@@ -30,9 +30,7 @@ class Timer():
 		self.pause()
 		self.__init__(duration)
 		threading.Thread(target = self.run).start()
-		
-timer = Timer(10)
-timer.start()
+
 
  	
 
