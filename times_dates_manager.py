@@ -11,7 +11,7 @@ class Timer:
 
 	def start(self):
 		threading.Thread(target = self.run).start()
-				
+
 	def run(self):
 		print("  ",self.remaining)
 		while self.control_thread.is_set() and self.remaining > 0:
@@ -21,10 +21,10 @@ class Timer:
 
 	def pause(self):
 		self.control_thread.clear()
-		
+
 	def resume(self):
 		self.control_thread.set()
-		
+
 	def reset(self, duration):
 		self.pause()
 		self.__init__(duration)
@@ -59,7 +59,7 @@ class Stopwatch:
 		print(tabulate(self.marks.items()))
 		print("stopped sw")
 		return int(time.monotonic() - self.started_at)
-		
+
 		
 
 class Alarm:
@@ -78,17 +78,3 @@ class Pomodoro:
 				else:
 				  self.work_sec, break_, lbreak = timings[1]
 				self.timer
-			
-				  
-				  
-		    
-					
-				
-			
-			
-			
-		
-
-
-	
-		
