@@ -1,6 +1,6 @@
 import time
 import threading
-
+from tabulate import tabulate
 
 class Timer:
 	def __init__(self, duration):
@@ -38,18 +38,32 @@ class Stopwatch:
 		self.started_at = None
 
 	def start(self):
+		print("STARTED SW")
 		self.running = True
-		self.started_at = time.perf_counter()
+		self.started_at = time.monotonic()
 
 	def mark(self, name='unknown'):
+		print("marked........")
 		if self.running:
-			self.marks[name] = time.perf_counter() - self.started_at
+			self.marks[name] = int(time.monotonic() - self.started_at)
 		else:
 			return None # handle or raise exception
 
 	def stop(self):
 		self.running = False
-		return time.perf_counter - self.started_at
+		'''for i,j in self.marks.items():
+			print(f"{i:<6} --- {j}")'''
+		print(tabulate(self.marks.items()))
+		print("stopped sw")
+		return int(time.monotonic() - self.started_at)
+		
+sw = Stopwatch()
+sw.start()
+sw.mark('balu')
+time.sleep(3)
+sw.mark('balaji')
+print(sw.stop())
+		
 
 
 	
