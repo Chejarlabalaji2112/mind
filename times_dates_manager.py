@@ -3,9 +3,9 @@ import threading
 from tabulate import tabulate
 
 class Timer:
-	def __init__(self, duration):
-		self.duration = duration
-		self.remaining = duration
+	def __init__(self, sec, mins=0, hrs=0):
+		self.duration = (hrs * 3600) + (mins * 60) + sec
+		self.remaining = self.duration
 		self.control_thread = threading.Event()
 		self.control_thread.set()
 
@@ -29,6 +29,9 @@ class Timer:
 		self.pause()
 		self.__init__(duration)
 		threading.Thread(target = self.run).start()
+		
+	def make_sound(self):
+		pass #play some audio.
 
 
 class Stopwatch:
@@ -57,12 +60,33 @@ class Stopwatch:
 		print("stopped sw")
 		return int(time.monotonic() - self.started_at)
 		
-sw = Stopwatch()
-sw.start()
-sw.mark('balu')
-time.sleep(3)
-sw.mark('balaji')
-print(sw.stop())
+		
+
+class Alarm:
+		def __init__(self, hrs, mins, sec = 0):
+			self.timer = Timer(sec, mins, hrs)
+			self.timer.start()
+			# you can implement better approach of letting tgread to go to sleep for some time.
+			
+			
+			
+class Pomodoro:
+			timings = ((1500, 300, 600),(3000, 600, 1200))
+			def __init__(general = True):
+				if general:
+					self.work_sec, break_, lbreak = timings[0]
+				else:
+				  self.work_sec, break_, lbreak = timings[1]
+				self.timer
+			
+				  
+				  
+		    
+					
+				
+			
+			
+			
 		
 
 
