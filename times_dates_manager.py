@@ -1,3 +1,4 @@
+import sqlite3
 import time
 import threading
 # from tabulate import tabulate
@@ -146,3 +147,16 @@ class Pomodoro:
         self.start()
 
 
+class  TaskReminder:
+    def __init__(self):
+        #  why you should not use login credentials to use these features.
+        #  identify user because each user will have their own tasks.
+        #  add, remove, update, markcomplete(toggle, status on/off)
+        self.db = sqlite3.connect()
+        self.cur = self.db.cursor()
+
+    def add(self, task_name, remind_at = None):
+        if remind_at:
+            task_date = remind_at[0]
+            self.task_time = remind_at[1]
+            
