@@ -82,7 +82,7 @@ class Stopwatch:
         # print(tabulate(self.marks.items()))
         # print("stopped sw")
         self.ended_at = time.monotonic()
-        return int(self.ended_at- self.started_at)
+        return int(self.ended_at-self.started_at)
 
 
 class Alarm:
@@ -207,7 +207,8 @@ class TaskReminder:
         self.cur.execute(f"update Tasks set status = 1 where id ={task_id}")
 
     def mark_uncompleted(self):
-          #  develop this method to tell that a specific task has crossed its deadline.
+        pass
+        #  develop this method to tell that a specific task has crossed its deadline.
 
 
 class TimeAllocated:
@@ -225,28 +226,33 @@ class TimeAllocated:
         # do not forget t0 set default value for allocated time as 0
         # allocate primary key for each skill like id so that it would be easy to insert or manipulate it.
 
-    def append(self,skill_name):
+    def append(self, skill_name):
         self.cur.execute(f"INSERT INTO SKILLS_TIME({skill_name} ")
         self.db.commit() # add general functionality that confirms whether the changes should be commited or not. like
         # by showing what changes has been made.
 
     @staticmethod
     def add_time(total, previous):
-          """this method is used to add the time like if previous is 2:10 now is 10 it should be like 2:20 """
+        """this method is used to add the time like if previous is 2:10 now is 10 it should be like 2:20. """
+        hrs, mins = tuple(map(int, previous.split(':')))
+        hrs_and_remaining = divmod(total, 3600)
+        return f"{hrs + hrs_and_remaining[0]}:{hrs_and_remaining[1] // 60}"
+
+
 
     def start_session(self):
         self.stopwatch.start()
-        self.session_started_at = self.stopwatch.started_at, time.strftime('%H:%M')
+        self.session_started_at = time.strftime('%d|%m|%y  %H:%M')
 
     def end_session(self):
-        total = self.stopwatch.stop()
+        total_spent_time = self.stopwatch.stop()
         self.session_ended_at = time.strftime("%H:%M") # set some default values or else previous time do not come
-        previous, session = self.cur.execute(f"select allocated_time, session FROM Skills_Time where skill = {self.current_skill}")
-        incremented = self.add_time(total, previous)
+        previous, sessions = self.cur.execute(f"SELECT allocated_time, sessions FROM Skills_Time where skill = {self.current_skill}")
+        incremented = TimeAllocated.add_time(total_spent_time, previous)
         # can static method be called with self or class method.
-        session = session + self.session_ended_at # use json to store tuple or list ds session.
+        sessions.append(f"{self.session_started_at} to {self.session_ended_at}")  # use json to store tuple or list ds sessions.
         # here again convert to normal list and update and convert to list or tuple and add it to db.
-        self.cur.execute(f"UPDATE Skills_time set allocated_time = {incremented}, set session = {session}")
+        self.cur.execute(f"UPDATE Skills_time set allocated_time = {incremented}, set sessions = {sessions}")
 
 
 
