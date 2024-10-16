@@ -1,9 +1,14 @@
 import sqlite3
 import time
 import threading
+import json
 
+# TODO PERRFORM UNIT TEST VERY BADLY
+# TODO AND ALSO EXCEPTION HANDLING SHOULD BE DONE
 
 # from tabulate import tabulate
+def make_sound(self):
+    pass  # play some audio.
 
 
 class Timer:
@@ -53,9 +58,6 @@ class Timer:
         self.remaining = self.duration
         self.control_event.set()
 
-    def make_sound(self):
-        pass  # play some audio.
-
 
 class Stopwatch:
     def __init__(self):
@@ -82,7 +84,7 @@ class Stopwatch:
         # print(tabulate(self.marks.items()))
         # print("stopped sw")
         self.ended_at = time.monotonic()
-        return int(self.ended_at-self.started_at)
+        return int(self.ended_at - self.started_at)
 
 
 class Alarm:
@@ -155,20 +157,20 @@ class TaskReminder:
         #  why you should not use login credentials to use these features.
         #  identify user because each user will have their own tasks.
         #  add, remove, update, markcomplete(toggle, status on/off)
-        self.db = sqlite3.connect()
+        self.db = sqlite3.connect('memory.db')
         self.cur = self.db.cursor()
         self.columns = 'id | name | time | date | status'
-
 
     def add(self, task_name, remind_at=None):
         if remind_at:
             task_date = remind_at[0]
-            task_time = remind_at[1]  #  taskid, taskname, time, data, status 0,1, -1 -1 if deadline is crossed.
-            self.cur.execute(f"INSERT INTO Tasks({task_date[0]+task_time[0]+task_name[0]},{task_name},{task_time},{task_date},0)")
+            task_time = remind_at[1]
+            print(f'{task_date[0] + task_time[0] + task_name[0]},{task_name},{task_time},{task_date}')# taskid, taskname, time, data, status 0,1, -1 -1 if deadline is crossed.
+            self.cur.execute(f"INSERT INTO Tasks values ('{task_date[0] + task_time[0] + task_name[0]}','{task_name}','{task_time}','{task_date}',0)")
             if input(f"""Confirm(y/n)
              Name:{task_name}
              Date:{task_date}
-             Time:{task_time}""").strip().lower() == 'y':
+             Time:{task_time}:  """).strip().lower() == 'y':
                 self.db.commit()
             else:
                 print("Re-add the task. check whether the re_add is correct")
@@ -185,10 +187,10 @@ class TaskReminder:
                 print(i)
 
     def remove(self, task_name):
-        self.show_task(f'select * from Tasks where name = {task_name}')
+        self.show_task(f"select * from Tasks where name = '{task_name}'")
         # remove tasks based on different conditions like name, time, etc.
         task_id = input("enter the task id from the above displayed tasks...")
-        self.cur.execute(f"Delete from Tasks where id = {task_id}")
+        self.cur.execute(f"Delete from Tasks where id = '{task_id}'")
         if input(f"Confirm (y/n) to delete {task_name}").strip().lower() == 'y':
             self.db.commit()
         else:
@@ -197,15 +199,19 @@ class TaskReminder:
 
     def update(self, command):
         self.show_task()
-        print("The columns are: ", self.columns)
+        #print("The columns are: ", self.columns)
         self.cur.execute(command)
+        self.db.commit()
         # write a method that checks the given command so that nothing wrong will happen.
 
-    def mark_complete(self, task_name):
-        self.show_task(f'select * from Tasks where name = {task_name}')
-        task_id = input("enter the task id from above displayed tasks...")
-        self.cur.execute(f"update Tasks set status = 1 where id ={task_id}")
-
+    def mark_complete(self, task_name, inverse = False):
+        self.show_task(f"select * from Tasks where name = '{task_name}'")
+        task_id = input("enter the task id from above displayed tasks: ")
+        if not inverse:
+            self.cur.execute(f"update Tasks set status = 1 where id ='{task_id}'")
+        else:
+            self.cur.execute(f"update Tasks set status = 0 where id ='{task_id}'")
+        self.db.commit()
     def mark_uncompleted(self):
         pass
         #  develop this method to tell that a specific task has crossed its deadline.
@@ -213,22 +219,24 @@ class TaskReminder:
 
 class TimeAllocated:
     """Actually, to learn the basics of any skill we should at least allocate 20hrs."""
-    def __init__(self, current_skill = None):
+
+    def __init__(self, current_skill=None):
         self.db = sqlite3.connect("memory.db")
         self.cur = self.db.cursor()
         self.stopwatch = Stopwatch()
         self.current_skill = current_skill
         if current_skill:
-            self.cur.execute(f"Select allocated_time from Skills_time where skill_name = {current_skill}")
-            if self.cur.fetchone() > '20':
+            self.cur.execute(f"Select allocated from Skills_time where skill = '{current_skill}'")
+            if self.cur.fetchone()[0] > '20':
                 pass
                 # raise alarm that reached 20hrs.
         # do not forget t0 set default value for allocated time as 0
         # allocate primary key for each skill like id so that it would be easy to insert or manipulate it.
 
     def append(self, skill_name):
-        self.cur.execute(f"INSERT INTO SKILLS_TIME({skill_name} ")
-        self.db.commit() # add general functionality that confirms whether the changes should be commited or not. like
+        self.cur.execute("INSERT INTO SKILLS_TIME (skill) VALUES (?)", (skill_name,))
+        self.current_skill = skill_name
+        #self.db.commit()  # add general functionality that confirms whether the changes should be commited or not. like
         # by showing what changes has been made.
 
     @staticmethod
@@ -236,9 +244,7 @@ class TimeAllocated:
         """this method is used to add the time like if previous is 2:10 now is 10 it should be like 2:20. """
         hrs, mins = tuple(map(int, previous.split(':')))
         hrs_and_remaining = divmod(total, 3600)
-        return f"{hrs + hrs_and_remaining[0]}:{hrs_and_remaining[1] // 60}"
-
-
+        return hrs + hrs_and_remaining[0], f"{hrs + hrs_and_remaining[0]}:{hrs_and_remaining[1] // 60}"
 
     def start_session(self):
         self.stopwatch.start()
@@ -246,17 +252,19 @@ class TimeAllocated:
 
     def end_session(self):
         total_spent_time = self.stopwatch.stop()
-        self.session_ended_at = time.strftime("%H:%M") # set some default values or else previous time do not come
-        previous, sessions = self.cur.execute(f"SELECT allocated_time, sessions FROM Skills_Time where skill = {self.current_skill}")
-        incremented = TimeAllocated.add_time(total_spent_time, previous)
+        self.session_ended_at = time.strftime("%H:%M")  # set some default values or else previous time do not come
+        previous, sessions = self.cur.execute(f"SELECT allocated, sessions FROM Skills_Time where skill = '{self.current_skill}'").fetchone()
+        sessions = json.loads(sessions)
+        allocated_till_now, incremented = TimeAllocated.add_time(total_spent_time, previous)
         # can static method be called with self or class method.
-        sessions.append(f"{self.session_started_at} to {self.session_ended_at}")  # use json to store tuple or list ds sessions.
+        sessions.append(
+            f"{self.session_started_at} to {self.session_ended_at}")  # use json to store tuple or list ds sessions.
         # here again convert to normal list and update and convert to list or tuple and add it to db.
-        self.cur.execute(f"UPDATE Skills_time set allocated_time = {incremented}, set sessions = {sessions}")
-
-
-
-
-
-
+        sessions = json.dumps(sessions)
+        self.cur.execute(f"UPDATE Skills_time set allocated = '{incremented}',sessions = '{sessions}'")
+        # TODO YOU MISSED TO COMMIT  CHANGES IN THIS SECTION.
+        # TODO IF BLOCK AT LINE 267 MAY NOT WORK BECAUSE ALLOCADTED_TILL_NOW HAS SOME ISSUES IN ADD_TIME FUNC LIKE
+        #  DIVMOD RETURN TUPLE AND YOU ARE TRYING TO ADD IT.
+        if allocated_till_now >= 20:
+            make_sound('completed 20hrs...')
 
