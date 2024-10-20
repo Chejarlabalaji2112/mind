@@ -2,22 +2,29 @@ import sqlite3
 import time
 import threading
 import json
+from pygame import mixer
+mixer.init()
 
-# TODO PERRFORM UNIT TEST VERY BADLY
+# TODO PERFORM UNIT TEST VERY BADLY
 # TODO AND ALSO EXCEPTION HANDLING SHOULD BE DONE
+# once timer is started eventhough I interrupt program in pycharm thread is running
+# so when we want to interrupt program try like calling all available threads pause method .
 
 # from tabulate import tabulate
-def make_sound(self):
-    pass  # play some audio.
+
+
+  # play some audio
 
 
 class Timer:
-    def __init__(self):
+    def __init__(self, silent = False, volume = 1):
         self.control_event = threading.Event()
         self.control_event.set()
         self.completed = False
         self.new = True
-
+        self.silent = silent
+        self.sounds = [mixer.Sound("sounds/analog tictoc.mp3"),mixer.Sound("sounds/classic_alarm.mp3")]
+        self.sounds[0].set_volume(volume)
     def start(self, sec, mins=0, hrs=0, name=None):
         def inner_start():
             self.duration = (hrs * 3600) + (mins * 60) + sec
@@ -25,6 +32,7 @@ class Timer:
             self.thread = threading.Thread(target=self.run, name=name)
             self.completed = False
             self.thread.start()
+            self.make_sound(0)
 
         if self.new:
             inner_start()
@@ -45,18 +53,37 @@ class Timer:
             time.sleep(1)
             self.remaining -= 1
             print("   ", self.remaining)
+        self.sounds[0].stop()
+        self.sounds[1].play()
+        time.sleep(5)
+        self.sounds[1].stop()
         self.completed = True
 
     def pause(self):
         self.control_event.clear()
+        self.sounds[0].stop()
 
     def resume(self):
         self.control_event.set()
+        time.sleep(1)
+        self.make_sound(0)
 
     def reset(self, duration):  # check whether this works or not.
         self.pause()
         self.remaining = self.duration
         self.control_event.set()
+        time.sleep(1)
+        self.make_sound(0)
+
+    def make_sound(self, i): # here `i` determines which sound to activate.
+        if self.silent:
+            return
+        else:
+            sound_thread = threading.Thread(target=self.sounds[i].play)
+            sound_thread.start()
+
+
+
 
 
 class Stopwatch:
@@ -104,7 +131,7 @@ class Pomodoro:
             self.work_sec, self.break_, self.lbreak = Pomodoro.timings[0]
         else:
             self.work_sec, self.break_, self.lbreak = Pomodoro.timings[1]
-        self.timer = Timer()
+        self.timer = Timer(volume= 0.1)
         self.counter = 0
         self.new = True
 
@@ -266,5 +293,5 @@ class TimeAllocated:
         # TODO IF BLOCK AT LINE 267 MAY NOT WORK BECAUSE ALLOCADTED_TILL_NOW HAS SOME ISSUES IN ADD_TIME FUNC LIKE
         #  DIVMOD RETURN TUPLE AND YOU ARE TRYING TO ADD IT.
         if allocated_till_now >= 20:
-            make_sound('completed 20hrs...')
+            pass # make_sound('completed 20hrs...')
 
