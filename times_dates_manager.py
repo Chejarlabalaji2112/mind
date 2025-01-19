@@ -17,13 +17,13 @@ mixer.init()
 
 
 class Timer:
-    def __init__(self, silent = False, volume = 1):
+    def __init__(self, silent = True, volume = 1):
         self.control_event = threading.Event()
         self.control_event.set()
         self.completed = False
         self.new = True
         self.silent = silent
-        self.sounds = [mixer.Sound("sounds/analog tictoc.mp3"),mixer.Sound("sounds/classic_alarm.mp3")]
+        self.sounds = [mixer.Sound("sounds/ticktock.mp3"), mixer.Sound("sounds/alarm.WAV"), mixer.Sound("sounds/complete.oga")]
         self.sounds[0].set_volume(volume)
     def start(self, sec, mins=0, hrs=0, name=None):
         def inner_start():
@@ -54,9 +54,8 @@ class Timer:
             self.remaining -= 1
             print("   ", self.remaining)
         self.sounds[0].stop()
-        self.sounds[1].play()
-        time.sleep(5)
-        self.sounds[1].stop()
+        self.sounds[2].play()
+        time.sleep(1)
         self.completed = True
 
     def pause(self):
@@ -68,7 +67,12 @@ class Timer:
         time.sleep(1)
         self.make_sound(0)
 
-    def reset(self, duration):  # check whether this works or not.
+    def kill(self):
+        self.pause()
+        self.remaining =0
+        self.resume()
+
+    def reset(self):  # check whether this works or not.
         self.pause()
         self.remaining = self.duration
         self.control_event.set()
