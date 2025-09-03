@@ -1,6 +1,7 @@
 import sqlite3
 from datetime import datetime
 from .. import custom_exception as ce
+import logging
 
 # TODO commits are there for each method we might need to think of those.
 class SkillTracker:
@@ -43,7 +44,7 @@ class SkillTracker:
 
             self.cur.execute("""
             INSERT INTO Skills (Name, CreatedOn, TotalTimeSpent) VALUES (?, DATE('now'), 0)""", (skill_name,))
-            self.conn.commit()
+            self.conn.commit() # should I use the commit here or just in the main file?
             return True
         except ce.SkillAlreadyExistsError as sae:
             print(sae)
@@ -68,7 +69,7 @@ class SkillTracker:
             # Check for existing active session for this skill
             if skill_id in self._active_sessions:
                 print(f"Warning: A session for skill '{skill_name}' is already active in this application instance.")
-                # Depending on desired behavior, you might raise an error or return False here.
+                #TODO Depending on desired behavior, we might raise an error or return False here.
                 # For now, we'll allow starting a new one if the database doesn't show it.
 
             self.cur.execute("SELECT SessionID FROM Sessions WHERE SkillID = ? AND EndTime IS NULL", (skill_id,))
@@ -229,7 +230,9 @@ class SkillTracker:
             if skill_id in self._active_sessions:
                 del self._active_sessions[skill_id]
             print(f"Skill '{skill_name}' and all its associated sessions have been deleted.")
+            #TODO but we have not cleared appropriate session of that skill in the sessins table.
             return True
+        
         except ce.SkillNotFoundError as snf:
             print(snf)
             return False
@@ -258,6 +261,8 @@ class SkillTracker:
             if skill_id in self._active_sessions:
                 del self._active_sessions[skill_id]
             print(f"All session data for skill '{skill_name}' has been reset, and TotalTimeSpent set to 0.")
+            # TODO it does not clear the sessions that are already stored in the sessions table.
+            
             return True
         except ce.SkillNotFoundError as snf:
             print(snf)
