@@ -1,0 +1,1 @@
+def calculate_total_mins(start_time:str, end_time:str) -> int:
