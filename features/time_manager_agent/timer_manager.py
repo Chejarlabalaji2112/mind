@@ -1,6 +1,13 @@
 from datetime import datetime, timedelta
 import time
 
+# TODO I do not understand why we are saving the timer etc in permament storage. it should be in ram only.
+# TODO Add pause/resume functionality to timers and stopwatches.
+# TODO Add notifications when timers/alarms go off. 
+
+"""The whole system is saving the timer and details in the disk and retrieving again and again. This is not efficient.
+Usually the timer and stopwatch should run directly (may be as a micro-service.)"""
+
 class TimerManager:
     def __init__(self, db):
         self.db = db

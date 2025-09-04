@@ -36,6 +36,8 @@ class TimeManagerAgent:
 
     def get_current_date(self):
         return datetime.now().strftime("%Y-%m-%d")
+    
+    # TODO : Add timezone support. agent could accept a timezone parameter and convert times accordingly.
 
     def stop_agent(self):
         self._running = False
