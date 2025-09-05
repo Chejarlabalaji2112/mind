@@ -2,6 +2,7 @@ import time
 import threading
 from enum import Enum, auto
 from time_tools.base_tool import TimeTool, Event
+from utils.time_conversions import convert_to_seconds, format_seconds_to_hms
 
 class PomodoroPhase(Enum):
     WORK = auto()
@@ -10,11 +11,14 @@ class PomodoroPhase(Enum):
     IDLE = auto()
 
 class Pomodoro(TimeTool):
-    def __init__(self, work_duration=25*60, short_break_duration=5*60, long_break_duration=15*60, cycles_before_long_break=4):
+    def __init__(self, work_duration_h=0, work_duration_m=25, work_duration_s=0,
+                 short_break_duration_h=0, short_break_duration_m=5, short_break_duration_s=0,
+                 long_break_duration_h=0, long_break_duration_m=15, long_break_duration_s=0,
+                 cycles_before_long_break=4):
         super().__init__()
-        self._work_duration = work_duration
-        self._short_break_duration = short_break_duration
-        self._long_break_duration = long_break_duration
+        self._work_duration = convert_to_seconds(work_duration_h, work_duration_m, work_duration_s)
+        self._short_break_duration = convert_to_seconds(short_break_duration_h, short_break_duration_m, short_break_duration_s)
+        self._long_break_duration = convert_to_seconds(long_break_duration_h, long_break_duration_m, long_break_duration_s)
         self._cycles_before_long_break = cycles_before_long_break
 
         self._current_cycle = 0
@@ -74,7 +78,8 @@ class Pomodoro(TimeTool):
             "current_phase": self._current_phase.name,
             "current_cycle": self._current_cycle,
             "remaining_time": self._remaining_time,
-            "total_phase_duration": self._get_current_phase_duration()
+            "total_phase_duration": self._get_current_phase_duration(),
+            "remaining_time_formatted": format_seconds_to_hms(self._remaining_time)
         }
 
     def _get_current_phase_duration(self):
@@ -96,13 +101,13 @@ class Pomodoro(TimeTool):
 
         if next_phase == PomodoroPhase.WORK:
             self.on_work_start.emit(cycle=self._current_cycle)
-            print(f"Starting Work Phase (Cycle {self._current_cycle}) for {self._work_duration/60:.0f} minutes.")
+            print(f"Starting Work Phase (Cycle {self._current_cycle}) for {format_seconds_to_hms(self._work_duration)}.")
         elif next_phase == PomodoroPhase.SHORT_BREAK:
             self.on_short_break_start.emit(cycle=self._current_cycle)
-            print(f"Starting Short Break for {self._short_break_duration/60:.0f} minutes.")
+            print(f"Starting Short Break for {format_seconds_to_hms(self._short_break_duration)}.")
         elif next_phase == PomodoroPhase.LONG_BREAK:
             self.on_long_break_start.emit(cycle=self._current_cycle)
-            print(f"Starting Long Break for {self._long_break_duration/60:.0f} minutes.")
+            print(f"Starting Long Break for {format_seconds_to_hms(self._long_break_duration)}.")
 
         if self._thread is None or not self._thread.is_alive():
             self._thread = threading.Thread(target=self._run)
@@ -113,7 +118,7 @@ class Pomodoro(TimeTool):
         while self._is_running and self._remaining_time > 0:
             current_elapsed = time.time() - self._start_time
             self._remaining_time = max(0, self._get_current_phase_duration() - (self._elapsed_at_pause + current_elapsed))
-            self.on_tick.emit(remaining_time=self._remaining_time, phase=self._current_phase.name)
+            self.on_tick.emit(remaining_time=self._remaining_time, phase=self._current_phase.name, remaining_time_formatted=format_seconds_to_hms(self._remaining_time))
 
             if self._remaining_time <= 0:
                 self._is_running = False

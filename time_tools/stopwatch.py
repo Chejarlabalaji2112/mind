@@ -1,6 +1,7 @@
 import time
 import threading
 from time_tools.base_tool import TimeTool, Event
+from utils.time_conversions import format_seconds_to_hms
 
 class Stopwatch(TimeTool):
     def __init__(self):
@@ -32,8 +33,8 @@ class Stopwatch(TimeTool):
         if self._is_running:
             current_elapsed = self._elapsed_at_pause + (time.time() - self._start_time)
             self._laps.append(current_elapsed)
-            self.on_lap.emit(lap_time=current_elapsed, all_laps=self._laps)
-            print(f"Lap recorded: {current_elapsed:.2f} seconds.")
+            self.on_lap.emit(lap_time=current_elapsed, lap_time_formatted=format_seconds_to_hms(current_elapsed), all_laps=self._laps)
+            print(f"Lap recorded: {format_seconds_to_hms(current_elapsed)}.")
         else:
             print("Stopwatch is not running, cannot record lap.")
 
@@ -43,11 +44,13 @@ class Stopwatch(TimeTool):
         return {
             "is_running": self._is_running,
             "elapsed_time": self._elapsed_time,
-            "laps": self._laps
+            "elapsed_time_formatted": format_seconds_to_hms(self._elapsed_time),
+            "laps": self._laps,
+            "laps_formatted": [format_seconds_to_hms(lap) for lap in self._laps]
         }
 
     def _run(self):
         while self._is_running:
             current_elapsed = self._elapsed_at_pause + (time.time() - self._start_time)
-            self.on_tick.emit(elapsed_time=current_elapsed)
+            self.on_tick.emit(elapsed_time=current_elapsed, elapsed_time_formatted=format_seconds_to_hms(current_elapsed))
             time.sleep(0.1) # Update every 100ms
