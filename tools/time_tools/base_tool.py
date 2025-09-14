@@ -1,10 +1,13 @@
 import threading
 import time
 from abc import ABC, abstractmethod
+import asyncio
+import inspect
 
 class Event:
-    def __init__(self):
+    def __init__(self, loop=None):
         self._listeners = []
+        self.loop = loop  # asyncio event loop to schedule async listeners
 
     def add_listener(self, listener):
         if callable(listener):
@@ -19,7 +22,15 @@ class Event:
     def emit(self, *args, **kwargs):
         for listener in self._listeners:
             try:
-                listener(*args, **kwargs)
+                if inspect.iscoroutinefunction(listener):
+                    if self.loop is None:
+                        raise RuntimeError("Async listener requires loop to be set")
+                    # schedule async listener on main loop thread-safely
+                    self.loop.call_soon_threadsafe(
+                        lambda l=listener: asyncio.create_task(l(*args, **kwargs))
+                    )
+                else:
+                    listener(*args, **kwargs)
             except Exception as e:
                 print(f"Error in event listener: {e}")
 
@@ -58,7 +69,7 @@ class TimeTool(ABC):
     def resume(self):
         if not self._is_running and self._start_time is not None:
             self._is_running = True
-            self._start_time = time.time() # Reset start time to calculate new elapsed duration
+            self._start_time = time.time()
             self._thread = threading.Thread(target=self._run)
             self._thread.daemon = True
             self._thread.start()
@@ -68,7 +79,8 @@ class TimeTool(ABC):
     def stop(self):
         if self._is_running:
             self._is_running = False
-            self._thread.join(timeout=0.1) # Give a small timeout for the thread to finish
+            if self._thread:
+                self._thread.join(timeout=0.1)
             self._thread = None
             self.on_stop.emit()
             print(f"{self.__class__.__name__} stopped.")

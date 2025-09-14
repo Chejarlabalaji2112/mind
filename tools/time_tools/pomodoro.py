@@ -1,8 +1,8 @@
 import time
 import threading
 from enum import Enum, auto
-from time_tools.base_tool import TimeTool, Event
-from utilities.time_conversions import convert_to_seconds, format_seconds_to_hms
+from .base_tool import TimeTool, Event
+from utils.time_conversions import convert_to_seconds, format_seconds_to_hms
 
 class PomodoroPhase(Enum):
     WORK = auto()
