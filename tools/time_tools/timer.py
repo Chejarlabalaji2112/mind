@@ -1,14 +1,17 @@
 import time
 import threading
-from time_tools.base_tool import TimeTool, Event
+from .base_tool import TimeTool, Event
 from utils.time_conversions import format_seconds_to_hms
 
 class Timer(TimeTool):
-    def __init__(self):
+    def __init__(self, loop=None):
         super().__init__()
         self._duration = 0
         self._remaining_time = 0
-        self.on_finished = Event()
+        self.on_finished = Event(loop=loop)
+
+        # Pass the loop to tick events as well
+        self.on_tick.loop = loop
 
     def start(self, duration):
         if self._is_running:
@@ -16,7 +19,7 @@ class Timer(TimeTool):
             return
 
         if duration <= 0:
-            raise ValueError("Duration must be a positive number.")
+            raise ValueError("Duration must be positive")
 
         self._duration = duration
         self._remaining_time = duration
@@ -48,15 +51,28 @@ class Timer(TimeTool):
         }
 
     def _run(self):
+        last_text = None
         while self._is_running and self._remaining_time > 0:
-            current_elapsed = time.time() - self._start_time
-            self._remaining_time = max(0, self._duration - (self._elapsed_at_pause + current_elapsed))
-            self.on_tick.emit(remaining_time=self._remaining_time, remaining_time_formatted=format_seconds_to_hms(self._remaining_time))
+            elapsed = time.time() - self._start_time
+            self._remaining_time = max(0, self._duration - (self._elapsed_at_pause + elapsed))
+
+            formatted = format_seconds_to_hms(self._remaining_time)
+            if formatted != last_text:
+                self.on_tick.emit(
+                    remaining_time=self._remaining_time,
+                    remaining_time_formatted=formatted
+                )
+                last_text = formatted
+                
+
             if self._remaining_time <= 0:
                 self._is_running = False
                 self.on_finished.emit()
                 print("Timer finished!")
                 break
-            time.sleep(0.1) # Update every 100ms
+
+            time.sleep(0.1)
+            
+
         if not self._is_running and self._remaining_time > 0:
             print("Timer stopped/paused before completion.")
