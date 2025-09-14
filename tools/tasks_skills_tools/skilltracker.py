@@ -1,11 +1,11 @@
 import sqlite3
 from datetime import datetime
-from utilities import custom_exception as ce
-from utilities.logging_handler import setup_logger
+from utils import custom_exception as ce
+from utils.logging_handler import setup_logger
 
 # TODO commits are there for each method we might need to think of those.
 class SkillTracker:
-    def __init__(self, db_path="../database/mind.db"):
+    def __init__(self, db_path="memory/memory.db"):
         self.conn = sqlite3.connect(db_path)
         self.cur = self.conn.cursor()
         self.cur.execute("PRAGMA foreign_keys = ON;")
