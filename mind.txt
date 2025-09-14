@@ -1,0 +1,35 @@
+Human Mind
+│
+├── Perception
+│   ├── Sensory input (sight, sound, touch, taste, smell)
+│   └── Processing into recognizable forms
+│
+├── Attention
+│   ├── Focused selection of information
+│   └── Filtering irrelevant stimuli
+│
+├── Memory
+│   ├── Short-term memory
+│   ├── Long-term memory
+│   └── Working memory
+│
+├── Thinking
+│   ├── Logical reasoning
+│   ├── Problem-solving
+│   └── Decision-making
+│
+├── Language Processing
+│   ├── Comprehension (input)
+│   └── Production (output)
+│
+├── Emotion Processing
+│   ├── Generation of emotional states
+│   └── Influence on decisions and behavior
+│
+├── Learning
+│   ├── Knowledge acquisition
+│   └── Updating stored information
+│
+└── Consciousness
+    ├── Awareness of self
+    └── Awareness of environment

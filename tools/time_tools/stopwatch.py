@@ -1,7 +1,7 @@
 import time
 import threading
 from time_tools.base_tool import TimeTool, Event
-from utils.time_conversions import format_seconds_to_hms
+from utilities.time_conversions import format_seconds_to_hms
 
 class Stopwatch(TimeTool):
     def __init__(self):
