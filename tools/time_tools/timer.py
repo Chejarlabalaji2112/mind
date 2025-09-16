@@ -51,13 +51,30 @@ class Timer(TimeTool):
         }
 
     def _run(self):
+        first_time=True
         last_text = None
+        formatted = format_seconds_to_hms(self._remaining_time)
+        if formatted != last_text:
+            self.on_tick.emit(
+                remaining_time=self._remaining_time,
+                remaining_time_formatted=formatted
+            )
+            last_text = formatted
         while self._is_running and self._remaining_time > 0:
             elapsed = time.time() - self._start_time
             self._remaining_time = max(0, self._duration - (self._elapsed_at_pause + elapsed))
 
+            if self._remaining_time <= 0:
+                self.on_finished.emit()
+                self._is_running = False
+                print("Timer finished!")
+                break
+
             formatted = format_seconds_to_hms(self._remaining_time)
             if formatted != last_text:
+                if first_time:
+                    first_time=False
+                    time.sleep(0.3)
                 self.on_tick.emit(
                     remaining_time=self._remaining_time,
                     remaining_time_formatted=formatted
@@ -65,13 +82,11 @@ class Timer(TimeTool):
                 last_text = formatted
                 
 
-            if self._remaining_time <= 0:
-                self._is_running = False
-                self.on_finished.emit()
-                print("Timer finished!")
-                break
 
-            time.sleep(0.1)
+
+            time.sleep(0.5)
+
+            
             
 
         if not self._is_running and self._remaining_time > 0:

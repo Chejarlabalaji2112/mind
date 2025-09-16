@@ -14,8 +14,9 @@ class Pomodoro(TimeTool):
     def __init__(self, work_duration_h=0, work_duration_m=25, work_duration_s=0,
                  short_break_duration_h=0, short_break_duration_m=5, short_break_duration_s=0,
                  long_break_duration_h=0, long_break_duration_m=15, long_break_duration_s=0,
-                 cycles_before_long_break=4):
+                 cycles_before_long_break=4, loop=None):
         super().__init__()
+        self.loop = loop # this is for async
         self._work_duration = convert_to_seconds(work_duration_h, work_duration_m, work_duration_s)
         self._short_break_duration = convert_to_seconds(short_break_duration_h, short_break_duration_m, short_break_duration_s)
         self._long_break_duration = convert_to_seconds(long_break_duration_h, long_break_duration_m, long_break_duration_s)
@@ -108,18 +109,35 @@ class Pomodoro(TimeTool):
         elif next_phase == PomodoroPhase.LONG_BREAK:
             self.on_long_break_start.emit(cycle=self._current_cycle)
             print(f"Starting Long Break for {format_seconds_to_hms(self._long_break_duration)}.")
-
         if self._thread is None or not self._thread.is_alive():
             self._thread = threading.Thread(target=self._run)
             self._thread.daemon = True
             self._thread.start()
 
     def _run(self):
+        first_time=True
+        last_text = None
+        formatted = format_seconds_to_hms(self._remaining_time)
+        self.on_tick.emit(
+                    remaining_time=self._remaining_time, 
+                    phase=self._current_phase.name, 
+                    remaining_time_formatted=formatted
+                    )
+        last_text = formatted 
         while self._is_running and self._remaining_time > 0:
             current_elapsed = time.time() - self._start_time
             self._remaining_time = max(0, self._get_current_phase_duration() - (self._elapsed_at_pause + current_elapsed))
-            self.on_tick.emit(remaining_time=self._remaining_time, phase=self._current_phase.name, remaining_time_formatted=format_seconds_to_hms(self._remaining_time))
-
+            formatted = format_seconds_to_hms(self._remaining_time)
+            if formatted != last_text:
+                if first_time:
+                    first_time=False
+                    time.sleep(0.3)
+                self.on_tick.emit(
+                    remaining_time=self._remaining_time, 
+                    phase=self._current_phase.name, 
+                    remaining_time_formatted=formatted
+                    )
+                last_text = formatted   
             if self._remaining_time <= 0:
                 self._is_running = False
                 self.on_phase_end.emit(previous_phase=self._current_phase.name, current_cycle=self._current_cycle)
@@ -132,9 +150,10 @@ class Pomodoro(TimeTool):
                     else:
                         self._transition_phase(PomodoroPhase.SHORT_BREAK)
                 elif self._current_phase in [PomodoroPhase.SHORT_BREAK, PomodoroPhase.LONG_BREAK]:
-                    self._current_cycle += 1
+                    self._current_cycle = (self._current_cycle % self._cycles_before_long_break) + 1
+
                     self._transition_phase(PomodoroPhase.WORK)
-                break
-            time.sleep(0.1)
+                continue
+            time.sleep(0.5)
         if not self._is_running and self._remaining_time > 0:
             print(f"Pomodoro {self._current_phase.name} phase stopped/paused before completion.")

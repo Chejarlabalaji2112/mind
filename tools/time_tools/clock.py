@@ -40,7 +40,7 @@ class Clock:
         return dt.strftime(format_str)
 
     @staticmethod
-    def get_current_datetime_str(timezone_str=None, format_str="%Y-%m-%d %H:%M:%S %Z%z"):
+    def get_current_datetime_str(timezone_str=None, format_str="%d-%m, %a| %H:%M:%S"):
         """Returns the current datetime as a formatted string, optionally in a specific timezone."""
         dt = Clock.get_current_datetime(timezone_str)
         return dt.strftime(format_str)
