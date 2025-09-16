@@ -21,17 +21,18 @@ async def main():
     loop = asyncio.get_running_loop()
 
     def screen_handler(title, center, bottom="", x=0, y=0, size=2, clear=True):
-            text = f"{title}{center}\n{bottom}"
             loop.call_soon_threadsafe(
             lambda: asyncio.create_task(
-                sender.show({
+                sender.show(
+                    {
                     "mode": "text",
-                    "text": text,
-                    "x": x,
-                    "y": y,
-                    "size": size,
                     "clear": clear
-                })
+                    "items":[{
+                    "text": center,"x": x,"y": y, "size": size
+                    }
+                    ]
+                }
+                )
             )
         )
 

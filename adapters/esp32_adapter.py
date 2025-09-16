@@ -20,7 +20,9 @@ import socket
 import time
 from utils.logging_handler import setup_logger
 
-logger = setup_logger(__name__)
+connection_logger = setup_logger("connection")
+sender_logger = setup_logger("sender", console=False)
+listener_logger = setup_logger("listener", console=False)
 import os
 
 ESP32_MDNS = "esp32.local"
@@ -89,7 +91,9 @@ class Connection:
     async def _try_connect(self, uri, label):
         try:
             ws = await asyncio.wait_for(websockets.connect(uri), timeout=3)
-            logger.info(f"[client] connected via {label}: {uri}")
+            connection_logger.info(("="*50))
+            connection_logger.info(f"[client] connected via {label}: {uri} ")
+            connection_logger.info("="*50)
             return ws
         except Exception:
             return None
@@ -155,7 +159,7 @@ class Listener(Audition):
 
     async def listen(self):
         async for msg in self.conn.receive():
-            logger.info(f"[ESP32] {msg}")
+            listener_logger.info(f"[ESP32] {msg}")
 
 
 # ------------------------------
@@ -177,7 +181,7 @@ async def main():
     await asyncio.sleep(5)
     await sender.show({"mode": "eyes", "mood": "happy", "direction": "center"})
     await sender.show({"mode": "clear"})
-    logger.info("[client] waiting 3s before closing...")
+    connection_logger.info("[client] waiting 3s before closing...")
     await asyncio.sleep(3)
     await conn.close()
 
@@ -186,4 +190,5 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logger.info("[client] exiting.")
+        connection_logger.info("[client] exiting.")
+        connection_logger.info("="*40)
