@@ -4,10 +4,11 @@ from .base_tool import TimeTool, Event
 from utils.time_conversions import format_seconds_to_hms
 
 class Stopwatch(TimeTool):
-    def __init__(self):
+    def __init__(self, loop=None):
         super().__init__()
         self._elapsed_time = 0
         self._laps = []
+        self.on_tick.loop = loop
         self.on_lap = Event()
 
     def start(self):
@@ -50,7 +51,15 @@ class Stopwatch(TimeTool):
         }
 
     def _run(self):
+        last_text = None
         while self._is_running:
             current_elapsed = self._elapsed_at_pause + (time.time() - self._start_time)
-            self.on_tick.emit(elapsed_time=current_elapsed, elapsed_time_formatted=format_seconds_to_hms(current_elapsed))
+            formatted = format_seconds_to_hms(current_elapsed)
+            if formatted != last_text:
+                self.on_tick.emit(
+                    elapsed_time=current_elapsed,
+                      elapsed_time_formatted=formatted
+                )
+                last_text = formatted       
+            
             time.sleep(0.1) # Update every 100ms

@@ -41,6 +41,7 @@ class TimeTool(ABC):
         self._start_time = None
         self._pause_time = None
         self._elapsed_at_pause = 0
+        self.paused = False
 
         self.on_tick = Event()
         self.on_start = Event()
@@ -60,6 +61,7 @@ class TimeTool(ABC):
     def pause(self):
         if self._is_running:
             self._is_running = False
+            self.paused = True
             self._pause_time = time.time()
             if self._start_time is not None:
                 self._elapsed_at_pause += (self._pause_time - self._start_time)
@@ -69,6 +71,7 @@ class TimeTool(ABC):
     def resume(self):
         if not self._is_running and self._start_time is not None:
             self._is_running = True
+            self.paused = False
             self._start_time = time.time()
             self._thread = threading.Thread(target=self._run)
             self._thread.daemon = True

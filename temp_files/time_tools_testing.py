@@ -80,7 +80,10 @@ def demonstrate_stopwatch():
 def demonstrate_pomodoro():
     print("\n--- Demonstrating Pomodoro (short durations for demo) ---")
     # Using short durations for demonstration purposes
-    pomodoro = Pomodoro(work_duration_s=5, short_break_duration_s=3, long_break_duration_s=7, cycles_before_long_break=2)
+    pomodoro = Pomodoro(work_duration_h=0, work_duration_m=0, work_duration_s=3,
+                 short_break_duration_h=0, short_break_duration_m=0, short_break_duration_s=4,
+                 long_break_duration_h=0, long_break_duration_m=0, long_break_duration_s=2,
+                 cycles_before_long_break=4)
     pomodoro.on_tick.add_listener(pomodoro_tick_handler)
     pomodoro.on_work_start.add_listener(pomodoro_work_start_handler)
     pomodoro.on_short_break_start.add_listener(pomodoro_break_start_handler)
@@ -90,19 +93,8 @@ def demonstrate_pomodoro():
 
     pomodoro.start()
     # Let it run through a few phases
-    time.sleep(6) # Work phase (5s) + a bit
-    print(f"Pomodoro status after work phase: {pomodoro.get_status()['remaining_time_formatted']}")
-    time.sleep(4) # Short break (3s) + a bit
-    print(f"Pomodoro status after short break: {pomodoro.get_status()['remaining_time_formatted']}")
-    time.sleep(6) # Work phase (5s) + a bit
-    print(f"Pomodoro status after second work phase: {pomodoro.get_status()['remaining_time_formatted']}")
-    time.sleep(8) # Long break (7s) + a bit
-    print(f"Pomodoro status after long break: {pomodoro.get_status()['remaining_time_formatted']}")
-    pomodoro.stop()
-    print(f"Pomodoro status after stop: {pomodoro.get_status()['remaining_time_formatted']}")
-    pomodoro.reset()
-    print(f"Pomodoro status after reset: {pomodoro.get_status()['remaining_time_formatted']}")
-
+    pomodoro._thread.join() # Work phase (5s) + a bit
+    
 def demonstrate_clock():
     print("\n--- Demonstrating Clock ---")
     print(f"Current UTC Datetime: {Clock.get_current_utc_datetime()}")
@@ -115,7 +107,4 @@ def demonstrate_clock():
 
 
 if __name__ == "__main__":
-    demonstrate_timer()
-    demonstrate_stopwatch()
-    demonstrate_pomodoro()
     demonstrate_clock()
