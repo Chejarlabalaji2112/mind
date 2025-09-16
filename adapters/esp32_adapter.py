@@ -15,9 +15,12 @@ Classes:
 
 import asyncio
 import websockets
-import socket
 import json
+import socket
 import time
+from utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 import os
 
 ESP32_MDNS = "esp32.local"
@@ -86,7 +89,7 @@ class Connection:
     async def _try_connect(self, uri, label):
         try:
             ws = await asyncio.wait_for(websockets.connect(uri), timeout=3)
-            print(f"[client] connected via {label}: {uri}")
+            logger.info(f"[client] connected via {label}: {uri}")
             return ws
         except Exception:
             return None
@@ -152,7 +155,7 @@ class Listener(Audition):
 
     async def listen(self):
         async for msg in self.conn.receive():
-            print("[ESP32]", msg)
+            logger.info(f"[ESP32] {msg}")
 
 
 # ------------------------------
@@ -174,7 +177,7 @@ async def main():
     await asyncio.sleep(5)
     await sender.show({"mode": "eyes", "mood": "happy", "direction": "center"})
     await sender.show({"mode": "clear"})
-    print("[client] waiting 3s before closing...")
+    logger.info("[client] waiting 3s before closing...")
     await asyncio.sleep(3)
     await conn.close()
 
@@ -183,8 +186,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n[client] exiting.")
-
-
-
-
+        logger.info("[client] exiting.")

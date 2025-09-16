@@ -2,6 +2,9 @@ import time
 import threading
 from .base_tool import TimeTool, Event
 from utils.time_conversions import format_seconds_to_hms
+from utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 
 class Timer(TimeTool):
     def __init__(self, loop=None):
@@ -15,7 +18,7 @@ class Timer(TimeTool):
 
     def start(self, duration):
         if self._is_running:
-            print("Timer is already running.")
+            logger.warning("Timer is already running.")
             return
 
         if duration <= 0:
@@ -29,13 +32,13 @@ class Timer(TimeTool):
         self._thread.daemon = True
         self._thread.start()
         self.on_start.emit(duration=duration)
-        print(f"Timer started for {duration} seconds.")
+        logger.info(f"Timer started for {duration} seconds.")
 
     def reset(self):
         super().reset()
         self._duration = 0
         self._remaining_time = 0
-        print("Timer reset.")
+        logger.info("Timer reset.")
 
     def get_status(self):
         if self._is_running:
@@ -67,7 +70,7 @@ class Timer(TimeTool):
             if self._remaining_time <= 0:
                 self.on_finished.emit()
                 self._is_running = False
-                print("Timer finished!")
+                logger.info("Timer finished!")
                 break
 
             formatted = format_seconds_to_hms(self._remaining_time)
@@ -90,4 +93,4 @@ class Timer(TimeTool):
             
 
         if not self._is_running and self._remaining_time > 0:
-            print("Timer stopped/paused before completion.")
+            logger.warning("Timer stopped/paused before completion.")

@@ -3,6 +3,9 @@ import time
 from abc import ABC, abstractmethod
 import asyncio
 import inspect
+from utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 
 class Event:
     def __init__(self, loop=None):
@@ -32,7 +35,7 @@ class Event:
                 else:
                     listener(*args, **kwargs)
             except Exception as e:
-                print(f"Error in event listener: {e}")
+                logger.error(f"Error in event listener: {e}")
 
 class TimeTool(ABC):
     def __init__(self):
@@ -66,7 +69,7 @@ class TimeTool(ABC):
             if self._start_time is not None:
                 self._elapsed_at_pause += (self._pause_time - self._start_time)
             self.on_pause.emit()
-            print(f"{self.__class__.__name__} paused.")
+            logger.info(f"{self.__class__.__name__} paused.")
 
     def resume(self):
         if not self._is_running and self._start_time is not None:
@@ -77,7 +80,7 @@ class TimeTool(ABC):
             self._thread.daemon = True
             self._thread.start()
             self.on_resume.emit()
-            print(f"{self.__class__.__name__} resumed.")
+            logger.info(f"{self.__class__.__name__} resumed.")
 
     def stop(self):
         if self._is_running:
@@ -86,7 +89,7 @@ class TimeTool(ABC):
                 self._thread.join(timeout=0.1)
             self._thread = None
             self.on_stop.emit()
-            print(f"{self.__class__.__name__} stopped.")
+            logger.info(f"{self.__class__.__name__} stopped.")
 
     @abstractmethod
     def reset(self):
@@ -96,7 +99,7 @@ class TimeTool(ABC):
         self._pause_time = None
         self._elapsed_at_pause = 0
         self.on_reset.emit()
-        print(f"{self.__class__.__name__} reset.")
+        logger.info(f"{self.__class__.__name__} reset.")
 
     @abstractmethod
     def get_status(self):

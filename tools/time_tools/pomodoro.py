@@ -3,6 +3,9 @@ import threading
 from enum import Enum, auto
 from .base_tool import TimeTool, Event
 from utils.time_conversions import convert_to_seconds, format_seconds_to_hms
+from utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 
 class PomodoroPhase(Enum):
     WORK = auto()
@@ -34,7 +37,7 @@ class Pomodoro(TimeTool):
 
     def start(self):
         if self._is_running:
-            print("Pomodoro is already running.")
+            logger.warning("Pomodoro is already running.")
             return
         if self._current_phase == PomodoroPhase.IDLE:
             self._current_cycle = 1
@@ -42,33 +45,33 @@ class Pomodoro(TimeTool):
         else:
             # If paused, just resume the current phase
             super().resume()
-        print("Pomodoro started.")
+        logger.info("Pomodoro started.")
 
     def pause(self):
         super().pause()
-        print("Pomodoro paused.")
+        logger.info("Pomodoro paused.")
 
     def resume(self):
         if not self._is_running and self._current_phase != PomodoroPhase.IDLE:
             super().resume()
-            print("Pomodoro resumed.")
+            logger.info("Pomodoro resumed.")
         elif self._current_phase == PomodoroPhase.IDLE:
             self.start() # If idle, start a new pomodoro
         else:
-            print("Pomodoro is already running or cannot be resumed from current state.")
+            logger.warning("Pomodoro is already running or cannot be resumed from current state.")
 
     def stop(self):
         super().stop()
         self._current_phase = PomodoroPhase.IDLE
         self._remaining_time = 0
-        print("Pomodoro stopped.")
+        logger.info("Pomodoro stopped.")
 
     def reset(self):
         super().reset()
         self._current_cycle = 0
         self._current_phase = PomodoroPhase.IDLE
         self._remaining_time = 0
-        print("Pomodoro reset.")
+        logger.info("Pomodoro reset.")
 
     def get_status(self):
         if self._is_running:
@@ -102,13 +105,13 @@ class Pomodoro(TimeTool):
 
         if next_phase == PomodoroPhase.WORK:
             self.on_work_start.emit(cycle=self._current_cycle)
-            print(f"Starting Work Phase (Cycle {self._current_cycle}) for {format_seconds_to_hms(self._work_duration)}.")
+            logger.info(f"Starting Work Phase (Cycle {self._current_cycle}) for {format_seconds_to_hms(self._work_duration)}.")
         elif next_phase == PomodoroPhase.SHORT_BREAK:
             self.on_short_break_start.emit(cycle=self._current_cycle)
-            print(f"Starting Short Break for {format_seconds_to_hms(self._short_break_duration)}.")
+            logger.info(f"Starting Short Break for {format_seconds_to_hms(self._short_break_duration)}.")
         elif next_phase == PomodoroPhase.LONG_BREAK:
             self.on_long_break_start.emit(cycle=self._current_cycle)
-            print(f"Starting Long Break for {format_seconds_to_hms(self._long_break_duration)}.")
+            logger.info(f"Starting Long Break for {format_seconds_to_hms(self._long_break_duration)}.")
         if self._thread is None or not self._thread.is_alive():
             self._thread = threading.Thread(target=self._run)
             self._thread.daemon = True
@@ -141,7 +144,7 @@ class Pomodoro(TimeTool):
             if self._remaining_time <= 0:
                 self._is_running = False
                 self.on_phase_end.emit(previous_phase=self._current_phase.name, current_cycle=self._current_cycle)
-                print(f"{self._current_phase.name} phase finished.")
+                logger.info(f"{self._current_phase.name} phase finished.")
 
                 if self._current_phase == PomodoroPhase.WORK:
                     self.on_cycle_complete.emit(cycle=self._current_cycle)
@@ -156,4 +159,4 @@ class Pomodoro(TimeTool):
                 continue
             time.sleep(0.5)
         if not self._is_running and self._remaining_time > 0:
-            print(f"Pomodoro {self._current_phase.name} phase stopped/paused before completion.")
+            logger.warning(f"Pomodoro {self._current_phase.name} phase stopped/paused before completion.")

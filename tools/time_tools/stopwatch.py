@@ -2,6 +2,9 @@ import time
 import threading
 from .base_tool import TimeTool, Event
 from utils.time_conversions import format_seconds_to_hms
+from utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 
 class Stopwatch(TimeTool):
     def __init__(self, loop=None):
@@ -13,7 +16,7 @@ class Stopwatch(TimeTool):
 
     def start(self):
         if self._is_running:
-            print("Stopwatch is already running.")
+            logger.warning("Stopwatch is already running.")
             return
 
         self._start_time = time.time()
@@ -22,22 +25,22 @@ class Stopwatch(TimeTool):
         self._thread.daemon = True
         self._thread.start()
         self.on_start.emit()
-        print("Stopwatch started.")
+        logger.info("Stopwatch started.")
 
     def reset(self):
         super().reset()
         self._elapsed_time = 0
         self._laps = []
-        print("Stopwatch reset.")
+        logger.info("Stopwatch reset.")
 
     def lap(self):
         if self._is_running:
             current_elapsed = self._elapsed_at_pause + (time.time() - self._start_time)
             self._laps.append(current_elapsed)
             self.on_lap.emit(lap_time=current_elapsed, lap_time_formatted=format_seconds_to_hms(current_elapsed), all_laps=self._laps)
-            print(f"Lap recorded: {format_seconds_to_hms(current_elapsed)}.")
+            logger.info(f"Lap recorded: {format_seconds_to_hms(current_elapsed)}.")
         else:
-            print("Stopwatch is not running, cannot record lap.")
+            logger.warning("Stopwatch is not running, cannot record lap.")
 
     def get_status(self):
         if self._is_running:
