@@ -107,4 +107,7 @@ def demonstrate_clock():
 
 
 if __name__ == "__main__":
+    demonstrate_timer()
+    demonstrate_stopwatch()
+    demonstrate_pomodoro()
     demonstrate_clock()

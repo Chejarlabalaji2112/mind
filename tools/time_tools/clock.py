@@ -1,5 +1,8 @@
 import datetime
 import pytz
+from utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 
 class Clock:
     @staticmethod
@@ -23,7 +26,7 @@ class Clock:
                 tz = pytz.timezone(timezone_str)
                 return datetime.datetime.now(pytz.utc).astimezone(tz)
             except pytz.exceptions.UnknownTimeZoneError:
-                print(f"Warning: Unknown timezone '{timezone_str}'. Returning UTC datetime.")
+                logger.warning(f"Unknown timezone '{timezone_str}'. Returning UTC datetime.")
                 return Clock.get_current_utc_datetime()
         return Clock.get_current_utc_datetime()
 

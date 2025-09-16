@@ -15,6 +15,9 @@ import os
 
 from time_tools.base_tool import Event
 from utils.time_conversions import format_seconds_to_hms # Assuming this is useful, will add more if needed
+from utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 
 class AlarmManager:
     def __init__(self, db_path="memory/memory.db"):
@@ -27,7 +30,7 @@ class AlarmManager:
         self._running = True
         self._monitor_thread = threading.Thread(target=self._monitor_alarms_thread, daemon=True)
         self._monitor_thread.start()
-        print("AlarmManager initialized and monitoring thread started.")
+        logger.info("AlarmManager initialized and monitoring thread started.")
 
     def _init_db(self):
         """Initializes the SQLite database and creates the alarms table if it doesn't exist."""
@@ -152,7 +155,7 @@ class AlarmManager:
 
     def _trigger_alarm(self, alarm_data):
         """Handles the triggering of an alarm."""
-        print(f"Alarm Triggered: {alarm_data['label']} at {datetime.datetime.fromtimestamp(alarm_data['next_trigger_timestamp'])}")
+        logger.info(f"Alarm Triggered: {alarm_data['label']} at {datetime.datetime.fromtimestamp(alarm_data['next_trigger_timestamp'])}")
         self.on_alarm_triggered.emit(alarm_id=alarm_data['id'], label=alarm_data['label'])
 
         if alarm_data['repeat'] == "once":
@@ -181,7 +184,7 @@ class AlarmManager:
         
         # Retrieve the newly created alarm's ID
         last_row_id = self._execute_query("SELECT last_insert_rowid()", fetch_one=True)[0]
-        print(f"Alarm '{label}' created with ID: {last_row_id}")
+        logger.info(f"Alarm '{label}' created with ID: {last_row_id}")
         return last_row_id
 
     def get_alarms(self, status_filter=None):
@@ -203,7 +206,7 @@ class AlarmManager:
     def delete_alarm(self, alarm_id):
         """Deletes an alarm by its ID."""
         self._execute_query("DELETE FROM alarms WHERE id = ?", (alarm_id,))
-        print(f"Alarm ID {alarm_id} deleted.")
+        logger.info(f"Alarm ID {alarm_id} deleted.")
 
     def toggle_alarm(self, alarm_id):
         """Toggles the status of an alarm (active/inactive)."""
@@ -217,9 +220,9 @@ class AlarmManager:
                 self._execute_query("UPDATE alarms SET status = ?, next_trigger_timestamp = ? WHERE id = ?", (new_status, next_ts, alarm_id))
             else:
                 self._execute_query("UPDATE alarms SET status = ? WHERE id = ?", (new_status, alarm_id))
-            print(f"Alarm ID {alarm_id} toggled to {new_status}.")
+            logger.info(f"Alarm ID {alarm_id} toggled to {new_status}.")
             return True
-        print(f"Alarm ID {alarm_id} not found.")
+        logger.warning(f"Alarm ID {alarm_id} not found.")
         return False
 
     def stop(self):
@@ -227,7 +230,7 @@ class AlarmManager:
         self._running = False
         if self._monitor_thread:
             self._monitor_thread.join(timeout=2) # Give it a moment to finish
-            print("AlarmManager monitoring thread stopped.")
+            logger.info("AlarmManager monitoring thread stopped.")
 
 # Example Usage (for testing purposes, can be removed later)
 if __name__ == "__main__":
@@ -237,43 +240,43 @@ if __name__ == "__main__":
     alarm_manager._execute_query("DELETE FROM alarms")
 
     # Create some alarms
-    print("\nCreating alarms:")
+    logger.info("\nCreating alarms:")
     alarm_manager.create_alarm("11:30", "Lunch Break", "daily")
     alarm_manager.create_alarm("11:31", "Quick Check", "once")
     alarm_manager.create_alarm("11:32", "Meeting Prep", "weekdays")
     alarm_manager.create_alarm("11:33", "Weekend Task", "Sat,Sun")
 
-    print("\nAll alarms:")
+    logger.info("\nAll alarms:")
     for alarm in alarm_manager.get_alarms():
-        print(alarm)
+        logger.info(alarm)
 
     # Simulate waiting for alarms to trigger
-    print("\nWaiting for alarms to trigger (will run for 10 seconds)...")
+    logger.info("\nWaiting for alarms to trigger (will run for 10 seconds)...")
     time.sleep(10)
 
-    print("\nAlarms after some time:")
+    logger.info("\nAlarms after some time:")
     for alarm in alarm_manager.get_alarms():
-        print(alarm)
+        logger.info(alarm)
 
     # Toggle an alarm
-    print("\nToggling alarm ID 1 to inactive:")
+    logger.info("\nToggling alarm ID 1 to inactive:")
     alarm_manager.toggle_alarm(1)
-    print("\nAlarms after toggle:")
+    logger.info("\nAlarms after toggle:")
     for alarm in alarm_manager.get_alarms():
-        print(alarm)
+        logger.info(alarm)
 
     # Toggle it back to active
-    print("\nToggling alarm ID 1 back to active:")
+    logger.info("\nToggling alarm ID 1 back to active:")
     alarm_manager.toggle_alarm(1)
-    print("\nAlarms after re-toggle:")
+    logger.info("\nAlarms after re-toggle:")
     for alarm in alarm_manager.get_alarms():
-        print(alarm)
+        logger.info(alarm)
 
     # Delete an alarm
-    print("\nDeleting alarm ID 2:")
+    logger.info("\nDeleting alarm ID 2:")
     alarm_manager.delete_alarm(2)
-    print("\nAlarms after deletion:")
+    logger.info("\nAlarms after deletion:")
     for alarm in alarm_manager.get_alarms():
-        print(alarm)
+        logger.info(alarm)
 
     alarm_manager.stop()

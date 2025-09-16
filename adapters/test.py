@@ -6,6 +6,9 @@ from tools.time_tools.stopwatch import Stopwatch
 from tools.time_tools.timer import Timer    
 from utils.time_conversions import convert_to_seconds
 from tools.time_tools.clock import Clock
+from utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 
 async def main():
     # 1) Connect to ESP32
@@ -79,4 +82,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n[client] exiting.")
+        logger.info("[client] exiting.")
