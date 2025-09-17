@@ -1,6 +1,6 @@
 # core/loop.py
 import asyncio
-from adapters.esp32_adapter import Connection, Sender, Listener
+from adapters.esp32_adapter import Connection, Sender, Listener, esp_output_tuner
 from core.tool_registry import ToolRegistry
 from core.agent import Agent
 from utils.logging_handler import setup_logger
@@ -24,7 +24,7 @@ async def main():
 
     # 2) Inject adapter into core
     loop = asyncio.get_running_loop()
-    tools = ToolRegistry(presenter=sender_adapter, loop=loop)
+    tools = ToolRegistry(presenter=sender_adapter, output_tuner=esp_output_tuner loop=loop)
     agent = Agent(tools)
 
     # 3) Start async user input loop
