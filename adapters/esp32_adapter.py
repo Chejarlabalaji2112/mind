@@ -162,6 +162,16 @@ class Listener(Audition):
             listener_logger.info(f"[ESP32] {msg}")
 
 
+def esp_output_tuner(title, content, bottom=""):
+    return {"mode": "text",
+            "clear": True,
+             "items": [
+                 {"text":title, "x": 0, "y": 0, "size": 1} ,
+                 {"text":content, "x": 10, "y": 20, "size": 2},
+                 {"text":bottom, "x": 0, "y": 54, "size": 1}
+             ]
+             }
+
 # ------------------------------
 # Example usage
 # ------------------------------
