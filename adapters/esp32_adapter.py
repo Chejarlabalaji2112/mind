@@ -162,7 +162,9 @@ class Listener(Audition):
             listener_logger.info(f"[ESP32] {msg}")
 
 
-def esp_output_tuner(title, content, bottom=""):
+def esp_output_tuner(title="None", content="", bottom="",/,home=False ):
+    if home:
+        return {"mode": "eyes"}
     return {"mode": "text",
             "clear": True,
              "items": [

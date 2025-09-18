@@ -40,6 +40,10 @@ class ToolRegistry:
         self._screen_handler(tuned_output)
 
     # --- Public API for agent ---
+    def home(self):
+        self._screen_handler(self.output_tuner(home=True))
+        return "Welcome Home!"
+
     def set_timer(self, seconds: int):
         self.timer.start(seconds)
         return f"Timer started for {seconds} seconds."
