@@ -1,36 +1,40 @@
 # core/loop.py
 import asyncio
+import dotenv
 from adapters.esp32_adapter import Connection, Sender, Listener, esp_output_tuner
 from core.tool_registry import ToolRegistry
 from core.agent import Agent
+from adapters.llm_gemini_adapter import GeminiLLMAdapter
 from utils.logging_handler import setup_logger
 
 logger = setup_logger(__name__)
+dotenv.load_dotenv()
 
-async def user_input_loop(agent):
-    loop = asyncio.get_running_loop()
+async def user_input_loop(agent: Agent, loop=None):
+    loop = asyncio.get_running_loop() if loop is None else loop
     while True:
         user_input = await loop.run_in_executor(None, input, ">>> ")
-        result = await agent.handle_request(user_input)
-        print(result)
+        response = await agent.handle_input(user_input)
+        print(response)
 
 async def main():
-    # 1) Connect to ESP32 (adapter)
+    # ESP32
     conn = Connection()
     await conn.connect()
-    sender_adapter = Sender(conn)  # implements Presenter
+    sender_adapter = Sender(conn)
     listener = Listener(conn)
     asyncio.create_task(listener.listen())
 
-    # 2) Inject adapter into core
+    # Tools
     loop = asyncio.get_running_loop()
-    tools = ToolRegistry(presenter=sender_adapter, output_tuner=esp_output_tuner loop=loop)
-    agent = Agent(tools)
+    tools = ToolRegistry(presenter=sender_adapter, loop=loop, output_tuner=esp_output_tuner)
 
-    # 3) Start async user input loop
-    asyncio.create_task(user_input_loop(agent))
+    # LLM Agent
+    llm_adapter = GeminiLLMAdapter(tools=tools, model="gemini-2.0-flash")
+    agent = Agent(decision_maker=llm_adapter, tools=tools)
 
-    # 4) Keep main loop alive
+    asyncio.create_task(user_input_loop(agent, loop=loop))
+
     while True:
         await asyncio.sleep(1)
 
@@ -41,4 +45,3 @@ if __name__ == "__main__":
         logger.info("="*50)
         logger.info("Exiting.")
         logger.info("="*50)
-        

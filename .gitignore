@@ -33,3 +33,6 @@ files_need_to_arrange/
 
 # database
 *.db
+
+# dotenv environment variables file
+.env    

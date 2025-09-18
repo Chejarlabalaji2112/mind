@@ -1,26 +1,27 @@
 # core/agent.py
+from ports.decision_making import DecisionMaker
 from core.tool_registry import ToolRegistry
-class Agent:
-    """LLM or rule-based agent that calls tools via ToolRegistry."""
+from utils.logging_handler import setup_logger
 
-    def __init__(self, tools: ToolRegistry):
+logger = setup_logger(__name__)
+
+class Agent:
+    """Orchestrates tools using a DecisionMaker (LLM or other)."""
+
+    def __init__(self, decision_maker: DecisionMaker, tools: ToolRegistry):
+        self.decision_maker = decision_maker
         self.tools = tools
 
-    async def handle_request(self, user_input: str):
-        """Rule-based for now; later swap with LLM function-calling."""
-        user_input = user_input.lower()
-        if "timer" in user_input:
-            if "pause" in user_input:
-                return self.tools.pause_timer()
-            elif "resume" in user_input:
-                return self.tools.resume_timer()
-            elif "stop" in user_input:
-                return self.tools.stop_timer()
-            else:
-                # extract number of minutes
-                numbers = [int(s) for s in user_input.split() if s.isdigit()]
-                if numbers:
-                    seconds = numbers[0] * 60
-                    return self.tools.set_timer(seconds)
-                return "Please specify timer duration."
-        return "Command not recognized."
+    async def handle_input(self, user_input: str):
+        """
+        Forward user input to the DecisionMaker (LLM) and handle tool execution.
+        The LLM adapter decides which tool to call.
+        """
+        try:
+
+            response = await self.decision_maker.handle_input({'input':user_input})
+            logger.info(f"Agent handled input: {user_input} -> {response}")
+            return response
+        except Exception as e:
+            logger.exception(f"Error handling input: {e}")
+            return f"Error: {e}"
