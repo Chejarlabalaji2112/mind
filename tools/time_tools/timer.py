@@ -19,7 +19,7 @@ class Timer(TimeTool):
     def start(self, duration):
         if self._is_running:
             logger.warning("Timer is already running.")
-            return
+            return "Timer is already running."
 
         if duration <= 0:
             raise ValueError("Duration must be positive")
@@ -33,12 +33,14 @@ class Timer(TimeTool):
         self._thread.start()
         self.on_start.emit(duration=duration)
         logger.info(f"Timer started for {duration} seconds.")
+        return f"Timer started for {duration} seconds."
 
     def reset(self):
         super().reset()
         self._duration = 0
         self._remaining_time = 0
         logger.info("Timer reset.")
+        return "Timer reset."
 
     def get_status(self):
         if self._is_running:
@@ -88,9 +90,6 @@ class Timer(TimeTool):
 
 
             time.sleep(0.5)
-
-            
-            
-
+           
         if not self._is_running and self._remaining_time > 0:
             logger.warning("Timer stopped/paused before completion.")
