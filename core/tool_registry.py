@@ -45,17 +45,14 @@ class ToolRegistry:
         return "Welcome Home!"
 
     def set_timer(self, seconds: int):
-        self.timer.start(seconds)
-        return f"Timer started for {seconds} seconds."
+        return self.timer.start(seconds)
 
-    def pause_timer(self):
-        self.timer.pause()
-        return "Timer paused."
+    def pause_timer(self):       
+        return self.timer.pause()
 
     def resume_timer(self):
-        self.timer.resume()
-        return "Timer resumed."
+        return self.timer.resume()
 
     def stop_timer(self):
-        self.timer.stop()
-        return "Timer stopped."
+        return self.timer.stop()
+        
