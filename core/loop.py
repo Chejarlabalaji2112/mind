@@ -24,7 +24,7 @@ async def main():
 
     # 2) Inject adapter into core
     loop = asyncio.get_running_loop()
-    tools = ToolRegistry(presenter=sender_adapter, output_tuner=esp_output_tuner loop=loop)
+    tools = ToolRegistry(presenter=sender_adapter, output_tuner=esp_output_tuner, loop=loop)
     agent = Agent(tools)
 
     # 3) Start async user input loop
