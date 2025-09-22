@@ -1,3 +1,4 @@
+#weathercore.py 
 class WeatherData:
     def __init__(self, temperature_celsius, condition, extra=None):
         self.temperature_celsius = temperature_celsius
