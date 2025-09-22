@@ -1,6 +1,6 @@
-
+#wheatheradapter.py
 import requests
-from ports import WeatherServicePort
+from mind.tools.weather_tools.port import WeatherServicePort
 from core import WeatherData
 
 class OpenMeteoAdapter(WeatherServicePort):

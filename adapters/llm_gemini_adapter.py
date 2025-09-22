@@ -1,9 +1,10 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.memory import ConversationBufferMemory
 from langchain.agents import initialize_agent, AgentType
-from langchain.tools import Tool
+from langchain.tools import StructuredTool,Tool
 from ports.decision_making import DecisionMaker
-from core.tool_registry import ToolRegistry
+from tools.tool_registry import ToolRegistry
+from langchain.prompts import MessagesPlaceholder
 
 
 class GeminiLLMAdapter(DecisionMaker):
@@ -17,56 +18,32 @@ class GeminiLLMAdapter(DecisionMaker):
         langchain_tools = [
             Tool(
                 name="home",
-                func=lambda _: self.tools.home(),
-                description="Return to home screen"
+                func=lambda _ :self.tools.home(),
+                description="To return to home screen. if there is any ongoing task, it will be stopped. ",
             ),
 
-            Tool(
-                name="set_timer",
-                func=lambda seconds: self.tools.set_timer(int(seconds)),
-                description="Set a timer in seconds"
+            StructuredTool.from_function(
+                func=self.tools.timer_tool,
+                name="timer_tool",
+                description=(
+                    "This is the timer tool. Actions: start, pause, resume, stop, reset, status. "
+                    "If action is 'start', then duration in seconds is required as well. "
+                    "Input must be a JSON object with keys: 'action' and 'duration'."
+                ),
             ),
-            Tool(
-                name="pause_timer",
-                func=lambda _: self.tools.pause_timer(),
-                description="Pause the timer"
+
+            StructuredTool.from_function(
+                func=self.tools.stopwatch_tool,
+                name="stopwatch_tool",
+                description="Interact with a stopwatch. Actions: start, pause, resume, lap, stop, reset, status.",
             ),
-            Tool(
-                name="resume_timer",
-                func=lambda _: self.tools.resume_timer(),
-                description="Resume the timer"
+
+            StructuredTool.from_function(
+                func=self.tools.pomodoro_tool,
+                name="PomodoroTool",
+                description="Control a Pomodoro timer. Actions: start (pom_type can be 'short' or 'long') if pom_type is not given it always short, pause, resume, stop, reset, status.",
             ),
-            Tool(
-                name="stop_timer",
-                func=lambda _: self.tools.stop_timer(),
-                description="Stop the timer"
-            ),
-            Tool(
-                name="create_skill",
-                func=lambda skill_name: self.tools.create_skill(skill_name),
-                description="Create a new skill"
-            ),
-            Tool(
-                name="start_skill_session",
-                func=lambda skill_name: self.tools.start_skill_session(skill_name),
-                description="Start a skill session"
-            ),
-            Tool(
-                name="end_skill_session",
-                func=lambda skill_name: self.tools.end_skill_session(skill_name),
-                description="End a skill session"
-            ),
-            Tool(
-                name="get_skills",
-                func=lambda _: self.tools.get_skills(),
-                description="List all skills"
-            ),
-            Tool(
-                name="get_weather",
-                func=lambda location: self.tools.get_weather(location),
-                description="Get weather by location"
-            ),
-        ]
+]
 
         # Create Gemini LLM wrapper
         llm = ChatGoogleGenerativeAI(model=self.model, temperature=0)
@@ -80,12 +57,14 @@ class GeminiLLMAdapter(DecisionMaker):
         self.agent = initialize_agent(
             tools=langchain_tools,
             llm=llm,
-            agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
+            agent=AgentType.OPENAI_FUNCTIONS, # Changed to support StructuredTools
             memory=memory,
-            verbose=True,
-        )
+            agent_kwargs={
+                "extra_prompt_messages":[MessagesPlaceholder(variable_name="chat_history")]
+            },
+            )
 
     async def handle_input(self, user_input: str) -> str:
         """Process user input with Gemini agent."""
         result = await self.agent.ainvoke(user_input)
-        return result["output"]
+        return result.get("output")

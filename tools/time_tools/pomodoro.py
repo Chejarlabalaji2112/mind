@@ -14,16 +14,14 @@ class PomodoroPhase(Enum):
     IDLE = auto()
 
 class Pomodoro(TimeTool):
-    def __init__(self, work_duration_h=0, work_duration_m=25, work_duration_s=0,
-                 short_break_duration_h=0, short_break_duration_m=5, short_break_duration_s=0,
-                 long_break_duration_h=0, long_break_duration_m=15, long_break_duration_s=0,
-                 cycles_before_long_break=4, loop=None):
+    def __init__(self,loop=None):
         super().__init__()
         self.loop = loop # this is for async
-        self._work_duration = convert_to_seconds(work_duration_h, work_duration_m, work_duration_s)
-        self._short_break_duration = convert_to_seconds(short_break_duration_h, short_break_duration_m, short_break_duration_s)
-        self._long_break_duration = convert_to_seconds(long_break_duration_h, long_break_duration_m, long_break_duration_s)
-        self._cycles_before_long_break = cycles_before_long_break
+        self.pom_types = {'short': [25,5, 10], "long": [[50, 10, 20]]}
+        self._work_duration = convert_to_seconds(25, 0, 0)  # Default 25 minutes
+        self._short_break_duration = convert_to_seconds(5, 0, 0)  # Default 5 minutes
+        self._long_break_duration = convert_to_seconds(10, 0, 0)  # Default 10 minutes
+        self._cycles_before_long_break = 4
 
         self._current_cycle = 0
         self._current_phase = PomodoroPhase.IDLE
@@ -35,12 +33,14 @@ class Pomodoro(TimeTool):
         self.on_phase_end = Event()
         self.on_cycle_complete = Event()
 
-    def start(self):
+    def start(self, pom_type: str = "short"):
         if self._is_running:
             logger.warning("Pomodoro is already running.")
             return
         if self._current_phase == PomodoroPhase.IDLE:
             self._current_cycle = 1
+            if pom_type == 'long':
+                self._set_type(pom_type)
             self._transition_phase(PomodoroPhase.WORK)
         else:
             # If paused, just resume the current phase
@@ -116,6 +116,12 @@ class Pomodoro(TimeTool):
             self._thread = threading.Thread(target=self._run)
             self._thread.daemon = True
             self._thread.start()
+
+    def _set_type(self, pom_type: str):
+        self._work_duration = convert_to_seconds(self.pom_types[pom_type][0], 0, 0)  # Default 25 minutes
+        self._short_break_duration = convert_to_seconds(self.pom_types[pom_type][1], 0, 0)  # Default 5 minutes
+        self._long_break_duration = convert_to_seconds(self.pom_types[type][2], 0, 0)  # Default 10 minutes
+
 
     def _run(self):
         first_time=True

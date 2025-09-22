@@ -1,6 +1,6 @@
 # core/agent.py
 from ports.decision_making import DecisionMaker
-from core.tool_registry import ToolRegistry
+from tools.tool_registry import ToolRegistry
 from utils.logging_handler import setup_logger
 
 logger = setup_logger(__name__)

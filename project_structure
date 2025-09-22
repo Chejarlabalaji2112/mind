@@ -1,0 +1,79 @@
+.
+├── adapters
+│   ├── esp32_adapter.py
+│   ├── __init__.py
+│   ├── llm_adapter.py
+│   ├── llm_gemini_adapter.py
+│   ├── __pycache__
+│   │   ├── esp32_adapter.cpython-312.pyc
+│   │   ├── __init__.cpython-312.pyc
+│   │   └── llm_gemini_adapter.cpython-312.pyc
+│   └── test.py
+├── core
+│   ├── agent.py
+│   ├── __init__.py
+│   ├── loop.py
+│   ├── __pycache__
+│   │   ├── agent.cpython-312.pyc
+│   │   ├── __init__.cpython-312.pyc
+│   │   ├── loop.cpython-312.pyc
+│   │   └── tool_registry.cpython-312.pyc
+│   └── tool_registry.py
+├── last_esp32_ip.txt
+├── memory
+│   └── memory.db
+├── mind.txt
+├── new updates.txt
+├── ports
+│   ├── act_port.py
+│   ├── decision_making.py
+│   ├── __init__.py
+│   ├── memory_port.py
+│   ├── percieve_port.py
+│   └── __pycache__
+│       ├── act_port.cpython-312.pyc
+│       ├── decision_making.cpython-312.pyc
+│       ├── __init__.cpython-312.pyc
+│       └── percieve_port.cpython-312.pyc
+├── project_structure
+├── temp_files
+│   ├── gemini_test.ipynb
+│   ├── __pycache__
+│   │   └── time_tools_testing.cpython-312.pyc
+│   ├── time_tools_testing.py
+│   └── udp_init_test.py
+├── tools
+│   ├── tasks_skills_tools
+│   │   ├── __pycache__
+│   │   │   └── skilltracker.cpython-312.pyc
+│   │   └── skilltracker.py
+│   ├── time_tools
+│   │   ├── alarm.py
+│   │   ├── base_tool.py
+│   │   ├── clock.py
+│   │   ├── pomodoro.py
+│   │   ├── __pycache__
+│   │   │   ├── base_tool.cpython-312.pyc
+│   │   │   ├── clock.cpython-312.pyc
+│   │   │   ├── pomodoro.cpython-312.pyc
+│   │   │   ├── stopwatch.cpython-312.pyc
+│   │   │   └── timer.cpython-312.pyc
+│   │   ├── stopwatch.py
+│   │   └── timer.py
+│   └── weather_tools
+│       ├── adapters.py
+│       ├── core.py
+│       ├── ports.py
+│       └── __pycache__
+│           ├── core.cpython-312.pyc
+│           └── ports.cpython-312.pyc
+└── utils
+    ├── custom_exception.py
+    ├── logging_handler.py
+    ├── __pycache__
+    │   ├── custom_exception.cpython-312.pyc
+    │   ├── logging_handler.cpython-312.pyc
+    │   └── time_conversions.cpython-312.pyc
+    └── time_conversions.py
+
+19 directories, 58 files
