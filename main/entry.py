@@ -1,7 +1,8 @@
 # core/loop.py
 import asyncio
 import dotenv
-from adapters.esp32_adapter import Connection, Sender, Listener, esp_output_tuner
+# from adapters.esp32_adapter import Connection, Sender, Listener, esp_output_tuner
+from adapters.dummy_esp import Connection, Sender, Listener, esp_output_tuner
 from tools.tool_registry import ToolRegistry
 from core.agent import Agent
 from adapters.llm_gemini_adapter import GeminiLLMAdapter
@@ -16,7 +17,6 @@ async def user_input_loop(agent: Agent, loop=None):
     while True:
         user_input = await loop.run_in_executor(None, input, ">>> ")
         response = await agent.handle_input(user_input)
-        print("from entry file:", response)
 
 async def main():
     # ESP32
