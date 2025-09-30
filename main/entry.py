@@ -1,16 +1,17 @@
 # core/loop.py
 import asyncio
 import dotenv
-# from adapters.esp32_adapter import Connection, Sender, Listener, esp_output_tuner
-from adapters.dummy_esp import Connection, Sender, Listener, esp_output_tuner
+from adapters.esp32_adapter import Connection, Sender, Listener, esp_output_tuner
+# from adapters.dummy_esp import Connection, Sender, Listener, esp_output_tuner
 from tools.tool_registry import ToolRegistry
 from core.agent import Agent
-# from adapters.llm_gemini_adapter import GeminiLLMAdapter 
-from adapters.llm_smollm2_adapter import Smollm2Adapter 
+from adapters.llm_gemini_adapter import GeminiLLMAdapter 
+# from adapters.llm_smollm2_adapter import Smollm2Adapter 
 from utils.logging_handler import setup_logger
 
 logger = setup_logger(__name__)
 dotenv.load_dotenv()
+
 
 async def user_input_loop(agent: Agent, loop=None):
     loop = asyncio.get_running_loop() if loop is None else loop
@@ -31,9 +32,9 @@ async def main():
     tools = ToolRegistry(presenter=sender_adapter, loop=loop, output_tuner=esp_output_tuner)
 
     # LLM Agent
-    # gemini_adapter = GeminiLLMAdapter(tools=tools, model="gemini-2.5-flash")
-    smollm2_adapter = Smollm2Adapter(tools=tools)
-    llm_adapter = smollm2_adapter
+    gemini_adapter = GeminiLLMAdapter(tools=tools, model="gemini-2.5-flash")
+    # smollm2_adapter = Smollm2Adapter(tools=tools, model="")
+    llm_adapter = gemini_adapter
 
     agent = Agent(decision_maker=llm_adapter, tools=tools)
 

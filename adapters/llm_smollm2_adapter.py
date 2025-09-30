@@ -28,7 +28,6 @@ class Smollm2Adapter(DecisionMaker):
                 description=(
                     "This is the timer tool. Actions: start, pause, resume, stop, reset, status. "
                     "If action is 'start', then duration in seconds is required as well. "
-                    "Input must be a JSON object with keys: 'action' and 'duration'."
                 ),
             ),
 
