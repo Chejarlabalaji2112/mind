@@ -15,6 +15,7 @@ The architecture follows a **Ports & Adapters** (Hexagonal) model — ensuring m
 
 ## 🧩 System Architecture
 ![Hitomi Architecture](./images/architecture.png)
+Above image is a base architecture. New sub-agents will be added.
 
 ### 🔸 Core Concept
 The system is divided into **Ports** (interfaces for perception and action) and **Agents** (reasoning and monitoring units).  
