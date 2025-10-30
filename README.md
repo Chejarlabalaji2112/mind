@@ -59,7 +59,7 @@ HITOMI acts as the **main orchestrator**, coordinating multiple sub-agents to pe
 ## ⚙️ Tech Stack
 
 **Languages:** Python, C++  
-**Frameworks:** ROS2, Gazebo, PyTorch, OpenCV, LangChain, LangGraph  
+**Frameworks:**PyTorch, OpenCV, LangChain, LangGraph  
 **Libraries:** SpeechRecognition, pyttsx3, Transformers  
 **Tools:** VS Code, Jupyter, Git, Anaconda
 
