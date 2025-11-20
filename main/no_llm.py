@@ -64,11 +64,11 @@ async def handle_user_command(sender: Sender, command: str):
             work, brk, lbreak = 25, 5, 15
             # allow "start pomodoro 0.1 0.01 0.2"
             numbers = re.findall(r"[\d.]+", command)
-            if len(numbers) >= 1: work = float(numbers[0])
-            if len(numbers) >= 2: brk = float(numbers[1])
-            if len(numbers) >= 3: lbreak = float(numbers[2])
+            if len(numbers) >= 1: work = int(numbers[0])
+            if len(numbers) >= 2: brk = int(numbers[1])
+            if len(numbers) >= 3: lbreak = int(numbers[2])
             await sender.show({"mode": "pomodoro", "action": "start", 
-                            "work": work, "break": brk, "lBreak": lbreak})
+                            "work": work, "break": brk, "lbreak": lbreak})
             return
 
         if command == "pause pomodoro":
@@ -100,6 +100,7 @@ async def main():
     loop = asyncio.get_running_loop()
     
     asyncio.create_task(user_input_loop(sender_adapter, loop=loop))
+    # await sender_adapter.show({"mode":"timer","action":"start", "duration":10})
 
     while True:
         await asyncio.sleep(1)
