@@ -5,8 +5,8 @@ from adapters.esp32_adapter import Connection, Sender, Listener, esp_output_tune
 # from adapters.dummy_esp import Connection, Sender, Listener, esp_output_tuner
 from tools.tool_registry import ToolRegistry
 from core.agent import Agent
-from adapters.llm_gemini_adapter import GeminiLLMAdapter 
-# from adapters.llm_smollm2_adapter import Smollm2Adapter 
+# from adapters.llm_gemini_adapter import GeminiLLMAdapter 
+from adapters.llm_smollm2_adapter import Smollm2Adapter 
 from utils.logging_handler import setup_logger
 
 logger = setup_logger(__name__)
@@ -32,9 +32,9 @@ async def main():
     tools = ToolRegistry(presenter=sender_adapter, loop=loop, output_tuner=esp_output_tuner)
 
     # LLM Agent
-    gemini_adapter = GeminiLLMAdapter(tools=tools, model="gemini-2.5-flash")
-    # smollm2_adapter = Smollm2Adapter(tools=tools, model="")
-    llm_adapter = gemini_adapter
+    # gemini_adapter = GeminiLLMAdapter(tools=tools, model="gemini-2.5-flash")
+    smollm2_adapter = Smollm2Adapter(tools=tools, model="gemma3:4b-it-qat")
+    llm_adapter = smollm2_adapter
 
     agent = Agent(decision_maker=llm_adapter, tools=tools)
 
