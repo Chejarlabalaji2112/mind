@@ -7,13 +7,40 @@ from random import randint, random
 from enum import Enum
 
 # --- Enums ---
-class Mood(Enum)
+class Mood(Enum):
     DEFAULT = 0; TIRED = 1; ANGRY = 2; HAPPY = 3
 
 class PosDir(Enum):
     CENTER = 0; N = 1; NE = 2; E = 3; SE = 4; S = 5; SW = 6; W = 7; NW = 8
 
 class RoboEyes(Widget):
+    """
+    Animated Kivy Widget simulating a pair of robotic eyes.
+
+    This widget handles its own smooth animation (gaze movement, blinking,
+    mood changes) using exponential smoothing. It operates on a virtual 128x64
+    screen space, scaled to fit the parent widget.
+
+    **Properties:**
+    * primary_color (ListProperty): Color of the eyes.
+    * bg_color (ListProperty): Background color used for eyelid masks.
+
+    **Core Animation Logic:**
+    The update() method uses a 'Zeno's Paradox' approach (cur = (cur + tgt) / 2)
+    for smooth, elastic movement between current and target states.
+
+    **Public API Methods:**
+    * set_mood(mood: Mood): Sets the emotional state (HAPPY, ANGRY, TIRED, DEFAULT).
+    * set_pos(pos_dir: PosDir): Sets the gaze direction (N, SE, CENTER, etc.).
+    * center_eyes(): Resets gaze to the center.
+    * blink(): Triggers a momentary eye closure animation.
+    * trigger_anim(name: str): Triggers a macro animation ('laugh' or 'confused').
+
+    **Public Flags (Set directly):**
+    * is_cyclops (bool): If True, hides the right eye.
+    * is_idle (bool): If True, eyes randomly select new gaze targets.
+    * anim_sweat (bool): If True, continuously runs the sweat animation.
+    """
     # Colors
     primary_color = ListProperty([0.25, 0.88, 0.82, 1]) # Turquoise
     bg_color = ListProperty([0, 0, 0, 1])         # Dark Gray
