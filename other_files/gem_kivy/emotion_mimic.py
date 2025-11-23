@@ -1,13 +1,23 @@
+import threading
+import sys
+import time
+from random import randint, random, choice
+from enum import Enum
+
+# Kivy Imports
+from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.clock import Clock
 from kivy.graphics import Color, RoundedRectangle, Triangle, Rectangle
-from kivy.properties import ListProperty
+from kivy.properties import ListProperty, BooleanProperty
 from kivy.core.window import Window
-from random import randint, random
-from enum import Enum
 
-# --- Enums ---
-class Mood(Enum)
+import cv2
+from deepface import DeepFace
+
+# --- 1. ENUMS ---
+
+class Mood(Enum):
     DEFAULT = 0; TIRED = 1; ANGRY = 2; HAPPY = 3
 
 class PosDir(Enum):
@@ -372,5 +382,166 @@ class RoboEyes(Widget):
         if name == 'laugh': self.anim_laugh = True; self.toggle_laugh = True
         if name == 'confused': self.anim_confused = True; self.toggle_confused = True
 
-# --- App & Input Wrapper ---
 
+class EmotionEngine(threading.Thread):
+    def __init__(self, app_instance, **kwargs):
+        super().__init__(**kwargs)
+        self.daemon = True
+        self.app = app_instance
+        self.running = True
+        self.cap = None
+
+    def run(self):
+        print("[CV] Attempting to start emotion engine...")
+        
+        # --- CV INITIALIZATION ---
+        if cv2 is None:
+            print("[CV] ERROR: Cannot run, missing DeepFace/OpenCV. Running simulation.")
+            self._run_simulation()
+            return
+
+        try:
+            self.cap = cv2.VideoCapture(0)  # Open default webcam
+            if not self.cap.isOpened():
+                raise IOError("Cannot open webcam (index 0). Check device access.")
+            print("[CV] Webcam opened successfully.")
+        except Exception as e:
+            print(f"[CV] CRITICAL ERROR during webcam init: {e}")
+            self._run_simulation()
+            return
+            
+        # --- CV MAIN LOOP ---
+        while self.running and self.cap.isOpened():
+            ret, frame = self.cap.read()
+            if not ret:
+                print("[CV] Failed to read frame from webcam.")
+                time.sleep(0.1)
+                continue
+
+            try:
+                # DeepFace analysis is computationally expensive, run it less often (e.g., every 0.5s)
+                # The analysis will detect face, align it, and run the model.
+                results = DeepFace.analyze(
+                    frame, 
+                    actions=['emotion'], 
+                    enforce_detection=False, # Allows processing if face is slightly out of view
+                    silent=True
+                )
+                
+                # Check if any face was detected
+                if results and len(results) > 0:
+                    # DeepFace returns a list of results (one per face)
+                    emotion = results[0]['dominant_emotion']
+                    
+                    # Pass the detected emotion to the Kivy UI thread
+                    Clock.schedule_once(lambda dt, cmd=emotion: self.app.exe_cmd(cmd), 0)
+                
+            except ValueError:
+                # This often happens if no face is detected in the frame
+                # If no face is found, default to 'neutral'
+                Clock.schedule_once(lambda dt, cmd='neutral': self.app.exe_cmd(cmd), 0)
+            except Exception as e:
+                # Handle other potential DeepFace errors
+                print(f"[CV] DeepFace Analysis Error: {e}")
+
+            # Control the frame rate of the CV analysis
+            time.sleep(0.5) 
+
+        # --- CV CLEANUP ---
+        if self.cap and self.cap.isOpened():
+            self.cap.release()
+        print("[CV] Emotion engine stopped.")
+
+    def _run_simulation(self):
+        """Fallback simulation if CV fails to initialize."""
+        self.emotion_map = ['neutral', 'happy', 'angry', 'tired', 'confused']
+        while self.running:
+            emotion = choice(self.emotion_map)
+            Clock.schedule_once(lambda dt, cmd=emotion: self.app.exe_cmd(cmd), 0)
+            time.sleep(1 + random() * 1.5)
+        
+    def stop(self):
+        self.running = False
+
+# --- 4. APP & INPUT WRAPPER ---
+
+class RoboEyesApp(App):
+    def build(self):
+        self.eyes = RoboEyes()
+        Window.bind(on_key_down=self._on_key)
+        
+        # Start console listener (manual commands)
+        self.console_thread = threading.Thread(target=self.console_loop, daemon=True)
+        self.console_thread.start()
+        
+        # Start Emotion Detection Engine (automatic commands)
+        # self.emotion_engine = EmotionEngine(self)
+        # self.emotion_engine.start()
+        
+        self.print_help()
+        return self.eyes
+
+    def on_stop(self):
+        print("Stopping threads...")
+        # self.emotion_engine.stop()
+
+    def print_help(self):
+        print("\n--- ROBO EYES COMMANDS ---")
+        print("MOODS:     happy, angry, tired, neutral")
+        print("POSITIONS: n, ne, e, se, s, sw, w, nw, center")
+        print("ACTIONS:   blink, laugh, confused, sweat (toggle), cyclops, idle")
+        print("KEYS:      1-4 (moods), Arrows (Pos), Space (Blink), C (Cyclops)")
+
+    # --- Unified Command Execution (Called by all input methods) ---
+    def exe_cmd(self, cmd):
+        e = self.eyes
+        
+        # Map CV Emotion Output and Console Commands to Eye Animations
+        if cmd == 'happy': e.set_mood(Mood.HAPPY)
+        elif cmd == 'angry': e.set_mood(Mood.ANGRY)
+        elif cmd == 'tired' or cmd == 'sad': e.set_mood(Mood.TIRED) # Map sad CV output
+        elif cmd == 'neutral': e.set_mood(Mood.DEFAULT)
+        elif cmd == 'confused': e.trigger_anim('confused')
+        elif cmd == 'laugh': e.trigger_anim('laugh')
+        
+        # Manual/Toggle/Position Commands
+        elif cmd == 'blink': e.blink()
+        elif cmd == 'sweat': e.anim_sweat = not e.anim_sweat
+        elif cmd == 'cyclops': e.is_cyclops = not e.is_cyclops; e.center_eyes()
+        elif cmd == 'idle': e.is_idle = not e.is_idle
+        elif cmd == 'curious': e.is_curious = not e.is_curious
+        elif cmd == 'n': e.set_pos(PosDir.N)
+        # ... (rest of position commands)
+        elif cmd == 'center': e.set_pos(PosDir.CENTER)
+        
+        elif cmd in ['q', 'quit']: self.stop(); sys.exit()
+        # else: print(f">> Executing: {cmd}") # Uncomment for debugging CV output
+
+    def console_loop(self):
+        while True:
+            try:
+                cmd = input(">> ").strip().lower()
+                Clock.schedule_once(lambda dt, c=cmd: self.exe_cmd(c))
+            except EOFError: break
+
+    def _on_key(self, instance, keyboard, keycode, text, modifiers):
+        # Safely handle corrupted events
+        if not isinstance(keycode, tuple) or len(keycode) < 2: return True
+        k = keycode[1]
+        
+        if k == 'space': self.exe_cmd('blink')
+        elif k == '1': self.exe_cmd('neutral')
+        elif k == '2': self.exe_cmd('tired')
+        elif k == '3': self.exe_cmd('angry')
+        elif k == '4': self.exe_cmd('happy')
+        elif k == 'c': self.exe_cmd('cyclops')
+        elif k == 'i': self.exe_cmd('idle')
+        elif k == 'l': self.exe_cmd('laugh')
+        elif k == 'up': self.exe_cmd('n')
+        elif k == 'down': self.exe_cmd('s')
+        elif k == 'left': self.exe_cmd('w')
+        elif k == 'right': self.exe_cmd('e')
+        return True
+
+if __name__ == '__main__':
+    RoboEyesApp().run()

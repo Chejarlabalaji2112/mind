@@ -1,3 +1,12 @@
+import threading
+import sys
+import math
+import queue
+import time
+import numpy as np
+
+# --- Kivy Imports ---
+from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.clock import Clock
 from kivy.graphics import Color, RoundedRectangle, Triangle, Rectangle
@@ -6,8 +15,57 @@ from kivy.core.window import Window
 from random import randint, random
 from enum import Enum
 
-# --- Enums ---
-class Mood(Enum)
+# --- Audio Imports ---
+try:
+    import sounddevice as sd
+    from scipy.signal import fftconvolve
+except ImportError:
+    print("ERROR: Missing dependencies.")
+    print("Please run: pip install sounddevice numpy scipy")
+    sys.exit(1)
+
+# ==========================================
+# PART 1: AUDIO MATH HELPER FUNCTIONS
+# ==========================================
+
+def gcc_phat(sig, refsig, fs=1, max_tau=None, interp=16):
+    """
+    Generalized Cross-Correlation with Phase Transform.
+    Standard algorithm for TDOA (Time Difference of Arrival).
+    """
+    n = sig.shape[0] + refsig.shape[0]
+    SIG = np.fft.rfft(sig, n=n)
+    REFSIG = np.fft.rfft(refsig, n=n)
+    R = SIG * np.conj(REFSIG)
+    denom = np.abs(R)
+    denom[denom==0] = 1e-12
+    R = R / denom
+    cc = np.fft.irfft(R, n=(n * interp))
+    max_shift = int((n * interp) / 2)
+    if max_tau:
+        max_shift = min(int(interp * fs * max_tau), max_shift)
+    cc = np.concatenate((cc[-max_shift:], cc[:max_shift+1]))
+    shift = np.argmax(np.abs(cc)) - max_shift
+    tau = shift / float(interp * fs)
+    return tau
+
+def tdoa_to_angle(tau, mic_dist_m, speed_of_sound=343.0):
+    """
+    Converts time delay (tau) to an angle of arrival.
+    """
+    if mic_dist_m <= 0:
+        return 0.0
+    val = tau * speed_of_sound / mic_dist_m
+    # Clamp value to [-1, 1] to avoid domain errors due to noise
+    val = max(min(val, 1.0), -1.0)
+    theta = math.degrees(math.asin(val))
+    return theta
+
+# ==========================================
+# PART 2: ROBO EYES WIDGET (Visuals)
+# ==========================================
+
+class Mood(Enum):
     DEFAULT = 0; TIRED = 1; ANGRY = 2; HAPPY = 3
 
 class PosDir(Enum):
@@ -372,5 +430,109 @@ class RoboEyes(Widget):
         if name == 'laugh': self.anim_laugh = True; self.toggle_laugh = True
         if name == 'confused': self.anim_confused = True; self.toggle_confused = True
 
-# --- App & Input Wrapper ---
+# ==========================================
+# PART 3: AUDIO WORKER & MAIN APP
+# ==========================================
 
+class AudioThread(threading.Thread):
+    def __init__(self, eyes_widget, mic_dist_cm=6.5):
+        super().__init__()
+        self.eyes = eyes_widget
+        self.mic_dist_m = mic_dist_cm / 100.0
+        self.running = True
+        self.q = queue.Queue()
+        self.current_dir = PosDir.CENTER
+        self.daemon = True # Killed when main app exits
+
+    def audio_callback(self, indata, frames, time_info, status):
+        if status:
+            print(f"Audio Status: {status}")
+        if indata.shape[1] < 2:
+            return
+        try:
+            self.q.put_nowait(indata.copy())
+        except queue.Full:
+            pass
+
+    def run(self):
+        print("--- Audio Thread Started ---")
+        
+        # Audio Settings
+        samplerate = 48000
+        blocksize = 2048
+        smoothing = 0.6
+        smooth_angle = 0.0
+        
+        # Threshold to switch gaze (degrees)
+        GAZE_THRESHOLD = 15.0 
+
+        try:
+            # Open Stream
+            with sd.InputStream(channels=2, samplerate=samplerate,
+                                blocksize=blocksize, callback=self.audio_callback,
+                                dtype="int16"):
+                
+                while self.running:
+                    try:
+                        data = self.q.get(timeout=1.0)
+                    except queue.Empty:
+                        continue
+
+                    # 1. Normalize Data
+                    data = data.astype(np.float32) / 32768.0
+                    ch1 = data[:, 0]
+                    ch2 = data[:, 1]
+
+                    # 2. GCC-PHAT Calculation
+                    max_tau = self.mic_dist_m / 343.0
+                    tau = gcc_phat(ch2, ch1, fs=samplerate, max_tau=max_tau, interp=8)
+                    
+                    # 3. Convert to Angle
+                    angle = tdoa_to_angle(tau, self.mic_dist_m)
+                    
+                    # 4. Smoothing
+                    smooth_angle = smoothing * smooth_angle + (1 - smoothing) * angle
+
+                    # 5. Determine Direction Logic
+                    new_dir = PosDir.CENTER
+                    
+                    # Assuming negative angle is LEFT, positive is RIGHT
+                    # (This depends on which mic is Ch1 vs Ch2, swap if inverted)
+                    if smooth_angle < -GAZE_THRESHOLD:
+                        new_dir = PosDir.W # Left
+                    elif smooth_angle > GAZE_THRESHOLD:
+                        new_dir = PosDir.E # Right
+                    else:
+                        new_dir = PosDir.CENTER
+
+                    # 6. Update UI (Thread-safe)
+                    if new_dir != self.current_dir:
+                        self.current_dir = new_dir
+                        print(f"Sound Direction: {smooth_angle:.1f}° -> Looking {new_dir.name}")
+                        # Schedule the visual update on the main Kivy thread
+                        Clock.schedule_once(lambda dt: self.eyes.set_pos(self.current_dir))
+
+        except Exception as e:
+            print(f"Audio Error: {e}")
+
+    def stop(self):
+        self.running = False
+
+class AudioEyeApp(App):
+    def build(self):
+        self.eyes = RoboEyes()
+        
+        # Start Audio Processing Thread
+        # Adjust mic_dist_cm to your actual hardware distance
+        self.audio_thread = AudioThread(self.eyes, mic_dist_cm=6.5)
+        self.audio_thread.start()
+        
+        return self.eyes
+
+    def on_stop(self):
+        # Clean up thread
+        if hasattr(self, 'audio_thread'):
+            self.audio_thread.stop()
+
+if __name__ == '__main__':
+    AudioEyeApp().run()
