@@ -287,7 +287,7 @@
 
         /* --- DOCK --- */
         .dock-container {
-            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: var(--surface); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--primary); border-radius: 24px; padding: 12px 20px; display: flex; gap: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 200; max-width: 420px; overflow-x: auto; justify-content: flex-start;
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: var(--surface); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--primary); border-radius: 24px; padding: 12px 20px; display: flex; gap: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 200; max-width: 420px; overflow-x: visible; justify-content: flex-start;
         }
         .dock-container::-webkit-scrollbar { display: none; }
         .dock-container.minimized { transform: translateX(-50%) translateY(200%); }
@@ -309,7 +309,6 @@
 </head>
 <body>
 
-    <!-- Header -->
     <header>
         <div class="left-actions">
             <button class="btn-icon" id="theme-toggle" title="Toggle Theme">
@@ -330,10 +329,8 @@
         </div>
     </header>
 
-    <!-- Main Stage -->
     <main id="main-stage">
         
-        <!-- VIEW 1: HOME -->
         <section class="view-section active" id="view-home">
             <div class="hitomi-container">
                 <div class="hitomi-pulse">
@@ -346,7 +343,6 @@
             </div>
         </section>
 
-        <!-- VIEW 2: CHAT -->
         <section id="view-chat" class="view-section">
             <aside class="chat-sidebar">
                 <button class="sidebar-btn active" onclick="app.chat.newSession()">
@@ -379,45 +375,47 @@
             </div>
         </section>
 
-        <!-- VIEW 3: EYES -->
         <section id="view-eyes" class="view-section">
             <canvas id="eyes-canvas"></canvas>
         </section>
 
     </main>
 
-    <!-- Dock Toggle Button -->
     <button class="dock-toggle" id="dock-toggle" onclick="app.ui.toggleDock()">
         <svg id="dock-toggle-icon" viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
     </button>
 
-    <!-- Dock -->
     <nav class="dock-container" id="dock">
         <button class="dock-item" onclick="app.router.navigate('home')" data-label="Home">
             <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
         </button>
+        
         <button class="dock-item" onclick="app.router.navigate('chat')" data-label="Chat">
             <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
         </button>
+        
         <button class="dock-item" onclick="app.router.navigate('eyes')" data-label="Eyes Mode">
-               <svg viewBox="0 0 24 24" style="width: 28px; height: 28px;">
+            <svg viewBox="0 0 24 24" style="width: 28px; height: 28px;">
                 <path d="M6,6 C3,6 1,8.5 1,12 s2,6 5,6 s5-2.5 5-6 S9,6 6,6z M6,14 c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S7.1,14,6,14z"/>
                 <path d="M18,6 c-3,0-5,2.5-5,6s2,6,5,6s5-2.5,5-6S21,6,18,6z M18,14 c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S19.1,14,18,14z"/>
-             </svg>
+            </svg>
         </button>
+        
         <button class="dock-item" data-label="Timer">
-            <svg viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42A8.962 8.962 0 0 0 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9a8.994 8.994 0 0 0 8.99-9c0-1.64-.44-3.19-1.24-4.52zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7 7 7z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42A8.962 8.962 0 0 0 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9a8.994 8.994 0 0 0 8.99-9c0-1.64-.44-3.19-1.24-4.52zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-7 7z"/></svg>
         </button>
-         <button class="dock-item" data-label="Tool 5">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+        
+        <button class="dock-item" onclick="app.router.navigate('eyes'); setTimeout(() => app.roboEyes.triggerLaugh(), 50);" data-label="Laugh">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 17.5c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5zM12 6c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3z"/></svg>
         </button>
-         <button class="dock-item" data-label="Tool 6">
-            <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/></svg>
+        
+        <button class="dock-item" onclick="app.router.navigate('eyes'); setTimeout(() => app.roboEyes.triggerConfused(), 50);" data-label="Confused">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
         </button>
     </nav>
 
     <script>
-        // --- FLUXGARAGE ROBOEYES JS PORT ---
+        // --- FLUXGARAGE ROBOEYES JS PORT (COMPLETE) ---
         class RoboEyes {
             constructor(canvasId) {
                 this.canvas = document.getElementById(canvasId);
@@ -462,6 +460,14 @@
                 this.idleTimer = 0;
                 this.idleInterval = 2000;
                 this.idleMode = true;
+
+                // NEW: Shake Animation State
+                this.shaking = {
+                    active: false,
+                    type: null, // 'laugh' (vertical) or 'confused' (horizontal)
+                    endTime: 0,
+                    amplitude: 0
+                };
 
                 // Bind resize
                 window.addEventListener('resize', () => this.resize());
@@ -536,6 +542,21 @@
                  this.target.eyeR.y = targetY;
             }
 
+            // --- ANIMATION TRIGGERS ---
+            triggerLaugh() {
+                this.shaking.active = true;
+                this.shaking.type = 'laugh';
+                this.shaking.endTime = Date.now() + 1000; // 1 second
+                this.shaking.amplitude = 10;
+            }
+
+            triggerConfused() {
+                this.shaking.active = true;
+                this.shaking.type = 'confused';
+                this.shaking.endTime = Date.now() + 1000; // 1 second
+                this.shaking.amplitude = 10;
+            }
+
             // --- MAIN LOOP ---
             
             loop() {
@@ -544,8 +565,7 @@
                 const now = Date.now();
                 const dt = now - this.lastUpdate;
                 
-                // 1. UPDATE TWEENS (Zeno's Paradox / Soft Ease)
-                // Use a factor of 0.1 for smooth movement like the C++ library
+                // 1. UPDATE TWEENS
                 const ease = 0.2; 
                 
                 // Position & Size
@@ -571,16 +591,28 @@
                 this.current.eyelids.angry += (targetAngry - this.current.eyelids.angry) * ease;
                 this.current.eyelids.happy += (targetHappy - this.current.eyelids.happy) * ease;
 
-                // 2. AUTO BLINK
+                // 2. SHAKE CALCULATION
+                let shakeX = 0;
+                let shakeY = 0;
+                if (this.shaking.active) {
+                    if (now > this.shaking.endTime) {
+                        this.shaking.active = false;
+                    } else {
+                        const vibration = Math.sin(now * 0.5) * this.shaking.amplitude; 
+                        if (this.shaking.type === 'laugh') shakeY = vibration;
+                        if (this.shaking.type === 'confused') shakeX = vibration;
+                    }
+                }
+
+                // 3. AUTO BLINK
                 if(this.autoBlink && now > this.blinkTimer) {
                     this.blink();
                     this.blinkTimer = now + this.blinkInterval + (Math.random() * 2000);
                 }
                 
-                // 3. IDLE MOVEMENT
+                // 4. IDLE MOVEMENT
                 if(this.idleMode && now > this.idleTimer) {
-                    // Random small offset from center
-                    this.centerEyes(); // Reset first
+                    this.centerEyes(); 
                     const offsetX = (Math.random() - 0.5) * 100;
                     const offsetY = (Math.random() - 0.5) * 50;
                     this.target.eyeL.x += offsetX;
@@ -591,50 +623,58 @@
                     this.idleTimer = now + this.idleInterval + (Math.random() * 2000);
                 }
                 
-                // 4. DRAW
-                this.draw();
+                // 5. DRAW (with Shake Offsets)
+                this.draw(shakeX, shakeY);
                 
                 requestAnimationFrame(() => this.loop());
             }
 
-            draw() {
+            draw(offsetX = 0, offsetY = 0) {
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 
-                // Get Color from CSS Variable to match Theme
                 const style = getComputedStyle(document.body);
                 const primaryColor = style.getPropertyValue('--primary').trim();
                 const bgColor = '#000000'; // Eyes BG is always black
                 
+                // Apply offsets to coords
+                const lx = this.current.eyeL.x + offsetX;
+                const ly = this.current.eyeL.y + offsetY;
+                const rx = this.current.eyeR.x + offsetX;
+                const ry = this.current.eyeR.y + offsetY;
+
                 this.ctx.fillStyle = primaryColor;
                 
-                // Draw Left Eye
-                this.drawRoundedRect(this.current.eyeL.x, this.current.eyeL.y, this.current.eyeL.w, this.current.eyeL.h, 20);
-                
-                // Draw Right Eye (if not Cyclops)
+                // Draw Eyes
+                this.drawRoundedRect(lx, ly, this.current.eyeL.w, this.current.eyeL.h, 20);
                 if(!this.cyclops) {
-                    this.drawRoundedRect(this.current.eyeR.x, this.current.eyeR.y, this.current.eyeR.w, this.current.eyeR.h, 20);
+                    this.drawRoundedRect(rx, ry, this.current.eyeR.w, this.current.eyeR.h, 20);
                 }
                 
-                // Draw Eyelids (Overlays) - using BG color to mask
+                // --- EYELIDS (Overlays) ---
                 this.ctx.fillStyle = bgColor;
                 
-                // Tired Eyelids (Top Down)
+                // Tired Eyelids (Top Down Flat)
                 if(this.current.eyelids.tired > 1) {
-                    this.ctx.fillRect(this.current.eyeL.x, this.current.eyeL.y - 10, this.current.eyeL.w, this.current.eyelids.tired + 10);
-                    if(!this.cyclops) this.ctx.fillRect(this.current.eyeR.x, this.current.eyeR.y - 10, this.current.eyeR.w, this.current.eyelids.tired + 10);
+                    this.ctx.fillRect(lx, ly - 10, this.current.eyeL.w, this.current.eyelids.tired + 10);
+                    if(!this.cyclops) this.ctx.fillRect(rx, ry - 10, this.current.eyeR.w, this.current.eyelids.tired + 10);
                 }
                 
-                // Angry Eyelids (Triangles)
+                // Angry Eyelids (Triangles - MASKING INNER CORNERS)
                 if(this.current.eyelids.angry > 1) {
-                   this.drawAngryEyelid(this.current.eyeL, this.current.eyelids.angry, false); // Left
-                   if(!this.cyclops) this.drawAngryEyelid(this.current.eyeR, this.current.eyelids.angry, true); // Right
+                   // Right side of Left eye (Inner)
+                   this.drawAngryEyelid({x: lx, y: ly, w: this.current.eyeL.w}, this.current.eyelids.angry, true); 
+                   // Left side of Right eye (Inner)
+                   if(!this.cyclops) this.drawAngryEyelid({x: rx, y: ry, w: this.current.eyeR.w}, this.current.eyelids.angry, false); 
                 }
                 
-                // Happy Eyelids (Bottom Up)
+                // Happy Eyelids (Bottom Up CURVED)
                 if(this.current.eyelids.happy > 1) {
                     const h = this.current.eyelids.happy;
-                    this.ctx.fillRect(this.current.eyeL.x, (this.current.eyeL.y + this.current.eyeL.h) - h, this.current.eyeL.w, h);
-                    if(!this.cyclops) this.ctx.fillRect(this.current.eyeR.x, (this.current.eyeR.y + this.current.eyeR.h) - h, this.current.eyeR.w, h);
+                    // Overlap bottom of eye with rounded rect to simulate cheek
+                    this.drawRoundedRect(lx - 2, (ly + this.current.eyeL.h) - h, this.current.eyeL.w + 4, h + 10, 10);
+                    if(!this.cyclops) {
+                        this.drawRoundedRect(rx - 2, (ry + this.current.eyeR.h) - h, this.current.eyeR.w + 4, h + 10, 10);
+                    }
                 }
             }
             
@@ -653,16 +693,16 @@
             
             drawAngryEyelid(eye, height, flip) {
                 this.ctx.beginPath();
-                if(!flip) {
-                    // Left Eye Slope (\)
-                    this.ctx.moveTo(eye.x, eye.y - 10); 
-                    this.ctx.lineTo(eye.x + eye.w, eye.y - 10); 
-                    this.ctx.lineTo(eye.x, eye.y + height);
+                if(flip) {
+                    // Left Eye: Mask RIGHT side (Inner) -> Shape: |\|
+                    this.ctx.moveTo(eye.x, eye.y - 10); // TL
+                    this.ctx.lineTo(eye.x + eye.w, eye.y - 10); // TR
+                    this.ctx.lineTo(eye.x + eye.w, eye.y + height); // Down Right
                 } else {
-                    // Right Eye Slope (/)
-                    this.ctx.moveTo(eye.x, eye.y - 10);
-                    this.ctx.lineTo(eye.x + eye.w, eye.y - 10);
-                    this.ctx.lineTo(eye.x + eye.w, eye.y + height);
+                    // Right Eye: Mask LEFT side (Inner) -> Shape: |/|
+                    this.ctx.moveTo(eye.x, eye.y - 10); // TL
+                    this.ctx.lineTo(eye.x + eye.w, eye.y - 10); // TR
+                    this.ctx.lineTo(eye.x, eye.y + height); // Down Left
                 }
                 this.ctx.fill();
             }
@@ -808,6 +848,10 @@
             }
             if (action === 'eyes_blink' && app.roboEyes) {
                 app.roboEyes.blink();
+            }
+            if (action === 'eyes_anim' && app.roboEyes) {
+                if (data.type === 'laugh') app.roboEyes.triggerLaugh();
+                if (data.type === 'confused') app.roboEyes.triggerConfused();
             }
         }
 
