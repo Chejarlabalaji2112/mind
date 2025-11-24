@@ -13,7 +13,6 @@ class AdapterAPI:
         self._window = window
 
     def _send_to_ui(self, action, data):
-        """Helper to call the global python_execute function in JS."""
         if self._window:
             data_json = json.dumps(data)
             self._window.evaluate_js(f'python_execute("{action}", {data_json})')
@@ -21,32 +20,37 @@ class AdapterAPI:
     def receive_from_ui(self, data):
         command = data.get('command')
         payload = data.get('payload', {})
-        print(f"Received from UI: {command} with payload: {payload}")
+        print(f"Received: {command} -> {payload}")
 
-        if command == 'mode_eyes':
-            # This logic is now handled in JS router, but we can do extra stuff here
-            print("Eyes Mode Activated")
-        
-        elif command == 'chat_query':
+        if command == 'chat_query':
             user_text = payload.get('prompt')
+            # Start processing in a separate thread so UI doesn't freeze
             t = threading.Thread(target=self._process_chat, args=(user_text,))
             t.start()
 
     def _process_chat(self, user_text):
-        time.sleep(1.5) # Fake thinking time
+        time.sleep(0.5) # Reduced sleep for snappier feel
         
-        # DEMO: If user says "angry", make eyes angry
+        # Default response text
+        response_text = f"I heard you say: '{user_text}'"
+
+        # Logic: Perform actions, but update the response text instead of returning
         if "angry" in user_text.lower():
              self._send_to_ui('navigate', {'view': 'eyes'})
              self._send_to_ui('eyes_mood', {'mood': 'ANGRY'})
-             return
+             response_text = "I am getting ANGRY now!"
 
-        if "happy" in user_text.lower():
+        elif "happy" in user_text.lower():
              self._send_to_ui('navigate', {'view': 'eyes'})
              self._send_to_ui('eyes_mood', {'mood': 'HAPPY'})
-             return
+             response_text = "I am feeling HAPPY!"
+        
+        elif "laugh" in user_text.lower():
+             self._send_to_ui('navigate', {'view': 'eyes'})
+             self._send_to_ui('eyes_anim', {'type': 'laugh'})
+             response_text = "Hahaha! That is funny."
 
-        response_text = f"I received your message: '{user_text}'. I am running on the Python backend."
+        # CRITICAL: This must ALWAYS run to unlock the JS input
         self._send_to_ui('ai_response', {'text': response_text})
 
 def start_app():
