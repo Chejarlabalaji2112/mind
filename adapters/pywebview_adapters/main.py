@@ -3,6 +3,7 @@ import threading
 import time
 import sys
 import os
+import json
 
 class AdapterAPI:
     def __init__(self):
@@ -11,40 +12,61 @@ class AdapterAPI:
     def set_window(self, window):
         self._window = window
 
+    def _send_to_ui(self, action, data):
+        """Helper to call the global python_execute function in JS."""
+        if self._window:
+            data_json = json.dumps(data)
+            self._window.evaluate_js(f'python_execute("{action}", {data_json})')
+
     def receive_from_ui(self, data):
-        """
-        Callback from JS: window.pywebview.api.receive_from_ui(data)
-        """
         command = data.get('command')
-        print(f"Received from UI: {command}")
+        payload = data.get('payload', {})
+        print(f"Received from UI: {command} with payload: {payload}")
 
         if command == 'mode_eyes':
-            # Example: In the future, this would trigger the immersive overlay
-            print("Switching Core Logic to EYES mode...")
-            # For now, let's just log it. 
-            # In next steps, we will implement the overlay trigger.
+            # This logic is now handled in JS router, but we can do extra stuff here
+            print("Eyes Mode Activated")
+        
+        elif command == 'chat_query':
+            user_text = payload.get('prompt')
+            t = threading.Thread(target=self._process_chat, args=(user_text,))
+            t.start()
+
+    def _process_chat(self, user_text):
+        time.sleep(1.5) # Fake thinking time
+        
+        # DEMO: If user says "angry", make eyes angry
+        if "angry" in user_text.lower():
+             self._send_to_ui('navigate', {'view': 'eyes'})
+             self._send_to_ui('eyes_mood', {'mood': 'ANGRY'})
+             return
+
+        if "happy" in user_text.lower():
+             self._send_to_ui('navigate', {'view': 'eyes'})
+             self._send_to_ui('eyes_mood', {'mood': 'HAPPY'})
+             return
+
+        response_text = f"I received your message: '{user_text}'. I am running on the Python backend."
+        self._send_to_ui('ai_response', {'text': response_text})
 
 def start_app():
     api = AdapterAPI()
     
-    # Get absolute path to assets for production stability
     base_dir = os.path.dirname(os.path.abspath(__file__))
     html_path = os.path.join(base_dir, 'assets', 'index.html')
 
-    # Create the window
     window = webview.create_window(
         title='Hitomi Assistant',
         url=html_path,
-        width=1000,
-        height=700,
+        width=1100,
+        height=750,
         resizable=True,
         js_api=api,
-        # transparent=True, # Uncomment if you want rounded corners on Windows 11/Mac
-        background_color='#f4f6f8'
+        background_color='#000000'
     )
     
     api.set_window(window)
-    webview.start(gui='qt', debug=True) # debug=True allows Right Click -> Inspect Element
+    webview.start(debug=True)
 
 if __name__ == '__main__':
     start_app()
