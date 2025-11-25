@@ -1,0 +1,108 @@
+/* assets/css/views.css */
+
+/* --- GENERIC ANIMATION --- */
+.view-section {
+    height: 100%; width: 100%;
+    display: flex; flex-direction: column;
+    animation: fadeIn 0.4s ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+/* --- VIEW: HOME --- */
+.hitomi-container {
+    height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; position: relative;
+}
+.hero-title {
+    font-size: 5rem; font-weight: 200; letter-spacing: 12px; text-transform: uppercase;
+    text-shadow: 0 0 30px var(--border); position: relative; z-index: 2;
+}
+.hitomi-pulse {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) translateX(-5px) translateY(-10px);
+    width: 400px; height: 400px; z-index: 1;
+    box-shadow: 0 0 35px var(--primary-glow); border-radius: 50%;
+    animation: pulse 4s infinite ease-in-out;
+}
+.hitomi-circle { width: 100%; height: 100%; }
+.circle-stroke {
+    fill: none; stroke: var(--primary); stroke-width: 6; stroke-linecap: round;
+    stroke-dasharray: 1230; stroke-dashoffset: 1230;
+    animation: drawCircle 2.5s ease-out forwards;
+}
+@keyframes drawCircle { from { stroke-dashoffset: 1230; } to { stroke-dashoffset: 0; } }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 25px var(--primary-glow); } 50% { box-shadow: 0 0 45px var(--primary-glow); } }
+.subtitle { position: relative; z-index: 2; font-size: 1.2rem; margin-top: 20px; opacity: 0.7; letter-spacing: 3px; }
+
+/* --- VIEW: CHAT --- */
+.chat-layout { display: flex; flex-direction: row; height: 100vh; width: 100%; }
+
+.chat-sidebar {
+    width: 260px; height: 100%; background-color: var(--surface-2);
+    border-right: 1px solid var(--border); padding: 80px 15px 20px 15px;
+    flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; z-index: 50;
+}
+.sidebar-btn {
+    padding: 12px 15px; border-radius: 8px; background: transparent;
+    color: var(--text); border: 1px solid var(--border); cursor: pointer;
+    text-align: left; transition: all 0.2s; font-size: 0.9rem;
+    display: flex; align-items: center; gap: 10px;
+}
+.sidebar-btn:hover { background: var(--surface); }
+.sidebar-btn.active { border-color: var(--primary); color: var(--primary); }
+.history-list { margin-top: 20px; overflow-y: auto; flex-grow: 1; }
+.history-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text); opacity: 0.5; margin-bottom: 10px; padding-left: 5px; }
+
+.chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; height: 100%; padding-top: 80px; }
+.chat-scroll-area { flex-grow: 1; overflow-y: auto; padding: 20px 20px 150px 20px; display: flex; flex-direction: column; align-items: center; }
+.chat-container { width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 20px; }
+
+.message-row { display: flex; gap: 15px; width: 100%; }
+.message-row.user { justify-content: flex-end; }
+.avatar {
+    width: 35px; height: 35px; border-radius: 50%; background: var(--surface);
+    border: 1px solid var(--border); display: flex; align-items: center;
+    justify-content: center; font-size: 0.8rem; flex-shrink: 0;
+}
+.avatar.ai { background: var(--primary); color: #000; border: none; font-weight: bold; }
+.bubble {
+    padding: 15px 20px; border-radius: 18px; background: transparent;
+    color: var(--text); max-width: 80%; line-height: 1.5; font-size: 1rem;
+}
+.bubble p { margin-bottom: 0.5em; }
+.message-row.user .bubble { background: var(--chat-user-bg); border-top-right-radius: 4px; }
+.message-row.ai .bubble { background: transparent; padding-left: 0; }
+
+.input-area {
+    position: absolute; bottom: 30px; left: 0; width: 100%;
+    display: flex; justify-content: center; padding: 0 20px;
+    background: linear-gradient(to top, var(--bg) 20%, transparent);
+    padding-bottom: 30px; padding-top: 40px;
+}
+.input-oval {
+    width: 100%; max-width: 750px; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 30px; padding: 8px 10px 8px 20px;
+    display: flex; align-items: flex-end; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+.input-oval:focus-within { border-color: var(--primary-glow); box-shadow: 0 10px 40px var(--primary-glow); }
+#chat-input {
+    flex-grow: 1; background: transparent; border: none; color: var(--text);
+    font-size: 1rem; padding: 10px 0; resize: none; max-height: 150px;
+    outline: none; font-family: inherit;
+}
+.send-btn {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--primary);
+    border: none; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; margin-left: 10px; transition: transform 0.1s;
+}
+.send-btn:active { transform: scale(0.9); }
+.send-btn svg { width: 18px; height: 18px; fill: black; margin-left: 2px; }
+
+.typing-indicator { display: flex; gap: 5px; padding: 10px 0; }
+.dot { width: 6px; height: 6px; background: var(--text); border-radius: 50%; opacity: 0.3; animation: bounce 1.4s infinite ease-in-out both; }
+.dot:nth-child(1) { animation-delay: -0.32s; } .dot:nth-child(2) { animation-delay: -0.16s; }
+@keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+/* --- VIEW: EYES --- */
+#eyes-canvas { display: block; width: 100%; height: 100%; }

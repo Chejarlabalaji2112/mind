@@ -1,0 +1,143 @@
+/* assets/css/global.css */
+:root {
+    /* Palette: Blue Turquoise Focus */
+    --primary-hue: 174;
+    --primary: hsl(var(--primary-hue), 70%, 41%);
+    --primary-glow: hsl(var(--primary-hue), 70%, 41%, 0.6);
+    
+    --bg-light: #e0e2e6;
+    --text-light: #333333;
+    --surface-light: rgba(255, 255, 255, 0.6);
+    --border-light: rgba(0, 0, 0, 0.1);
+    --chat-user-light: #d1e7dd; 
+
+    --bg-dark: #000000;
+    --text-dark: #c0c4c8;
+    --surface-dark: rgba(20, 20, 20, 0.85);
+    --surface-2-dark: #121212; 
+    --border-dark: rgba(255, 255, 255, 0.1);
+    --chat-user-dark: #1e2226; 
+
+    /* Default to Light */
+    --bg: var(--bg-light);
+    --text: var(--text-light);
+    --surface: var(--surface-light);
+    --surface-2: #f0f2f5;
+    --border: var(--border-light);
+    --chat-user-bg: var(--chat-user-light);
+    --transition-speed: 0.3s;
+}
+
+[data-theme="dark"] {
+    --bg: var(--bg-dark);
+    --text: var(--text-dark);
+    --surface: var(--surface-dark);
+    --surface-2: var(--surface-2-dark);
+    --border: var(--border-dark);
+    --chat-user-bg: var(--chat-user-dark);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+
+/* --- HEADER --- */
+header {
+    position: fixed;
+    top: 0; left: 0; width: 100%;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    transition: opacity 0.3s;
+}
+
+body.eyes-mode header { opacity: 0; pointer-events: none; }
+body.eyes-mode { background-color: #000 !important; }
+
+.clock-widget {
+    font-size: 1.1rem; font-weight: 500; font-variant-numeric: tabular-nums;
+    letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px;
+    position: absolute; left: 50%; transform: translateX(-50%);
+    border: 1px solid var(--primary); padding: 6px 16px; border-radius: 20px;
+    background: var(--surface); backdrop-filter: blur(12px);
+}
+
+.actions { display: flex; gap: 10px; align-items: center; }
+.left-actions { display: flex; align-items: center; }
+
+.btn-icon {
+    background: var(--surface); border: 1px solid var(--primary);
+    color: var(--text); cursor: pointer; padding: 8px; border-radius: 50%;
+    transition: background 0.2s, transform 0.2s; display: flex;
+    align-items: center; justify-content: center; backdrop-filter: blur(12px);
+}
+.btn-icon:hover { background: var(--primary-glow); transform: scale(1.05); }
+.btn-icon svg { width: 20px; height: 20px; fill: currentColor; }
+
+/* --- MAIN STAGE --- */
+#main-stage {
+    height: 100%; width: 100%; position: relative;
+    /* Views inject here */
+}
+
+/* --- DOCK --- */
+.dock-container {
+    position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+    background: var(--surface); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--primary); border-radius: 24px; padding: 12px 20px;
+    display: flex; gap: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 200; max-width: 420px; overflow-x: auto; justify-content: flex-start;
+}
+.dock-container::-webkit-scrollbar { display:none; }
+.dock-container.minimized { transform: translateX(-50%) translateY(200%); }
+
+.dock-item {
+    width: 50px; height: 50px; flex-shrink: 0; border-radius: 14px;
+    background: transparent; border: none; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; position: relative;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.dock-item:hover {transform: translateY(-8px) scale(1.1); }
+.dock-item svg { width: 24px; height: 24px; fill: var(--text); transition: fill 0.2s; }
+.dock-item:hover svg { fill: #fff; }
+.dock-item::after {
+    content: attr(data-label); position: absolute; top: -35px;
+    background: var(--text); color: var(--bg); padding: 4px 8px;
+    border-radius: 6px; font-size: 0.75rem; opacity: 0; pointer-events: none;
+    transition: opacity 0.2s; white-space: nowrap;
+}
+.dock-item:hover::after { opacity: 1; }
+
+.dock-icon-img {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+    filter: var(--icon-filter, none);
+    transition: filter 0.2s;
+}
+
+
+
+
+.dock-toggle {
+    position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+    background: var(--surface); border: 1px solid var(--primary);
+    color: var(--text); width: 40px; height: 24px; border-radius: 12px;
+    cursor: pointer; z-index: 201; display: flex; align-items: center;
+    justify-content: center; backdrop-filter: blur(12px); transition: all 0.3s ease;
+}
+.dock-toggle:hover { background: var(--surface-2); }
+.dock-toggle svg { width: 16px; height: 16px; fill: currentColor; }
