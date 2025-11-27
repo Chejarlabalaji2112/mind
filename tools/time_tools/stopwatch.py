@@ -30,6 +30,7 @@ class Stopwatch(TimeTool):
     def reset(self):
         super().reset()
         self._elapsed_time = 0
+        self.on_reset.emit(elapsed_time=0, elapsed_time_formatted=format_seconds_to_hms(0))
         self._laps = []
         logger.info("Stopwatch reset.")
 

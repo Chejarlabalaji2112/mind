@@ -1,13 +1,17 @@
+from utils.logging_handler import setup_logger
 import webview
 import threading
 import time
 import os
 import json
 import sys
-
 from tools import Stopwatch
 from tools import Pomodoro
 from tools import Timer
+from adapters.llm_adapters.llm_without_agnetv1 import GeminiLLMAdapter
+
+logger = setup_logger(__name__)
+#TODO: need to add output tuner for pywebview as i did for esp32.
 
 class AdapterAPI:
     def __init__(self):
@@ -22,9 +26,12 @@ class AdapterAPI:
         # Connect Python Tool Events -> UI Sender Methods
         self.stopwatch.on_tick.add_listener(self._sync_stopwatch_tick)
         self.stopwatch.on_lap.add_listener(self._sync_stopwatch_lap)
+        self.stopwatch.on_reset.add_listener(self._sync_stopwatch_tick)  # Sync on reset as well
         
         self.pomodoro.on_tick.add_listener(self._sync_pomodoro_tick)
         self.pomodoro.on_phase_end.add_listener(self._sync_pomodoro_phase)
+
+        self.gemini_adapter = GeminiLLMAdapter(model="gemini-2.5-flash")
 
     def set_window(self, window):
         self._window = window
@@ -33,7 +40,7 @@ class AdapterAPI:
     def send_event(self, event_name, data):
         """Generic method to send JSON events to the generic JS bridge"""
         if self._window:
-            # We wrap the JS call safely
+            # We wrap the JS call safely/home/badri/mine/hitomi/mind/adapters/pywebview_adapters/assets/index.html
             json_data = json.dumps(data)
             js = f'if(window.app && app.bridge) app.bridge.receive("{event_name}", {json_data})'
             self._window.evaluate_js(js)
@@ -90,9 +97,8 @@ class AdapterAPI:
             pass
 
     def _process_chat(self, user_text):
-        """Mock AI processing"""
-        time.sleep(1)
-        response = f"I processed: {user_text}"
+        
+        response = self.gemini_adapter.handle_input(user_text)
         
         # Integration Example: Text command controlling tools
         if "start stopwatch" in user_text.lower():
@@ -106,8 +112,7 @@ def start_app():
     api = AdapterAPI()
     
     # Path Setup
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    html_path = os.path.join(base_dir, 'assets', 'index.html')
+    html_path = '/home/badri/mine/hitomi/mind/adapters/pywebview_adapters/assets/index.html' #TODO: need a better way to manage paths   
 
     if not os.path.exists(html_path):
         print(f"Error: Could not find {html_path}")
@@ -127,4 +132,10 @@ def start_app():
     webview.start(debug=True)
 
 if __name__ == '__main__':
-    start_app()
+    try:
+        start_app()
+
+    except KeyboardInterrupt:
+        logger.info("="*50)
+        logger.info("Exiting.")
+        logger.info("="*50)
