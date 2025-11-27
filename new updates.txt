@@ -9,3 +9,6 @@ langchain tavilysearch can even bring weather updates and also
 
 langchain has llmmathchain which uses llm + executor:
 given a math problem llm understands it and the executor performs the mathematical operations to reduce the hallucinations.
+
+
+what about adding the lap button in stopwatch.

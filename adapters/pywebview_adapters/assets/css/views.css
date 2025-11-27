@@ -106,3 +106,189 @@
 
 /* --- VIEW: EYES --- */
 #eyes-canvas { display: block; width: 100%; height: 100%; }
+
+/* --- NEW: MESSAGE ACTIONS (User) --- */
+.message-row {
+    position: relative;
+}
+
+/* Container for Edit/Copy buttons */
+.message-actions {
+    position: absolute;
+    bottom: -20px;
+    right: 10px;
+    display: flex;
+    gap: 5px;
+    opacity: 0;
+    transform: translateY(-5px);
+    transition: all 0.2s ease;
+    pointer-events: none; /* Prevent clicks when hidden */
+}
+
+/* Show actions when hovering the message row */
+.message-row:hover .message-actions {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.action-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+.action-btn:hover {
+    background: var(--primary);
+    color: #000;
+}
+
+/* --- NEW: ASK DOUBT BUTTON (AI) --- */
+.doubt-trigger-wrapper {
+    margin-top: 5px;
+    height: 0;
+    overflow: hidden;
+    transition: height 0.3s ease;
+}
+
+.message-row.ai:hover .doubt-trigger-wrapper {
+    height: 35px; /* Reveal button on hover */
+}
+
+.doubt-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.doubt-btn:hover {
+    background: var(--primary);
+    color: #000;
+    box-shadow: 0 0 10px var(--primary-glow);
+}
+
+/* --- NEW: DOUBT MODAL WINDOW --- */
+.doubt-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.doubt-modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.doubt-window {
+    width: 500px;
+    height: 400px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.doubt-modal-overlay.active .doubt-window {
+    transform: scale(1);
+}
+
+.doubt-header {
+    padding: 15px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface-2);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+}
+
+.doubt-title { font-size: 0.9rem; font-weight: bold; color: var(--primary); }
+.doubt-close {
+    background: transparent; border: none; color: var(--text);
+    cursor: pointer; font-size: 1.2rem;
+}
+
+.doubt-messages-area {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.doubt-input-area {
+    padding: 15px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+}
+
+.doubt-input {
+    flex-grow: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    color: var(--text);
+    outline: none;
+}
+.doubt-input:focus { border-color: var(--primary); }
+
+.doubt-send {
+    background: var(--primary);
+    border: none;
+    border-radius: 6px;
+    padding: 0 15px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* Add this to your views.css */
+
+.message-row.editing {
+    opacity: 0.5;
+    border: 1px dashed var(--primary);
+    border-radius: 10px;
+    padding: 5px;
+}
+
+/* Optional: Add a label to show it's being edited */
+.message-row.editing::before {
+    content: "Editing...";
+    position: absolute;
+    top: -20px;
+    right: 10px;
+    font-size: 0.7rem;
+    color: var(--primary);
+    font-weight: bold;
+}

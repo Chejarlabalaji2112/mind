@@ -29,3 +29,20 @@
         </div>
     </div>
 </div>
+<div class="view-section chat-layout" id="view-chat">
+    </div>
+
+<div id="doubt-modal" class="doubt-modal-overlay">
+    <div class="doubt-window">
+        <div class="doubt-header">
+            <span class="doubt-title">Asking about context...</span>
+            <button class="doubt-close" onclick="app.chat.closeDoubtWindow()">✕</button>
+        </div>
+        <div class="doubt-messages-area" id="doubt-messages">
+            </div>
+        <div class="doubt-input-area">
+            <input type="text" id="doubt-input" class="doubt-input" placeholder="Ask specific question..." onkeydown="if(event.key==='Enter') app.chat.sendDoubtMessage()">
+            <button class="doubt-send" onclick="app.chat.sendDoubtMessage()">Send</button>
+        </div>
+    </div>
+</div>
