@@ -30,3 +30,5 @@ Thumbs.db
 sounds/
 database/
 files_need_to_arrange/
+
+.env
