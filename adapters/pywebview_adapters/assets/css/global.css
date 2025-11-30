@@ -1,9 +1,8 @@
 /* assets/css/global.css */
 :root {
     /* Palette: Blue Turquoise Focus */
-    --primary-hue: 174;
-    --primary: hsl(var(--primary-hue), 70%, 41%);
-    --primary-glow: hsl(var(--primary-hue), 70%, 41%, 0.6);
+    --primary: #00e1ff; 
+    --primary-glow: #00e1ff99; 
     
     --bg-light: #e0e2e6;
     --text-light: #333333;

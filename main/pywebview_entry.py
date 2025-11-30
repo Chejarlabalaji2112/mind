@@ -1,3 +1,4 @@
+import mujoco
 from utils.logging_handler import setup_logger
 import webview
 import threading
