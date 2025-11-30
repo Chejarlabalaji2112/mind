@@ -1,0 +1,18 @@
+why skill tracker has to be used only for humans, 
+it could also be used to track the skills learnt by the system. 
+so hitomi keep tracks what skill it newly learnt. 
+this is idea to hightlight the dynamic learning.
+
+
+
+langchain tavilysearch can even bring weather updates and also
+
+langchain has llmmathchain which uses llm + executor:
+given a math problem llm understands it and the executor performs the mathematical operations to reduce the hallucinations.
+
+
+what about adding the lap button in stopwatch.
+
+
+
+new update feature for themes where we can update the theme like color of the total app 

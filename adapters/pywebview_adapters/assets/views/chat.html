@@ -1,0 +1,48 @@
+<div class="view-section chat-layout" id="view-chat">
+    <aside class="chat-sidebar">
+        <button class="sidebar-btn active" onclick="app.chat.newSession()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            New Chat
+        </button>
+        <div class="history-list">
+            <div class="history-label">Recent</div>
+            <button class="sidebar-btn">Previous Chat 1</button>
+            <button class="sidebar-btn">Previous Chat 2</button>
+        </div>
+    </aside>
+    <div class="chat-main">
+        <div class="chat-scroll-area" id="scroller">
+            <div class="chat-container" id="message-container">
+                <div class="message-row ai">
+                    <div class="avatar ai">H</div>
+                    <div class="bubble"><p>Hello! I am Hitomi. How can I assist you today?</p></div>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="input-oval">
+                <textarea id="chat-input" rows="1" placeholder="Message Hitomi..." oninput="app.chat.resizeInput(this)" onkeydown="app.chat.handleEnter(event)"></textarea>
+                <button class="send-btn" onclick="app.chat.sendMessage()">
+                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="view-section chat-layout" id="view-chat">
+    </div>
+
+<div id="doubt-modal" class="doubt-modal-overlay">
+    <div class="doubt-window">
+        <div class="doubt-header">
+            <span class="doubt-title">Asking about context...</span>
+            <button class="doubt-close" onclick="app.chat.closeDoubtWindow()">✕</button>
+        </div>
+        <div class="doubt-messages-area" id="doubt-messages">
+            </div>
+        <div class="doubt-input-area">
+            <input type="text" id="doubt-input" class="doubt-input" placeholder="Ask specific question..." onkeydown="if(event.key==='Enter') app.chat.sendDoubtMessage()">
+            <button class="doubt-send" onclick="app.chat.sendDoubtMessage()">Send</button>
+        </div>
+    </div>
+</div>
