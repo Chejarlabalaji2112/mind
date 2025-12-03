@@ -14,7 +14,7 @@ The architecture follows a **Ports & Adapters** (Hexagonal) model — ensuring m
 ---
 
 ## 🧩 System Architecture
-![Hitomi Architecture](./images/architecture.png)
+![Hitomi Architecture](./src/mind/assets/architecture.png)
 Above image is a base architecture. New sub-agents will be added.
 
 ### 🔸 Core Concept

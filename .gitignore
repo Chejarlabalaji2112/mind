@@ -40,4 +40,4 @@ files_need_to_arrange/
 .env    
 
 #media 
-src/mind/simulation/media/videos/
+src/mind/simulation/media/

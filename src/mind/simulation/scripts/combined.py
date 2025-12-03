@@ -13,31 +13,32 @@ XML_PATH   = "/home/badri/mine/hitomi/mind/src/mind/simulation/description/scene
 ALPHIE_IMG = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/images/alphie.png"
 EYES_IMG   = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/images/eyes.png"
 
+XML_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/description/scene.xml"
 
 
-
-# ============================================================
-# MAIN SIMULATION SETUP
-# ============================================================
 model = mujoco.MjModel.from_xml_path(XML_PATH)
 data  = mujoco.MjData(model)
 
-# Load screen
+# Load "home" keyframe BEFORE viewer starts
+home_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_KEY, "home")
+open_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_KEY, "open")
+
+
+mujoco.mj_resetDataKeyframe(model, data, home_id)
+
+
+# Screen + audio
 screen = ScreenUpdater(model, "display_top")
-
 audio = AudioManager(rate=44100, channels=2)
-
 player = AVOrchestrator(screen, audio)
 
-# Create motion controller
-# motion = MotionController(model)
 
-
-# ============================================================
-# MAIN VIEWER LOOP
-# ============================================================
+# -----------------------------------------------------
+# VIEWER
+# -----------------------------------------------------
 with mujoco.viewer.launch_passive(model, data,
         show_left_ui=False, show_right_ui=False) as viewer:
+
     start_t = time.time()
         
     screen.put_text("System Ready (SoundDevice)")
@@ -49,16 +50,54 @@ with mujoco.viewer.launch_passive(model, data,
         viewer.cam.elevation = -15.0
         viewer.cam.distance = 0.5
 
-    # Simulation loop
+    # MAIN LOOP
     while viewer.is_running():
 
-        # STEP SIM
+        elapsed = time.time() - start_t
+
+        # ----------------------------------------
+        # 1) Move from HOME → OPEN during first 2 sec
+        # ----------------------------------------
+        if elapsed < 2.0:
+            # Linear interpolation factor
+            alpha = elapsed / 2.0
+
+            # Interpolate qpos
+            data.qpos[:] = (
+                (1 - alpha) * model.key_qpos[home_id] +
+                alpha * model.key_qpos[open_id]
+            )
+
+            # Interpolate controls
+            data.ctrl[:] = (
+                (1 - alpha) * model.key_ctrl[home_id] +
+                alpha * model.key_ctrl[open_id]
+            )
+
+        # ----------------------------------------
+        # 2) When opening animation finishes → play boot.mp4
+        # ----------------------------------------
+        elif not boot_started:
+            opened = True
+            boot_started = True
+            player.play_file("/home/badri/mine/hitomi/mind/src/mind/simulation/media/videos/boot.mp4")
+
+        # ----------------------------------------
+        # 3) Other timed screen events
+        # ----------------------------------------
+        if 6.0 < elapsed < 6.1:
+            screen.put_text("Loading Video........")
+
+        if 7.0 < elapsed < 7.001:
+            player.play_file(
+                "/home/badri/mine/hitomi/mind/src/mind/simulation/media/videos/eyes.mp4",
+                audio_track_index=2
+            )
+
+        # Step simulation
         mujoco.mj_step(model, data)
 
-        # Apply YES/NO animation if active
-        # motion.update_motion(data)
-
-        # Update the display screen (image/video)
+        # Update display
         screen.update(viewer)
 
         # Sync viewer
