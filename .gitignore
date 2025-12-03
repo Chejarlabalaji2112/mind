@@ -40,4 +40,4 @@ files_need_to_arrange/
 .env    
 
 #media 
-/home/badri/mine/hitomi/mind/src/mind/simulation/media/videos
+src/mind/simulation/media/videos/
