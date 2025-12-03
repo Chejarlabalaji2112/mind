@@ -6,7 +6,7 @@
     <!-- qpos values correspond to the order of joints defined below -->
     <!-- Order: j_top_y, j_top_z, j_top_cam, j_top_ant_r, j_top_ant_l -->
     <keyframe>
-        <key name="home" qpos="1.85 0 1.52 1.52 0" ctrl="2.1 0 15 15 0"/>
+        <key name="home" qpos="1.85 0 0 1.52 1.52" ctrl="2.1 0 0 15 15"/>
         <key name="open" qpos="0 0 0 0 0" ctrl="0 0 0 0 0"/>
     </keyframe>
 
@@ -52,10 +52,10 @@
         </body>
     </worldbody>
     <actuator>
-        <position name="servo_top_y"   joint="j_top_y"     kp="100" ctrlrange="0 2.1"/>
-        <position name="servo_top_z"   joint="j_top_z"     kp="90" ctrlrange="-0.5 0.5"/>
-        <position name="servo_ant_r"   joint="j_top_ant_r"        ctrlrange = "-10 15" kp="5"/>
-        <position name="servo_ant_l"   joint="j_top_ant_l"        ctrlrange = "-10 15" kp="5"/>
-        <position name="servo_top_com" joint="j_top_cam" ctrlrange="0 3.5" kp="50"/>
+        <position name="servo_top_y"   joint="j_top_y"        kp="100"  ctrlrange="0 2.1"/>
+        <position name="servo_top_z"   joint="j_top_z"        kp="90"   ctrlrange="-0.5 0.5"/>
+        <position name="servo_ant_r"   joint="j_top_ant_r"    kp="5"    ctrlrange = "-10 15" />
+        <position name="servo_ant_l"   joint="j_top_ant_l"    kp="5"    ctrlrange = "-10 15" />
+        <position name="servo_top_com" joint="j_top_cam"      kp="50"   ctrlrange="0 3.5" />
     </actuator>
 </mujoco>

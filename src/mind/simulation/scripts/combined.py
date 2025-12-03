@@ -44,7 +44,7 @@ with mujoco.viewer.launch_passive(model, data,
     with viewer.lock():
         viewer.cam.lookat[:] = np.array([0.0, 0.05, 0.1])
         viewer.cam.azimuth = 0.0
-        viewer.cam.elevation = -15.0
+        viewer.cam.elevation = -20.0
         viewer.cam.distance = 0.3
 
     # MAIN LOOP
@@ -87,7 +87,7 @@ with mujoco.viewer.launch_passive(model, data,
 
         if 7.0 < elapsed < 7.001:
             player.play_file(
-                "/home/badri/mine/hitomi/mind/src/mind/simulation/media/videos/shin.mp4",
+                "/home/badri/mine/hitomi/mind/src/mind/simulation/media/videos/eyes.mp4",
                 audio_track_index=2
             )
 
