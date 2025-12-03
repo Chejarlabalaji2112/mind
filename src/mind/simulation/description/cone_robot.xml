@@ -19,7 +19,7 @@
         
 
         <texture name="display_top" type="2d" builtin="checker" width="512" height="512" rgb1="0 0 0" rgb2="0 0 0"/>
-        <material name="display_matt" texture="display_top" specular="0.5" shininess="0.5"/>
+        <material name="display_matt" texture="display_top" specular="0.5" shininess="0.5" emission="0.8"/>
         <texture name="display_bottom"  type="2d" builtin="checker" width="512" height="512" rgb1="0 0 0" rgb2="0 0 0"/>
         <material name="display_matb" texture="display_bottom" specular="0.5" shininess="0.5"/>
     </asset>
@@ -32,7 +32,7 @@
                 <joint name="j_top_z" type="hinge" axis="0 0 1" range="-10 10" damping="20" stiffness="10" armature="0.01" pos="-0.027 -0.049 -0.01"/>
                 
                 <geom type="mesh" mesh="top_mesh" rgba="0.7 0.7 0.7 1" density="300"/>
-                <geom name="screen_geom" type="box" size="0.031 0.0278 0.0001" material="display_matt" pos="0 -0.049 0.073" euler="0 74 90" mass="0"/>
+                <geom name="screen_geom" type="box" size="0.031 0.0278 0.0001" material="display_matt" pos="-0.001 -0.049 0.073" euler="0 74 90" mass="0"/>
                 
                 <body name="camera" pos="0.002 0 0.015">
                     <camera name="camera_top" pos="-0.025 0 0.1" euler="0 150 90"/>
