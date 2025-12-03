@@ -38,3 +38,6 @@ files_need_to_arrange/
 
 # dotenv environment variables file
 .env    
+
+#media 
+/home/badri/mine/hitomi/mind/src/mind/simulation/media/videos
