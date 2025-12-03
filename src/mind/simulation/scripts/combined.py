@@ -8,7 +8,7 @@ from .motion_controller import MotionController
 import time
 import numpy as np
 
-VIDEO_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/videos/my_video.mp4"
+VIDEO_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/videos/shin.mp4"
 XML_PATH   = "/home/badri/mine/hitomi/mind/src/mind/simulation/description/scene.xml"
 ALPHIE_IMG = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/images/alphie.png"
 EYES_IMG   = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/images/eyes.png"
@@ -41,11 +41,12 @@ with mujoco.viewer.launch_passive(model, data,
     start_t = time.time()
         
     screen.put_text("System Ready (SoundDevice)")
+    player.play_file("/home/badri/mine/hitomi/mind/src/mind/simulation/media/videos/boot.mp4")
     # Camera setup
     with viewer.lock():
         viewer.cam.lookat[:] = np.array([0.0, 0.05, 0.1])
         viewer.cam.azimuth = 0.0
-        viewer.cam.elevation = -5.0
+        viewer.cam.elevation = -15.0
         viewer.cam.distance = 0.5
 
     # Simulation loop
@@ -66,9 +67,7 @@ with mujoco.viewer.launch_passive(model, data,
         if 2.0 < elapsed < 2.1:
             screen.put_text("Loading Video...")
         elif 4.0 < elapsed < 4.1:
-            player.play_file("/home/badri/mine/movies/f1/f1.mp4",audio_track_index=2)
-
-
+            player.play_file(VIDEO_PATH, audio_track_index=2)
 
 
 # Cleanup
