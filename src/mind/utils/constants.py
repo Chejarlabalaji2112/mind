@@ -1,0 +1,1 @@
+ASSETS_ROOT_PATH = "/home/badri/mine/hitomi/mind/src/mind/assets"

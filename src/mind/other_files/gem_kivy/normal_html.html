@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FluxGarage RoboEyes - Browser Test</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #333; /* Dark background for OLED contrast */
+        }
+        canvas {
+            border: 5px solid #000;
+            background-color: #000;
+            /* Set a fixed size, or make it responsive with CSS */
+            width: 800px;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="roboEyesCanvas"></canvas>
+
+    <script>
+        // =======================================================
+        // FLUXGARAGE ROBOEYES - JAVASCRIPT RENDERING ENGINE
+        // =======================================================
+
+        class RoboEyes {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                
+                // Use fixed internal resolution for consistency, then scale with CSS
+                this.width = 800;
+                this.height = 400;
+                this.canvas.width = this.width;
+                this.canvas.height = this.height;
+
+                // Colors
+                this.bgColor = "#000000";
+                this.mainColor = "#00FFFF"; // Cyan for the "OLED look"
+
+                // Default Geometry
+                this.defaultH = 200;
+                this.defaultW = 200;
+                this.gap = 40;
+                this.radius = 20;
+                this.speed = 0.15; // Tweening speed (smoothness)
+
+                // State configuration (Targets)
+                this.state = {
+                    eyeL_h: this.defaultH, eyeR_h: this.defaultH, 
+                    eyeL_w: this.defaultW, eyeR_w: this.defaultW, 
+                    eyeL_x: 0,   eyeR_x: 0,   
+                    eyeL_y: 0,   eyeR_y: 0,   
+                    lid_top: 0,               // For Tired/Angry
+                    lid_bottom: 0,            // For Happy
+                    radius: this.radius
+                };
+
+                // Current values (for animation smoothing - the C++ (current + next)/2 logic)
+                this.current = { ...this.state };
+                
+                this.initPosition();
+                this.animate();
+
+                console.log("RoboEyes initialized! Try calling: eyes.setMood('ANGRY'), eyes.blink(), eyes.lookAt(50, -50)");
+            }
+
+            initPosition() {
+                // Center the eyes
+                const centerY = (this.height / 2) - (this.defaultH / 2);
+                const centerX = this.width / 2;
+                
+                this.state.eyeL_x = centerX - this.defaultW - (this.gap / 2);
+                this.state.eyeR_x = centerX + (this.gap / 2);
+                this.state.eyeL_y = centerY;
+                this.state.eyeR_y = centerY;
+                
+                this.current = { ...this.state };
+            }
+
+            // Linear Interpolation (mimics smooth transition)
+            lerp(start, end, amt) {
+                return (1 - amt) * start + amt * end;
+            }
+
+            updatePhysics() {
+                // Smoothly transition all properties towards their targets
+                for (let key in this.state) {
+                    this.current[key] = this.lerp(this.current[key], this.state[key], this.speed);
+                }
+            }
+
+            drawRoundedRect(x, y, w, h, r) {
+                if (w < 2 * r) r = w / 2;
+                if (h < 2 * r) r = h / 2;
+                this.ctx.beginPath();
+                this.ctx.roundRect(x, y, w, h, r);
+                this.ctx.fill();
+            }
+
+            drawEyelids() {
+                this.ctx.fillStyle = this.bgColor;
+
+                // Top Eyelids (Angry/Tired)
+                if (this.current.lid_top > 1) {
+                     // Drawing background-colored shapes over the eyes for the eyelid effect
+                     this.ctx.fillRect(this.current.eyeL_x, this.current.eyeL_y, this.current.eyeL_w, this.current.lid_top);
+                     this.ctx.fillRect(this.current.eyeR_x, this.current.eyeR_y, this.current.eyeR_w, this.current.lid_top);
+                }
+
+                // Bottom Eyelids (Happy)
+                if (this.current.lid_bottom > 1) {
+                    const lOffset = this.current.eyeL_h - this.current.lid_bottom;
+                    const rOffset = this.current.eyeR_h - this.current.lid_bottom;
+                    
+                    this.ctx.fillRect(this.current.eyeL_x, this.current.eyeL_y + lOffset, this.current.eyeL_w, this.current.lid_bottom);
+                    this.ctx.fillRect(this.current.eyeR_x, this.current.eyeR_y + rOffset, this.current.eyeR_w, this.current.lid_bottom);
+                }
+            }
+
+            draw() {
+                // 1. Clear screen
+                this.ctx.fillStyle = this.bgColor;
+                this.ctx.fillRect(0, 0, this.width, this.height);
+
+                // 2. Draw Eyes
+                this.ctx.fillStyle = this.mainColor;
+                
+                this.drawRoundedRect(this.current.eyeL_x, this.current.eyeL_y, this.current.eyeL_w, this.current.eyeL_h, this.current.radius);
+                this.drawRoundedRect(this.current.eyeR_x, this.current.eyeR_y, this.current.eyeR_w, this.current.eyeR_h, this.current.radius);
+
+                // 3. Draw Eyelids/Overlays
+                this.drawEyelids();
+            }
+
+            animate = () => {
+                this.updatePhysics(); // Update positions based on targets
+                this.draw();          // Render the current state
+                requestAnimationFrame(this.animate); // Loop at monitor's refresh rate (typically 60fps)
+            }
+
+            // ===================================
+            // API (What Python/Tauri will call)
+            // ===================================
+            
+            /** Set eye position relative to center */
+            lookAt(xOffset, yOffset) {
+                const centerX = this.width / 2;
+                const centerY = this.height / 2;
+                
+                // Restore default horizontal positioning
+                this.state.eyeL_x = centerX - this.defaultW - (this.gap / 2);
+                this.state.eyeR_x = centerX + (this.gap / 2);
+                this.state.eyeL_y = centerY - (this.defaultH / 2);
+                this.state.eyeR_y = centerY - (this.defaultH / 2);
+
+                // Apply new offset (xOffset and yOffset can be negative)
+                this.state.eyeL_x += xOffset;
+                this.state.eyeR_x += xOffset;
+                this.state.eyeL_y += yOffset;
+                this.state.eyeR_y += yOffset;
+            }
+
+            /** Set emotion/eyelid state */
+            setMood(mood) {
+                // Reset lids
+                this.state.lid_top = 0;
+                this.state.lid_bottom = 0;
+                this.state.eyeL_h = this.defaultH; 
+                this.state.eyeR_h = this.defaultH;
+
+                switch(mood.toUpperCase()) {
+                    case 'TIRED':
+                        this.state.lid_top = this.defaultH * 0.4;
+                        break;
+                    case 'ANGRY':
+                        this.state.lid_top = this.defaultH * 0.6; 
+                        break;
+                    case 'HAPPY':
+                        this.state.lid_bottom = this.defaultH * 0.5;
+                        break;
+                    default: // Neutral/DEFAULT
+                        break;
+                }
+            }
+
+            /** Trigger a single blink animation */
+            blink() {
+                // Close fast
+                this.state.eyeL_h = 2;
+                this.state.eyeR_h = 2;
+                
+                // Re-open after 150ms
+                setTimeout(() => {
+                    this.state.eyeL_h = this.defaultH;
+                    this.state.eyeR_h = this.defaultH;
+                }, 150);
+            }
+        }
+
+        // Initialize the eyes and make the object globally accessible for testing
+        const eyes = new RoboEyes('roboEyesCanvas');
+    </script>
+</body>
+</html>
