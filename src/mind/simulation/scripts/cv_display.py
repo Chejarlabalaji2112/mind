@@ -2,11 +2,12 @@
 import cv2
 import threading
 import time
+import numpy as np
 #TODO:may be we need to put this outside of simulation
 class CvDisplay:
     """
     Fallback video display using OpenCV window.
-    Thread-safe for put_frame calls.
+    Thread-safe for show calls.
     """
     def __init__(self, window_name="Video Playback"):
         self.window_name = window_name
@@ -14,12 +15,19 @@ class CvDisplay:
         self._lock = threading.Lock()
         self.running = True
 
-    def put_frame(self, frame_bgr):
+    def show(self, frame_bgr):
         """Put frame into buffer for display."""
-        with self._lock:
-            self._pending_frame = frame_bgr.copy()  # Avoid ref issues
+        if hasattr(frame_bgr, "__class__") and frame_bgr.__class__.__name__ == "Image":
+            frame_bgr = np.array(frame_bgr)  # RGB array
+            frame_bgr = cv2.cvtColor(frame_bgr, cv2.COLOR_RGB2BGR)
 
-    def put_text(self, text, bg_color=(0, 0, 0), text_color=(255, 255, 255), scale=1.0):
+        with self._lock:
+            self._pending_frame = frame_bgr.copy()
+
+        
+        
+
+    def show_text(self, text, bg_color=(0, 0, 0), text_color=(255, 255, 255), scale=1.0):
         """Overlay text on a blank frame (or current pending)."""
         h, w = 480, 640  # Default size if no frame
         canvas = cv2.imread("black.png") if hasattr(self, 'canvas') else np.zeros((h, w, 3), dtype=np.uint8)
@@ -29,7 +37,7 @@ class CvDisplay:
         text_x = (w - text_size[0]) // 2
         text_y = (h + text_size[1]) // 2
         cv2.putText(canvas, text, (text_x, text_y), font, scale, text_color, 2)
-        self.put_frame(canvas)
+        self.show(canvas)
 
     def update(self):
         """Call in main loop to display pending frame."""
@@ -38,6 +46,9 @@ class CvDisplay:
                 return
             frame_to_show = self._pending_frame.copy()
             self._pending_frame = None
+
+        print("DEBUG type:", type(frame_to_show))
+        print("DEBUG shape:", getattr(frame_to_show, "shape", None))
 
         cv2.imshow(self.window_name, frame_to_show)
         if cv2.waitKey(1) & 0xFF == ord('q'):

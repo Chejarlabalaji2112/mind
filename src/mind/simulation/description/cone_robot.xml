@@ -20,7 +20,7 @@
 
         <texture name="display_top" type="2d" builtin="checker" width="512" height="512" rgb1="0 0 0" rgb2="0 0 0"/>
         <material name="display_matt" texture="display_top" specular="0.5" shininess="0.5" emission="0.8"/>
-        <texture name="display_bottom"  type="2d" builtin="checker" width="512" height="512" rgb1="0 0 0" rgb2="0 0 0"/>
+        <texture name="display_bottom"  type="2d" builtin="checker" width="128" height="64" rgb1="0 0 0" rgb2="0 0 0"/>
         <material name="display_matb" texture="display_bottom" specular="0.5" shininess="0.5"/>
     </asset>
     <worldbody>
