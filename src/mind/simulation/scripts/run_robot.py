@@ -4,6 +4,9 @@ from mind.simulation.scripts.mind_engine import MujocoBackend
 BOOT_VIDEO_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/videos/pupil_boot.mp4"
 import threading
 import time
+from mind.utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 
 def main():
 
@@ -16,15 +19,15 @@ def main():
     sim_thread = threading.Thread(target=bot.run, daemon=True, name="MuJoCo-Loop")
 
     # 3. Start the thread
-    print("Main: Starting simulation thread...")
+    logger.info("Starting simulation thread")
     sim_thread.start()
 
     # 4. Wait for the simulation to be fully initialized (Optional but recommended)
-    print("Main: Waiting for viewer...")
+    logger.info("Waiting for viewer")
     if bot.wait_until_ready(timeout=10):
-        print("Main: Robot is ready!")
+        logger.info("Robot is ready")
     else:
-        print("Main: Timed out waiting for robot.")
+        logger.warning("Timed out waiting for robot")
         return
 
     # 5. Send Commands from Main Thread
@@ -41,11 +44,11 @@ def main():
 
             time.sleep(0.1)
     except KeyboardInterrupt:
-        print("Main: Stopping...")
+        logger.info("Stopping simulation")
          
         bot.stop()
         sim_thread.join()
-        print("Main: Exited.")
+        logger.info("Simulation exited")
 
 if __name__ == "__main__":
     main()

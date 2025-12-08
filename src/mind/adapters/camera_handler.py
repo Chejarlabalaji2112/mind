@@ -1,7 +1,7 @@
 import cv2 
 from mind.ports.percieve_port import Vision
 
-class CameraSource(Vision()):
+class CameraSource(Vision):
     """
     Standalone camera handler.
     """

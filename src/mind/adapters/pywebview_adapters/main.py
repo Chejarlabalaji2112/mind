@@ -4,10 +4,13 @@ import time
 import os
 import json
 import sys
+from mind.utils.logging_handler import setup_logger
 
 from mind.tools import Stopwatch
 from mind.tools import Pomodoro
 from mind.tools import Timer
+
+logger = setup_logger(__name__)
 
 class AdapterAPI:
     def __init__(self):
@@ -53,13 +56,13 @@ class AdapterAPI:
 
     def _sync_pomodoro_phase(self, previous_phase, current_cycle, **kwargs):
         # Optional: Send a notification or sound here
-        print(f"Phase {previous_phase} ended!")
+        logger.info("Pomodoro phase ended", extra={"previous_phase": previous_phase, "cycle": current_cycle})
 
     # --- RECEIVER (JS -> Python) ---
     def receive_from_ui(self, data):
         command = data.get('command')
         payload = data.get('payload', {})
-        print(f"Command: {command} | Payload: {payload}")
+        logger.debug("Received command from UI", extra={"command": command, "payload": payload})
 
         # --- ROUTER ---
         
@@ -110,7 +113,7 @@ def start_app():
     html_path = os.path.join(base_dir, 'assets', 'index.html')
 
     if not os.path.exists(html_path):
-        print(f"Error: Could not find {html_path}")
+        logger.error("UI HTML not found", extra={"path": html_path})
         return
 
     window = webview.create_window(

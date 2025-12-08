@@ -2,6 +2,9 @@ import mujoco
 import mujoco.viewer
 import numpy as np
 import time
+from mind.utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 
 # The full XML from your model (paste it here as a string)
 xml_string = """
@@ -82,7 +85,10 @@ if texid < model.ntex - 1:
 else:
     tex_size = model.ntexdata - model.tex_adr[texid]
 channels = tex_size // (width * height)
-print(f"Texture '{texname.decode()}': {width}x{height}, {channels} channels (RGB/RGBA)")
+logger.info(
+    "Texture details",
+    extra={"name": texname.decode(), "width": width, "height": height, "channels": channels},
+)
 
 def set_texture_color(model, texid, color, alpha=1.0):
     """
@@ -123,7 +129,7 @@ def set_texture_color(model, texid, color, alpha=1.0):
     # Update starting from tex_adr[texid]
     offset = model.tex_adr[texid]
     model.tex_data[offset:offset + tex_size] = flat_data
-    print(f"Set texture {texid} to solid color {color} (alpha={alpha if channels==4 else 'N/A'})")
+    logger.info("Set texture to solid color", extra={"texture_id": texid, "color": color, "alpha": alpha if channels == 4 else 'N/A'})
 
 # Color cycling example: Red -> Green -> Blue -> repeat
 colors = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
@@ -151,4 +157,4 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         running = viewer.is_running
         time.sleep(1)  # Small delay to prevent CPU hog
 
-print("Viewer closed.")
+logger.info("Viewer closed")

@@ -14,6 +14,9 @@ from kivy.core.window import Window
 
 import cv2
 from deepface import DeepFace
+from mind.utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 
 # --- 1. ENUMS ---
 
@@ -392,11 +395,11 @@ class EmotionEngine(threading.Thread):
         self.cap = None
 
     def run(self):
-        print("[CV] Attempting to start emotion engine...")
+        logger.info("Starting emotion engine")
         
         # --- CV INITIALIZATION ---
         if cv2 is None:
-            print("[CV] ERROR: Cannot run, missing DeepFace/OpenCV. Running simulation.")
+            logger.error("Missing DeepFace/OpenCV; running simulation fallback")
             self._run_simulation()
             return
 
@@ -404,9 +407,9 @@ class EmotionEngine(threading.Thread):
             self.cap = cv2.VideoCapture(0)  # Open default webcam
             if not self.cap.isOpened():
                 raise IOError("Cannot open webcam (index 0). Check device access.")
-            print("[CV] Webcam opened successfully.")
+            logger.info("Webcam opened successfully")
         except Exception as e:
-            print(f"[CV] CRITICAL ERROR during webcam init: {e}")
+            logger.error("Critical error during webcam init", exc_info=e)
             self._run_simulation()
             return
             
@@ -414,7 +417,7 @@ class EmotionEngine(threading.Thread):
         while self.running and self.cap.isOpened():
             ret, frame = self.cap.read()
             if not ret:
-                print("[CV] Failed to read frame from webcam.")
+                logger.warning("Failed to read frame from webcam")
                 time.sleep(0.1)
                 continue
 
@@ -442,7 +445,7 @@ class EmotionEngine(threading.Thread):
                 Clock.schedule_once(lambda dt, cmd='neutral': self.app.exe_cmd(cmd), 0)
             except Exception as e:
                 # Handle other potential DeepFace errors
-                print(f"[CV] DeepFace Analysis Error: {e}")
+                logger.error("DeepFace analysis error", exc_info=e)
 
             # Control the frame rate of the CV analysis
             time.sleep(0.5) 
@@ -450,7 +453,7 @@ class EmotionEngine(threading.Thread):
         # --- CV CLEANUP ---
         if self.cap and self.cap.isOpened():
             self.cap.release()
-        print("[CV] Emotion engine stopped.")
+        logger.info("Emotion engine stopped")
 
     def _run_simulation(self):
         """Fallback simulation if CV fails to initialize."""
@@ -482,15 +485,15 @@ class RoboEyesApp(App):
         return self.eyes
 
     def on_stop(self):
-        print("Stopping threads...")
+        logger.info("Stopping threads")
         # self.emotion_engine.stop()
 
     def print_help(self):
-        print("\n--- ROBO EYES COMMANDS ---")
-        print("MOODS:     happy, angry, tired, neutral")
-        print("POSITIONS: n, ne, e, se, s, sw, w, nw, center")
-        print("ACTIONS:   blink, laugh, confused, sweat (toggle), cyclops, idle")
-        print("KEYS:      1-4 (moods), Arrows (Pos), Space (Blink), C (Cyclops)")
+        logger.info("--- ROBO EYES COMMANDS ---")
+        logger.info("MOODS:     happy, angry, tired, neutral")
+        logger.info("POSITIONS: n, ne, e, se, s, sw, w, nw, center")
+        logger.info("ACTIONS:   blink, laugh, confused, sweat (toggle), cyclops, idle")
+        logger.info("KEYS:      1-4 (moods), Arrows (Pos), Space (Blink), C (Cyclops)")
 
     # --- Unified Command Execution (Called by all input methods) ---
     def exe_cmd(self, cmd):

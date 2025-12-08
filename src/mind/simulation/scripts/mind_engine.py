@@ -6,6 +6,7 @@ import os
 import threading
 import queue
 from enum import Enum, auto
+from mind.utils.logging_handler import setup_logger
 
 # Adapters and Utils
 from mind.simulation.scripts.screen_updater import ScreenUpdater
@@ -18,6 +19,8 @@ from mind.utils.robo_eyes import RoboEyes, HAPPY
 # Paths (Keep these configurable or constants)
 XML_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/description/scene.xml"
 CLOSE_AUDIO_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/audio/shutdown.mp3"
+
+logger = setup_logger(__name__)
 
 class RobotCommand(Enum):
     WAKE_UP = auto()
@@ -70,7 +73,7 @@ class MujocoBackend:
         Blocking method that runs the MuJoCo viewer and physics loop.
         Optimized to decouple Physics (500Hz) from Rendering (30Hz).
         """
-        print("[Backend] Launching Viewer...")
+        logger.info("Launching viewer")
         
         with mujoco.viewer.launch_passive(
             self.model, self.data, show_left_ui=False, show_right_ui=True
@@ -156,15 +159,16 @@ class MujocoBackend:
                 # ------------------------------------
                 # 5. FPS Calculation
                 # # ------------------------------------
-                loop_end = time.perf_counter()
-                dt = loop_end - step_start
-                loop_times.append(dt)
-                if len(loop_times) > 100:
-                    loop_times.pop(0)
+                # loop_end = time.perf_counter()
+                # dt = loop_end - step_start
+                # loop_times.append(dt)
+                # if len(loop_times) > 100:
+                #     loop_times.pop(0)
 
-                avg_dt = sum(loop_times) / len(loop_times)
-                loop_hz = 1.0 / avg_dt
-                print(f"\rLoop frequency: {loop_hz:.2f} Hz", end="")
+                # avg_dt = sum(loop_times) / len(loop_times)
+                # loop_hz = 1.0 / avg_dt
+                # if len(loop_times) % 50 == 0:
+                #     logger.debug("Loop frequency: %.2f Hz", loop_hz)
 
             self._cleanup()
 
@@ -205,7 +209,7 @@ class MujocoBackend:
                 self.motion.do_open(self.data, qpos_open, ctrl_open, payload['duration'])
                 
             elif cmd_type == RobotCommand.SHUT_DOWN:
-                print("[Backend] Playing Shutdown Sequence...")
+                logger.info("Playing shutdown sequence")
                 self.player.stop()
                 self.eyes.is_active = False
                 self.screen_top.show_text("Goodbye...")
@@ -237,7 +241,7 @@ class MujocoBackend:
                 self.screen_bottom.show_text(payload['text'])
 
     def _cleanup(self):
-        print("[Backend] Cleaning up resources...")
+        logger.info("Cleaning up resources")
         self.player.stop()
         self.audio.close()
         self._is_ready_event.clear()

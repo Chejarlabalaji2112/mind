@@ -4,6 +4,7 @@ import time
 import numpy as np
 import os
 import atexit
+from mind.utils.logging_handler import setup_logger
 
 # Adapters and Utils
 from mind.simulation.scripts.screen_updater import ScreenUpdater
@@ -17,6 +18,8 @@ from mind.utils.robo_eyes import RoboEyes, HAPPY
 XML_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/description/scene.xml"
 BOOT_VIDEO_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/videos/Light.mp4"
 CLOSE_AUDIO_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/audio/shutdown.mp3"
+
+logger = setup_logger(__name__)
 
 
 class CombinedSimulation:
@@ -95,7 +98,7 @@ class CombinedSimulation:
     # Shutdown (uses non-blocking close motion)
     # -----------------------------------------------------
     def shutdown_sequence(self, viewer):
-        print("\n--- Initiating Shutdown Sequence ---")
+        logger.info("Initiating shutdown sequence")
 
         # Stop all media
         self.player.stop()
@@ -125,14 +128,14 @@ class CombinedSimulation:
             dt = time.perf_counter() - loop_start
             time.sleep(max(0, self.model.opt.timestep - dt))
 
-        print("Shutdown complete.")
+        logger.info("Shutdown complete")
 
     # -----------------------------------------------------
     # MAIN LOOP
     # -----------------------------------------------------
 
     def run(self):
-        print("Launching Viewer…")
+        logger.info("Launching viewer")
 
         with mujoco.viewer.launch_passive(
             self.model, self.data,
@@ -175,7 +178,7 @@ class CombinedSimulation:
 
                     if self.state == "WAKING":
                         if self.motion.current_motion is None:
-                            print("Wake complete → BOOTING")
+                            logger.info("Wake complete -> booting")
                             self.state = "BOOTING"
 
                     elif self.state == "BOOTING":
@@ -183,7 +186,7 @@ class CombinedSimulation:
                             self.player.play_file(BOOT_VIDEO_PATH)
                             self.boot_video_triggered = True
                         elif self.player.no_video_playing:
-                            print("Boot finished → ACTIVE")
+                            logger.info("Boot finished -> active")
                             self.state = "ACTIVE"
 
                     elif self.state == "ACTIVE":
@@ -211,7 +214,8 @@ class CombinedSimulation:
 
                     avg_dt = sum(loop_times) / len(loop_times)
                     loop_hz = 1.0 / avg_dt
-                    print(f"\rLoop frequency: {loop_hz:.2f} Hz", end="")
+                    if len(loop_times) % 50 == 0:
+                        logger.debug("Loop frequency: %.2f Hz", loop_hz)
 
             except KeyboardInterrupt:
                 self.shutdown_sequence(viewer)
@@ -221,7 +225,7 @@ class CombinedSimulation:
 
     # -----------------------------------------------------
     def cleanup(self):
-        print("Cleaning up…")
+        logger.info("Cleaning up resources")
         self.player.stop()
         self.audio.close()
 

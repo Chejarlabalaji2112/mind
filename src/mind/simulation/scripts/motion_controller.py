@@ -1,6 +1,9 @@
 from mind.ports.act_port import Manipulator
 import mujoco
 import numpy as np
+from mind.utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 
 
 class MotionController(Manipulator):
@@ -60,7 +63,7 @@ class MotionController(Manipulator):
 
     def do_close(self, data, target_qpos, target_ctrl, duration=2.0):
         """Open → Home (non-blocking full-body keyframe interpolation)."""
-        print(f"closing with {duration}")
+        logger.info("Closing motion initiated", extra={"duration": duration})
         self.current_motion = self._interp_keyframe(target_qpos, target_ctrl, duration)
         next(self.current_motion)
 

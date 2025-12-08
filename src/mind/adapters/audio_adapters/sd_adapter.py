@@ -1,7 +1,11 @@
 #TODO:not working with wav files
 from mind.ports.percieve_port import Audition
 from mind.ports.act_port import Speaker
+from mind.utils.logging_handler import setup_logger
 import sounddevice as sd
+
+
+logger = setup_logger(__name__)
 
 class AudioManager(Audition, Speaker):
     """
@@ -43,7 +47,7 @@ class AudioManager(Audition, Speaker):
             try:
                 self.output_stream.write(data_array)
             except Exception as e:
-                print(f"Audio Write Error: {e}")
+                logger.error("Audio write error", exc_info=e)
 
     def say(self, data_array):
         """Alias for write_chunk to comply with Speaker interface."""
@@ -70,10 +74,10 @@ class AudioManager(Audition, Speaker):
             try:
                 data, overflow = self.input_stream.read(num_frames)
                 if overflow:
-                    print("Audio Input Overflow")
+                    logger.warning("Audio input overflow")
                 return data
             except Exception as e:
-                print(f"Audio Read Error: {e}")
+                logger.error("Audio read error", exc_info=e)
                 return None
         return None
     

@@ -4,6 +4,9 @@ import time
 import sys
 import os
 import json
+from mind.utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 
 class AdapterAPI:
     def __init__(self):
@@ -20,7 +23,7 @@ class AdapterAPI:
     def receive_from_ui(self, data):
         command = data.get('command')
         payload = data.get('payload', {})
-        print(f"Received: {command} -> {payload}")
+        logger.debug("Received command from UI", extra={"command": command, "payload": payload})
 
         if command == 'chat_query':
             user_text = payload.get('prompt')

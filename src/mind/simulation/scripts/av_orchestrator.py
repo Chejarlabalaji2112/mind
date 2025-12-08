@@ -9,6 +9,9 @@ from mind.simulation.scripts.cv_display import CvDisplay  # Fallback import
 from mind.adapters.audio_adapters.sd_adapter import AudioManager
 from mind.adapters.camera_handler import CameraSource
 from mind.adapters.display_adapters import DisplayObj
+from mind.utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 
 class AVOrchestrator:
     """
@@ -29,10 +32,10 @@ class AVOrchestrator:
                 import mujoco
                 model = mujoco.MjModel.from_xml_path("default.xml")  # Placeholder; user provides in combined.py
                 self.display = ScreenUpdater(model, "display_top")
-                print("Using MuJoCo texture display.")
+                logger.info("Using MuJoCo texture display")
             except (ImportError, FileNotFoundError, ValueError):
                 self.display = CvDisplay("AV Playback")
-                print("Using OpenCV fallback window.")
+                logger.info("Using OpenCV fallback window")
         
         self.running = False
         self.thread = None
@@ -83,7 +86,7 @@ class AVOrchestrator:
         try:
             container = av.open(file_path)
         except Exception as e:
-            print(f"Error opening file: {e}")
+            logger.error("Error opening file", exc_info=e, extra={"file_path": file_path})
             self.running = False
             return
         
@@ -95,31 +98,31 @@ class AVOrchestrator:
         has_audio = bool(audio_streams)
         
         if not has_video and not has_audio:
-            print("No audio or video streams found.")
+            logger.warning("No audio or video streams found", extra={"file_path": file_path})
             return
 
         # Handle audio tracks (if any)
         audio_stream = None
         if has_audio:
             if audio_track_index >= len(audio_streams):
-                print(f"Warning: Audio track {audio_track_index} out of range. Using 0.")
+                logger.warning("Audio track out of range, defaulting to 0", extra={"requested_track": audio_track_index})
                 audio_track_index = 0
             audio_stream = audio_streams[audio_track_index]
-            print("Available audio tracks:")
+            logger.info("Available audio tracks", extra={"count": len(audio_streams)})
             for i, stream in enumerate(audio_streams):
                 codec_name = stream.codec_context.codec.name if stream.codec_context else "Unknown"
                 rate = stream.rate or "Unknown"
                 channels = stream.channels or "Unknown"
-                print(f"  Track {i}: {codec_name} ({channels}ch, {rate}Hz)")
-            print(f"Selected: Track {audio_track_index}")
+                logger.info("Audio track", extra={"index": i, "codec": codec_name, "channels": channels, "rate": rate})
+            logger.info("Selected audio track", extra={"index": audio_track_index})
             self.audio.start_output_stream(rate=audio_stream.rate, channels=audio_stream.channels)
 
         # Setup display loop if video (in thread or main; here we assume main calls display.update())
         if has_video:
-            print("Video playback enabled.")
+            logger.info("Video playback enabled", extra={"file_path": file_path})
         else:
             self.no_video_playing = True
-            print("Audio-only playback (no display updates).")
+            logger.info("Audio-only playback", extra={"file_path": file_path})
 
         start_time = time.time()
         audio_start_time = None
@@ -164,10 +167,10 @@ class AVOrchestrator:
                                 img = frame.to_ndarray(format='bgr24')
                                 self.display.show(img)
         except Exception as e:
-            print(f"Playback error: {e}")
+            logger.error("Playback error", exc_info=e, extra={"file_path": file_path})
         finally:
             container.close()
             self.no_video_playing = True
             if has_audio:
                 self.audio.close()
-            print("Playback finished.")
+            logger.info("Playback finished", extra={"file_path": file_path})
