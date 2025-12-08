@@ -1,15 +1,13 @@
 import mujoco
-from utils.logging_handler import setup_logger
+from mind.utils.logging_handler import setup_logger
 import webview
 import threading
 import time
 import os
 import json
 import sys
-from tools import Stopwatch
-from tools import Pomodoro
-from tools import Timer
-from adapters.llm_adapters.llm_without_agnetv1 import GeminiLLMAdapter
+from mind.tools import Stopwatch, Pomodoro, Timer
+from mind.adapters.llm_adapters.llm_without_agnetv1 import GeminiLLMAdapter
 
 logger = setup_logger(__name__)
 #TODO: need to add output tuner for pywebview as i did for esp32.

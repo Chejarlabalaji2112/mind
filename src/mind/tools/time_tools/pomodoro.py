@@ -1,9 +1,9 @@
 import time
 import threading
 from enum import Enum, auto
-from .base_tool import TimeTool, Event
-from utils.time_conversions import convert_to_seconds, format_seconds_to_hms
-from utils.logging_handler import setup_logger
+from mind.tools.time_tools.base_tool import TimeTool, Event
+from mind.utils.time_conversions import convert_to_seconds, format_seconds_to_hms
+from mind.utils.logging_handler import setup_logger
 
 logger = setup_logger(__name__)
 

@@ -3,112 +3,144 @@ import mujoco.viewer
 import time
 import numpy as np
 import os
+import atexit
 
 # Adapters and Utils
-from .screen_updater import ScreenUpdater
-from .av_orchestrator import AVOrchestrator
-from adapters.audio_adapters import AudioManager
-from adapters.camera_adapers import CameraSource
-from .motion_controller import MotionController
-from utils.robo_eyes import RoboEyes
+from mind.simulation.scripts.screen_updater import ScreenUpdater
+from mind.simulation.scripts.av_orchestrator import AVOrchestrator
+from mind.adapters.audio_adapters.sd_adapter import AudioManager
+from mind.adapters.camera_handler import CameraSource
+from mind.simulation.scripts.motion_controller import MotionController
+from mind.utils.robo_eyes import RoboEyes, HAPPY
 
 # Paths
 XML_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/description/scene.xml"
 BOOT_VIDEO_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/videos/Light.mp4"
-CLOSE_AUDIO_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/audio/shutdown.mp3" # Ensure this path is correct
+CLOSE_AUDIO_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/audio/shutdown.mp3"
+
 
 class CombinedSimulation:
     def __init__(self, scene_path=XML_PATH):
-        # 1. Initialize MuJoCo
+        # -------------------------------
+        # 1. MuJoCo Model Setup
+        # -------------------------------
         self.model = mujoco.MjModel.from_xml_path(scene_path)
         self.data = mujoco.MjData(self.model)
 
-        # 2. Keyframe Setup
+        # Keyframes
         self.home_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_KEY, "home")
         self.open_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_KEY, "open")
-        self.wake_duration = 4.0 
+
+        self.wake_duration = 4.0
         self.close_duration = 5.0
 
-        # Start robot in "home" position
+        # Start at home pose
         mujoco.mj_resetDataKeyframe(self.model, self.data, self.home_id)
         mujoco.mj_forward(self.model, self.data)
 
-        # 3. Component Initialization
+        atexit.register(self.cleanup)
+        # -------------------------------
+        # 2. Components
+        # -------------------------------
         self.screen = ScreenUpdater(self.model, "display_top")
+        self.screen2 = ScreenUpdater(self.model, "display_bottom")
         self.audio = AudioManager(rate=44100, channels=2)
         self.player = AVOrchestrator(self.screen, self.audio)
         self.eyes = RoboEyes(self.screen, width=512, height=512)
 
-        # 4. State Flags
+        # NEW: Motion Controller
+        self.motion = MotionController(self.model)
+
+        # -------------------------------
+        # 3. State
+        # -------------------------------
         self.state = "WAKING"
         self.boot_video_triggered = False
 
-    def interpolate_pose(self, elapsed, start_qpos, start_ctrl, target_qpos, target_ctrl, duration):
-        """Generic interpolation between two states."""
-        alpha = min(elapsed / duration, 1.0)
+        self.last_clock_update = 0
 
-        self.data.qpos[:] = (
-            (1 - alpha) * start_qpos +
-            alpha * target_qpos
-        )
+        self.is_happy = False
 
-        self.data.ctrl[:] = (
-            (1 - alpha) * start_ctrl +
-            alpha * target_ctrl
-        )
+        self.model.opt.timestep = 0.002
+    # -----------------------------------------------------
+    # clock update
+    # -----------------------------------------------------
+    def update_clock(self):
+        now = time.time()
+        if now - self.last_clock_update >= 1.0:   # update once per second
+            self.last_clock_update = now
+            self.screen2.show_layout({
+                    "top_left"    : "topleft",
+                    "top_center"  : time.strftime("%H:%M:%S"),
+                    "top_right"   : "top_right",
+                    "center"      : "center",
+                    "bottom_left" : "bottom_left",
+                    "bottom_right": "bottom right"
 
+            })
+
+    # -----------------------------------------------------
+    # update all
+    # -----------------------------------------------------
+
+    def update_all(self, viewer):
+        self.update_clock()
+        self.motion.update_motion(self.data)
+        mujoco.mj_step(self.model, self.data)
+        self.screen.update(viewer)
+        self.screen2.update(viewer)
+        viewer.sync()
+
+    # -----------------------------------------------------
+    # Shutdown (uses non-blocking close motion)
+    # -----------------------------------------------------
     def shutdown_sequence(self, viewer):
-        """Handles the graceful shutdown: Stop video, play sound, move to home."""
         print("\n--- Initiating Shutdown Sequence ---")
 
-        # 1. Stop current media/eyes
+        # Stop all media
         self.player.stop()
-        self.screen.show_text("shutting down...")
         self.eyes.is_active = False
+
+        self.screen.show_text("shutting down…")
         self.screen.update(viewer)
-        time.sleep(1.0)  # Brief pause to ensure message is seen
-        
-        # 2. Play Close Audio
+        time.sleep(0.7)
+
+        # Play audio
         if os.path.exists(CLOSE_AUDIO_PATH):
             self.player.play_file(CLOSE_AUDIO_PATH)
-        else:
-            print(f"Warning: Close audio not found at {CLOSE_AUDIO_PATH}")
 
-        # 3. Capture CURRENT state (start point) and HOME state (target point)
-        start_qpos = self.data.qpos.copy()
-        start_ctrl = self.data.ctrl.copy()
-        
-        target_qpos = self.model.key_qpos[self.home_id]
-        target_ctrl = self.model.key_ctrl[self.home_id]
+        # Trigger CLOSE motion (model keyframe home)
+        self.motion.do_close(
+            self.data,
+            self.model.key_qpos[self.home_id],
+            self.model.key_ctrl[self.home_id],
+            duration=self.close_duration
+        )
 
-        # 4. Closing Animation Loop
-        start_close_time = time.time()
-        
-        print("Returning to Home Position...")
-        while time.time() - start_close_time < self.close_duration:
-            elapsed = time.time() - start_close_time
-            
-            # Interpolate backwards (Current -> Home)
-            self.interpolate_pose(elapsed, start_qpos, start_ctrl, target_qpos, target_ctrl, self.close_duration)
-            
-            # Step Physics
-            mujoco.mj_step(self.model, self.data)
-            
-            # Update screen (keeps it black/static during close)
-            self.screen.update(viewer)
-            
-            # Sync Viewer
-            viewer.sync()
+        # Allow the non-blocking motion to run until done
+        start_t = time.time()
+        while viewer.is_running() and self.motion.current_motion is not None:
+            loop_start = time.perf_counter()
+            self.update_all(viewer)
+            dt = time.perf_counter() - loop_start
+            time.sleep(max(0, self.model.opt.timestep - dt))
 
-        print("Shutdown Sequence Complete.")
+        print("Shutdown complete.")
+
+    # -----------------------------------------------------
+    # MAIN LOOP
+    # -----------------------------------------------------
 
     def run(self):
-        print("Launching Viewer...")
-        
-        with mujoco.viewer.launch_passive(self.model, self.data,
-                show_left_ui=False, show_right_ui=False) as viewer:
-            
-            # -- Camera Setup --
+        print("Launching Viewer…")
+
+        with mujoco.viewer.launch_passive(
+            self.model, self.data,
+            show_left_ui=False,
+            show_right_ui=False
+        ) as viewer:
+
+            # Camera setup
             with viewer.lock():
                 viewer.cam.lookat[:] = np.array([0.0, 0.05, 0.1])
                 viewer.cam.azimuth = 0.0
@@ -117,74 +149,88 @@ class CombinedSimulation:
 
             start_time = time.time()
 
+            # Pre-calc wake targets
+            qpos_open = self.model.key_qpos[self.open_id]
+            ctrl_open = self.model.key_ctrl[self.open_id]
+
+            # Trigger OPEN motion immediately
+            self.motion.do_open(
+                self.data,
+                qpos_open,
+                ctrl_open,
+                self.wake_duration
+            )
+
+            loop_times = []
+
             try:
-                # Pre-calculate Waking targets
-                wake_start_qpos = self.model.key_qpos[self.home_id]
-                wake_start_ctrl = self.model.key_ctrl[self.home_id]
-                wake_target_qpos = self.model.key_qpos[self.open_id]
-                wake_target_ctrl = self.model.key_ctrl[self.open_id]
-
                 while viewer.is_running():
+                    start_t = time.time()
+                    loop_start = time.perf_counter()  # high-precision timing
+
+                    # ---------------------------
+                    # STATE MACHINE
+                    # ---------------------------
                     elapsed = time.time() - start_time
-                    
-                    # -------------------------------------------------
-                    # STATE 1: WAKING
-                    # -------------------------------------------------
+
                     if self.state == "WAKING":
-                        self.interpolate_pose(elapsed, wake_start_qpos, wake_start_ctrl, 
-                                              wake_target_qpos, wake_target_ctrl, self.wake_duration)
-
-                        if elapsed >= self.wake_duration:
+                        if self.motion.current_motion is None:
+                            print("Wake complete → BOOTING")
                             self.state = "BOOTING"
-                            print("Waking complete. Starting Boot Sequence.")
 
-                    # -------------------------------------------------
-                    # STATE 2: BOOTING
-                    # -------------------------------------------------
                     elif self.state == "BOOTING":
                         if not self.boot_video_triggered:
                             self.player.play_file(BOOT_VIDEO_PATH)
                             self.boot_video_triggered = True
-                        
-                        if self.boot_video_triggered and self.player.no_video_playing:
-                             self.state = "ACTIVE"
-                             print("Boot complete. Activating Eyes.")
+                        elif self.player.no_video_playing:
+                            print("Boot finished → ACTIVE")
+                            self.state = "ACTIVE"
 
-                    # -------------------------------------------------
-                    # STATE 3: ACTIVE
-                    # -------------------------------------------------
                     elif self.state == "ACTIVE":
                         if not self.eyes.is_active:
-                            time.sleep(0.1)
                             self.eyes.is_active = True
+                            time.sleep(0.1)
                             self.eyes.begin()
                             self.eyes.set_auto_blink(True)
                             self.eyes.set_idle_mode(True)
-                        
                         self.eyes.update()
 
-                    # -------------------------------------------------
-                    # STEP & RENDER
-                    # -------------------------------------------------
-                    mujoco.mj_step(self.model, self.data)
-                    self.screen.update(viewer)
-                    viewer.sync()
+                    # Update everything
+                    self.update_all(viewer)
+                    took = time.time() - start_t
+                    time.sleep(max(0, self.model.opt.timestep - took))
+
+                    # ---------------------------
+                    # Loop timing & Hz calculation
+                    # ---------------------------
+                    loop_end = time.perf_counter()
+                    dt = loop_end - loop_start
+                    loop_times.append(dt)
+                    if len(loop_times) > 100:  # keep last 100 steps
+                        loop_times.pop(0)
+
+                    avg_dt = sum(loop_times) / len(loop_times)
+                    loop_hz = 1.0 / avg_dt
+                    print(f"\rLoop frequency: {loop_hz:.2f} Hz", end="")
 
             except KeyboardInterrupt:
-                # Intercept the Ctrl+C here
                 self.shutdown_sequence(viewer)
-            
+
             finally:
                 self.cleanup()
 
+    # -----------------------------------------------------
     def cleanup(self):
-        print("Cleaning up resources...")
+        print("Cleaning up…")
         self.player.stop()
         self.audio.close()
 
+    
+
 # -----------------------------------------------------
-# EXECUTION
+# ENTRY
 # -----------------------------------------------------
+
 if __name__ == "__main__":
     sim = CombinedSimulation()
     sim.run()

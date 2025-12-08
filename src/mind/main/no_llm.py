@@ -1,7 +1,7 @@
 # core/loop.py
 import asyncio
-from adapters.esp32_adapter import Connection, Sender, Listener, esp_output_tuner
-from utils.logging_handler import setup_logger
+from mind.adapters.esp32_adapters.esp32_adapter import Connection, Sender, Listener, esp_output_tuner
+from mind.utils.logging_handler import setup_logger
 import re
 
 logger = setup_logger(__name__)

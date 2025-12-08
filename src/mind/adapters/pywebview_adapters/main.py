@@ -5,9 +5,9 @@ import os
 import json
 import sys
 
-from tools import Stopwatch
-from tools import Pomodoro
-from tools import Timer
+from mind.tools import Stopwatch
+from mind.tools import Pomodoro
+from mind.tools import Timer
 
 class AdapterAPI:
     def __init__(self):

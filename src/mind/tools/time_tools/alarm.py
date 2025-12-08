@@ -13,7 +13,7 @@ import datetime
 import sqlite3
 import os
 
-from time_tools.base_tool import Event
+from mind.tools.time_tools.base_tool import Event
 from utils.time_conversions import format_seconds_to_hms # Assuming this is useful, will add more if needed
 from utils.logging_handler import setup_logger
 

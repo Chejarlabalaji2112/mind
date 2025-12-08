@@ -1,12 +1,14 @@
 <mujoco>
+    
     <compiler angle="degree" coordinate="local"/>
-    <option timestep="0.001" iterations="100" tolerance="1e-10"/>
+    <option timestep="0.002" iterations="100" tolerance="1e-10"/>
     
     <!-- ADDED: Keyframe definition for the "Home" position -->
     <!-- qpos values correspond to the order of joints defined below -->
     <!-- Order: j_top_y, j_top_z, j_top_cam, j_top_ant_r, j_top_ant_l -->
+
     <keyframe>
-        <key name="home" qpos="1.85 0 0 1.52 1.52" ctrl="2.1 0 0 15 15"/>
+        <key name="home" qpos="1.85 0 0 1.52 1.52" ctrl="2.1 0 0 15 15"/> <!-- closed position-->
         <key name="open" qpos="0 0 0 0 0" ctrl="0 0 0 0 0"/>
     </keyframe>
 
@@ -19,43 +21,69 @@
         
 
         <texture name="display_top" type="2d" builtin="checker" width="512" height="512" rgb1="0 0 0" rgb2="0 0 0"/>
-        <material name="display_matt" texture="display_top" specular="0.5" shininess="0.5" emission="0.8"/>
-        <texture name="display_bottom"  type="2d" builtin="checker" width="128" height="64" rgb1="0 0 0" rgb2="0 0 0"/>
+        <material name="display_matt" texture="display_top" specular="0.1" shininess="0.1" emission="3"/>
+
+        <texture name="display_bottom"  type="2d" builtin="checker" width="512" height="256" rgb1="0 0 0" rgb2="0 0 0"/>
         <material name="display_matb" texture="display_bottom" specular="0.5" shininess="0.5"/>
     </asset>
     <worldbody>
         <body name="bottom" pos="0 0 0.024" euler="0 0 180">
+
             <geom type="mesh" mesh="bottom_mesh" rgba="0.7 0.7 0.7 1" density="300"/>
-            <geom name="bottom_screen" type="box" size="0.023 0.008 0.0001" material="display_matb" pos="0.045 -0.057 -0.0077" euler="0 73 90"/>
+            <geom name="bottom_screen" type="box" size="0.0235 0.0066 0.0001" material="display_matb" pos="0.0445 -0.0577 -0.00875" euler="0 74 90.3"/>
+            
             <body name="top" pos="-0.008 0 0.01">
+
                 <joint name="j_top_y" type="hinge" axis="0 1 0" range="0 106" damping="4" stiffness="10" armature="0.000001" pos="-0.027 -0.01 0.03"/>
                 <joint name="j_top_z" type="hinge" axis="0 0 1" range="-10 10" damping="20" stiffness="10" armature="0.01" pos="-0.027 -0.049 -0.01"/>
                 
                 <geom type="mesh" mesh="top_mesh" rgba="0.7 0.7 0.7 1" density="300"/>
-                <geom name="screen_geom" type="box" size="0.031 0.0278 0.0001" material="display_matt" pos="-0.001 -0.049 0.073" euler="0 74 90" mass="0"/>
+                <geom name="screen_geom" type="box" size="0.032 0.0278 0.0001" material="display_matt" pos="-0.003 -0.0492 0.0728" euler="0 74 90" mass="0"/>
                 
                 <body name="camera" pos="0.002 0 0.015">
+
                     <camera name="camera_top" pos="-0.025 0 0.1" euler="0 150 90"/>
+                    
                     <joint name="j_top_cam" type="hinge" pos="-0.015 0 0.097" range="0 90" damping="10" stiffness="50" armature="0.01" axis="0 1 0"/>
+                    
                     <geom type="mesh" mesh="camera_mesh" rgba="0.1 0.5 0.7 1"/>
+                
                 </body>
+            
             </body>
                 
             <body name="antenna_right" pos="0 0 0.002">
+                
                 <joint name="j_top_ant_r" type="hinge" axis="0 1 0" range="0 180" damping="0.1" stiffness="50" springref="10" pos="-0.025 -0.08 -0.01"/>
+                
                 <geom type="mesh" mesh="ant_r_mesh" rgba="0 0 0 1"/>
+            
             </body>
+            
             <body name="antenna_left" pos="0 0 0.002">
+                
                 <joint name="j_top_ant_l" type="hinge" axis="0 1 0" range="0 180" damping="0.1" stiffness="50" springref="10" pos="-0.027 0.08 -0.01"/>
+                
                 <geom type="mesh" mesh="ant_l_mesh" rgba="0 0 0 1"/>
+            
             </body>
+        
         </body>
+    
     </worldbody>
+    
     <actuator>
+        
         <position name="servo_top_y"   joint="j_top_y"        kp="100"  ctrlrange="0 2.1"/>
+        
         <position name="servo_top_z"   joint="j_top_z"        kp="90"   ctrlrange="-0.5 0.5"/>
-        <position name="servo_ant_r"   joint="j_top_ant_r"    kp="5"    ctrlrange = "-10 15" />
-        <position name="servo_ant_l"   joint="j_top_ant_l"    kp="5"    ctrlrange = "-10 15" />
+        
         <position name="servo_top_com" joint="j_top_cam"      kp="50"   ctrlrange="0 3.5" />
+        
+        <position name="servo_ant_r"   joint="j_top_ant_r"    kp="5"    ctrlrange = "-10 15" />
+        
+        <position name="servo_ant_l"   joint="j_top_ant_l"    kp="5"    ctrlrange = "-10 15" />
+    
     </actuator>
+
 </mujoco>

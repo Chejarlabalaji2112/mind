@@ -1,10 +1,7 @@
 # tools/tool_registry.py
 import asyncio
-from ports.act_port import Presenter
-from tools.time_tools.timer import Timer
-from tools.time_tools.stopwatch import Stopwatch
-from tools.time_tools.pomodoro import Pomodoro
-from tools.time_tools.clock import Clock
+from mind.ports.act_port import Presenter
+from mind.tools import Timer, Stopwatch, Pomodoro, Clock
 from tools.tasks_skills_tools.skilltracker import SkillTracker
 
 

@@ -1,6 +1,8 @@
 import time
 import random
-from PIL import Image, ImageDraw
+import numpy as np
+import cv2
+
 
 # --- Constants ---
 # Moods
@@ -123,7 +125,7 @@ class RoboEyes:
 
     def begin(self):
         """Startup: Clear display and set initial closed eyes."""
-        frame = Image.new("RGB", (self.width, self.height), self.col_bg)
+        frame = np.zeros((self.height, self.width, 3), dtype=np.uint8)
         self.screen_updater.show(frame)
         self.curr['eyeL_h'] = 1
         self.curr['eyeR_h'] = 1
@@ -294,6 +296,25 @@ class RoboEyes:
     def _tween_value(self, current, target):
         """Tween: (current + target) / 2 for ease-out."""
         return current + (target - current) * 0.8
+    
+    def cv2_roundrect(img, pt1, pt2, radius, color):
+        x1, y1 = pt1
+        x2, y2 = pt2
+        w = x2 - x1
+        h = y2 - y1
+        if radius > min(w, h) // 2:
+            radius = min(w, h) // 2
+
+        # Outer contour
+        cv2.rectangle(img, (x1 + radius, y1), (x2 - radius, y2), color, -1)
+        cv2.rectangle(img, (x1, y1 + radius), (x2, y2 - radius), color, -1)
+
+        # Four corners
+        cv2.circle(img, (x1 + radius, y1 + radius), radius, color, -1)
+        cv2.circle(img, (x2 - radius, y1 + radius), radius, color, -1)
+        cv2.circle(img, (x1 + radius, y2 - radius), radius, color, -1)
+        cv2.circle(img, (x2 - radius, y2 - radius), radius, color, -1)
+
 
     def _get_screen_constraint_x(self):
         """Max X for left eye."""
@@ -416,21 +437,40 @@ class RoboEyes:
         self.curr['lid_angry'] = self._tween_value(self.curr['lid_angry'], self.next['lid_angry'])
         self.curr['lid_happy_offset'] = self._tween_value(self.curr['lid_happy_offset'], self.next['lid_happy_offset'])
         # --- DRAWING ---
-        image = Image.new("RGB", (self.width, self.height), self.col_bg)
-        draw = ImageDraw.Draw(image)
+        image = np.zeros((self.height, self.width, 3), dtype=np.uint8)
+        image[:] = self.col_bg
+
+        def cv2_roundrect(img, pt1, pt2, radius, color):
+            x1, y1 = pt1
+            x2, y2 = pt2
+            w = x2 - x1
+            h = y2 - y1
+            if radius > min(w, h) // 2:
+                radius = min(w, h) // 2
+
+            # Outer contour
+            cv2.rectangle(img, (x1 + radius, y1), (x2 - radius, y2), color, -1)
+            cv2.rectangle(img, (x1, y1 + radius), (x2, y2 - radius), color, -1)
+
+            # Four corners
+            cv2.circle(img, (x1 + radius, y1 + radius), radius, color, -1)
+            cv2.circle(img, (x2 - radius, y1 + radius), radius, color, -1)
+            cv2.circle(img, (x1 + radius, y2 - radius), radius, color, -1)
+            cv2.circle(img, (x2 - radius, y2 - radius), radius, color, -1)
+
         def s(x, y):
             return (int(self.offset_x + x * self.uniform_scale), int(self.offset_y + y * self.uniform_scale))
         # Draw Left Eye
         lx, ly = self.curr['eyeL_x'] + off_x, self.curr['eyeL_y'] + off_y
         lw, lh = self.curr['eyeL_w'], self.curr['eyeL_h']
         lr = int(self.curr['eyeL_radius'] * self.uniform_scale)
-        draw.rounded_rectangle([s(lx, ly), s(lx + lw, ly + lh)], radius=lr, fill=self.col_main)
+        cv2_roundrect(image, s(lx, ly), s(lx + lw, ly + lh), lr, self.col_main)
         # Draw Right Eye
         if not self.cyclops:
             rx, ry = self.curr['eyeR_x'] + off_x, self.curr['eyeR_y'] + off_y
             rw, rh = self.curr['eyeR_w'], self.curr['eyeR_h']
             rr = int(self.curr['eyeR_radius'] * self.uniform_scale)
-            draw.rounded_rectangle([s(rx, ry), s(rx + rw, ry + rh)], radius=rr, fill=self.col_main)
+            cv2_roundrect(image, s(rx, ry), s(rx + rw, ry + rh), rr, self.col_main)
         else:
             rx, ry, rw, rh, rr = 0, 0, 0, 0, 0
         # Eyelids (BG masks)
@@ -439,50 +479,50 @@ class RoboEyes:
             off = self.curr['lid_happy_offset']
             happy_h = self.default_eye_h  # Use ref units (fixed bug: was scaled incorrectly)
             # Left
-            draw.rounded_rectangle(
-                [s(lx - 1, (ly + lh - off) + 1), s(lx + lw + 1, ly + happy_h + 1)],
-                radius=lr, fill=self.col_bg
+            cv2_roundrect(image,
+                s(lx - 1, (ly + lh - off) + 1), s(lx + lw + 1, ly + happy_h + 1),
+                lr, self.col_bg
             )
             # Right
             if not self.cyclops:
-                draw.rounded_rectangle(
-                    [s(rx - 1, (ry + rh - off) + 1), s(rx + rw + 1, ry + happy_h + 1)],
-                    radius=rr, fill=self.col_bg
+                cv2_roundrect(image,
+                    s(rx - 1, (ry + rh - off) + 1), s(rx + rw + 1, ry + happy_h + 1),
+                    rr, self.col_bg
                 )
         # Tired Top (Triangles: left-leaning for left, right-leaning for right)
         if self.curr['lid_tired'] > 1:
             h_lid = self.curr['lid_tired']
             # Left
             poly_l = [s(lx, ly - 1), s(lx + lw, ly - 1), s(lx, ly + h_lid - 1)]
-            draw.polygon(poly_l, fill=self.col_bg)
+            cv2.fillPoly(image, [np.array(poly_l, dtype=np.int32)], self.col_bg)
             # Right
             if not self.cyclops:
                 poly_r = [s(rx, ly - 1), s(rx + rw, ly - 1), s(rx + rw, ly + h_lid - 1)]
-                draw.polygon(poly_r, fill=self.col_bg)
+                cv2.fillPoly(image, [np.array(poly_r, dtype=np.int32)], self.col_bg)
             else:
                 # Cyclops: Split left eye
                 half_w = lw / 2
                 poly_l1 = [s(lx, ly - 1), s(lx + half_w, ly - 1), s(lx, ly + h_lid - 1)]
-                draw.polygon(poly_l1, fill=self.col_bg)
+                cv2.fillPoly(image, [np.array(poly_l1, dtype=np.int32)], self.col_bg)
                 poly_l2 = [s(lx + half_w, ly - 1), s(lx + lw, ly - 1), s(lx + lw, ly + h_lid - 1)]
-                draw.polygon(poly_l2, fill=self.col_bg)
+                cv2.fillPoly(image, [np.array(poly_l2, dtype=np.int32)], self.col_bg)
         # Angry Top (Triangles: right-leaning left, left-leaning right)
         if self.curr['lid_angry'] > 1:
             h_lid = self.curr['lid_angry']
             # Left
             poly_l = [s(lx, ly - 1), s(lx + lw, ly - 1), s(lx + lw, ly + h_lid - 1)]
-            draw.polygon(poly_l, fill=self.col_bg)
+            cv2.fillPoly(image, [np.array(poly_l, dtype=np.int32)], self.col_bg)
             # Right
             if not self.cyclops:
                 poly_r = [s(rx, ly - 1), s(rx + rw, ly - 1), s(rx, ly + h_lid - 1)]
-                draw.polygon(poly_r, fill=self.col_bg)
+                cv2.fillPoly(image, [np.array(poly_r, dtype=np.int32)], self.col_bg)
             else:
                 # Cyclops: Split
                 half_w = lw / 2
                 poly_l1 = [s(lx, ly - 1), s(lx + half_w, ly - 1), s(lx + half_w, ly + h_lid - 1)]
-                draw.polygon(poly_l1, fill=self.col_bg)
+                cv2.fillPoly(image, [np.array(poly_l1, dtype=np.int32)], self.col_bg)
                 poly_l2 = [s(lx + half_w, ly - 1), s(lx + lw, ly - 1), s(lx + half_w, ly + h_lid - 1)]
-                draw.polygon(poly_l2, fill=self.col_bg)
+                cv2.fillPoly(image, [np.array(poly_l2, dtype=np.int32)], self.col_bg)
         # --- Sweat ---
         if self.sweat:
             sr = int(self.sweat_border_radius * self.uniform_scale)
@@ -506,5 +546,5 @@ class RoboEyes:
                 dy = int(self.offset_y + drop['y'] * self.uniform_scale)
                 dw = int(drop['w'] * self.uniform_scale)
                 dh = int(drop['h'] * self.uniform_scale)
-                draw.rounded_rectangle([ (dx, dy), (dx + dw, dy + dh) ], radius=sr, fill=self.col_main)
+                cv2_roundrect(image, (dx, dy), (dx + dw, dy + dh), sr, self.col_main)
         self.screen_updater.show(image)

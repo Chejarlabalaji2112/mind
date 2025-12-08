@@ -4,11 +4,11 @@ import time
 import av  # PyAV
 import numpy as np  # For dtype handling
 import cv2  # For fallback
-from .screen_updater import ScreenUpdater as MujocoScreen  # Optional MuJoCo import
-from .cv_display import CvDisplay  # Fallback import
-from adapters.audio_adapters import AudioManager
-from adapters.camera_adapers import CameraSource
-from adapters.display_adapters import DisplayObj
+from mind.simulation.scripts.screen_updater import ScreenUpdater  # Optional MuJoCo import
+from mind.simulation.scripts.cv_display import CvDisplay  # Fallback import
+from mind.adapters.audio_adapters.sd_adapter import AudioManager
+from mind.adapters.camera_handler import CameraSource
+from mind.adapters.display_adapters import DisplayObj
 
 class AVOrchestrator:
     """
@@ -28,7 +28,7 @@ class AVOrchestrator:
                 # Try MuJoCo context (import optional)
                 import mujoco
                 model = mujoco.MjModel.from_xml_path("default.xml")  # Placeholder; user provides in combined.py
-                self.display = MujocoScreen(model, "display_top")
+                self.display = ScreenUpdater(model, "display_top")
                 print("Using MuJoCo texture display.")
             except (ImportError, FileNotFoundError, ValueError):
                 self.display = CvDisplay("AV Playback")

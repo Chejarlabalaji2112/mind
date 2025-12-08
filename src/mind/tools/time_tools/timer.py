@@ -1,8 +1,8 @@
 import time
 import threading
-from .base_tool import TimeTool, Event
-from utils.time_conversions import format_seconds_to_hms
-from utils.logging_handler import setup_logger
+from mind.tools.time_tools.base_tool import TimeTool, Event
+from mind.utils.time_conversions import format_seconds_to_hms
+from mind.utils.logging_handler import setup_logger
 
 logger = setup_logger(__name__)
 

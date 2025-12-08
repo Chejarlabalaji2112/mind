@@ -1,7 +1,7 @@
 # adapters/llm_adapter.py
 import json
-from ports.decision_making import DecisionMaker
-from core.tool_registry import ToolRegistry
+from mind.ports.decision_making import DecisionMaker
+# from mind.core.tool_registry import ToolRegistry
 import openai  # or any other LLM provider
 
 class LLMAdapter(DecisionMaker):
