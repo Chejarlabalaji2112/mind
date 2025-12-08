@@ -3,7 +3,7 @@ import time
 from abc import ABC, abstractmethod
 import asyncio
 import inspect
-from utils.logging_handler import setup_logger
+from mind.utils.logging_handler import setup_logger
 
 logger = setup_logger(__name__)
 

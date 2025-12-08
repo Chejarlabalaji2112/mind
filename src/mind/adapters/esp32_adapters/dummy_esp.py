@@ -1,7 +1,7 @@
 import asyncio
 import json
-from ports.act_port import Presenter
-from ports.percieve_port import Audition
+from mind.ports.act_port import Presenter
+from mind.ports.percieve_port import Audition
 import logging
 
 # ------------------------------

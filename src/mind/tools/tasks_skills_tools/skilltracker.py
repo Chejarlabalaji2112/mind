@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime
-from utils import custom_exception as ce
-from utils.logging_handler import setup_logger
+from mind.utils import custom_exception as ce
+from mind.utils.logging_handler import setup_logger
 
 # TODO commits are there for each method we might need to think of those.
 class SkillTracker:

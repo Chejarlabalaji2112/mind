@@ -1,7 +1,7 @@
 #wheatheradapter.py
 import requests
 from mind.tools.weather_tools.port import WeatherServicePort
-from core import WeatherData
+from mind.tools.weather_tools.core import WeatherData
 
 class OpenMeteoAdapter(WeatherServicePort):
     def __init__(self):

@@ -1,6 +1,6 @@
 import datetime
 import pytz
-from utils.logging_handler import setup_logger
+from mind.utils.logging_handler import setup_logger
 
 logger = setup_logger(__name__)
 

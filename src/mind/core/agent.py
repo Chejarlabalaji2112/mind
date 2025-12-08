@@ -1,7 +1,7 @@
 # core/agent.py
-from ports.decision_making import DecisionMaker
-from tools.tool_registry import ToolRegistry
-from utils.logging_handler import setup_logger
+from mind.ports.decision_making import DecisionMaker
+from mind.tools.tool_registry import ToolRegistry
+from mind.utils.logging_handler import setup_logger
 
 logger = setup_logger(__name__)
 

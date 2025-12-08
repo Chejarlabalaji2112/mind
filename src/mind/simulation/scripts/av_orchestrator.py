@@ -4,10 +4,11 @@ import time
 import av  # PyAV
 import numpy as np  # For dtype handling
 import cv2  # For fallback
-from .screen_updater import ScreenUpdater as MujocoScreen  # Optional MuJoCo import
-from .cv_display import CvDisplay  # Fallback import
-from adapters.audio_adapters import AudioManager
-from adapters.camera_adapers import CameraSource
+from mind.simulation.scripts.screen_updater import ScreenUpdater  # Optional MuJoCo import
+from mind.simulation.scripts.cv_display import CvDisplay  # Fallback import
+from mind.adapters.audio_adapters.sd_adapter import AudioManager
+from mind.adapters.camera_handler import CameraSource
+from mind.adapters.display_adapters import DisplayObj
 
 class AVOrchestrator:
     """
@@ -16,9 +17,10 @@ class AVOrchestrator:
     - Video: Uses provided display (MuJoCo texture or OpenCV window).
     - Sync: Video follows audio clock.
     """
-    def __init__(self, display_obj=None, audio_ref: AudioManager = None):
+    def __init__(self, display_obj: DisplayObj = None, audio_ref: AudioManager = None):
         self.audio = audio_ref or AudioManager(rate=44100, channels=2)
-        self.display = display_obj  # Generic: Must have put_frame() and update()
+        self.display = display_obj  # Generic: Must have show() and update()
+        self.no_video_playing = True
         
         # Auto-setup display if none provided
         if display_obj is None:
@@ -26,7 +28,7 @@ class AVOrchestrator:
                 # Try MuJoCo context (import optional)
                 import mujoco
                 model = mujoco.MjModel.from_xml_path("default.xml")  # Placeholder; user provides in combined.py
-                self.display = MujocoScreen(model, "display_top")
+                self.display = ScreenUpdater(model, "display_top")
                 print("Using MuJoCo texture display.")
             except (ImportError, FileNotFoundError, ValueError):
                 self.display = CvDisplay("AV Playback")
@@ -41,6 +43,7 @@ class AVOrchestrator:
         self.running = True
         self.thread = threading.Thread(target=self._decoding_loop, args=(file_path, audio_track_index))
         self.thread.start()
+        self.no_video_playing = False
 
     def play_camera(self, device_index=0):
         """Camera passthrough (video-only)."""
@@ -67,7 +70,7 @@ class AVOrchestrator:
             start = time.time()
             frame = cam.get_frame()
             if frame is not None:
-                self.display.put_frame(frame)
+                self.display.show(frame)
             elapsed = time.time() - start
             if elapsed < delay:
                 time.sleep(delay - elapsed)
@@ -115,6 +118,7 @@ class AVOrchestrator:
         if has_video:
             print("Video playback enabled.")
         else:
+            self.no_video_playing = True
             print("Audio-only playback (no display updates).")
 
         start_time = time.time()
@@ -153,16 +157,17 @@ class AVOrchestrator:
                         if pts > current_audio_time:
                             time.sleep(pts - current_audio_time)
                             img = frame.to_ndarray(format='bgr24')
-                            self.display.put_frame(img)
+                            self.display.show(img)
                         else:
                             lag = current_audio_time - pts
                             if lag < 0.05:
                                 img = frame.to_ndarray(format='bgr24')
-                                self.display.put_frame(img)
+                                self.display.show(img)
         except Exception as e:
             print(f"Playback error: {e}")
         finally:
             container.close()
+            self.no_video_playing = True
             if has_audio:
                 self.audio.close()
             print("Playback finished.")

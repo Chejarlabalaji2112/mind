@@ -1,5 +1,5 @@
-from ports.act_port import Presenter
-from ports.percieve_port import Audition
+from mind.ports.act_port import Presenter
+from mind.ports.percieve_port import Audition
 
 
 
@@ -18,7 +18,7 @@ import websockets
 import json
 import socket
 import time
-from utils.logging_handler import setup_logger
+from mind.utils.logging_handler import setup_logger
 
 connection_logger = setup_logger("connection")
 sender_logger = setup_logger("sender", console=False)

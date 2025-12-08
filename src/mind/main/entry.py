@@ -1,13 +1,13 @@
 # core/loop.py
 import asyncio
 import dotenv
-from adapters.esp32_adapters import Connection, Sender, Listener, esp_output_tuner
+from mind.adapters.esp32_adapters import Connection, Sender, Listener, esp_output_tuner
 # from adapters.dummy_esp import Connection, Sender, Listener, esp_output_tuner
-from tools.tool_registry import ToolRegistry
-from core.agent import Agent
+from mind.tools.tool_registry import ToolRegistry
+from mind.core.agent import Agent
 # from adapters.llm_gemini_adapter import GeminiLLMAdapter 
-from adapters.llm_adapters.llm_smollm2_adapter import Smollm2Adapter 
-from utils.logging_handler import setup_logger
+from mind.adapters.llm_adapters.llm_smollm2_adapter import Smollm2Adapter 
+from mind.utils.logging_handler import setup_logger
 
 logger = setup_logger(__name__)
 dotenv.load_dotenv()
