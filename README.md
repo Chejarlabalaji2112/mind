@@ -1,5 +1,4 @@
-[Under development.]
-usable code is in the branches rule-based and llm_agent
+A simultation available 
 # 🤖 Personalized Companion Robot — HITOMI Architecture
 
 > _Adaptive Interaction · Emotional Understanding · Causal Intelligence_
