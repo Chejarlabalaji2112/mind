@@ -8,6 +8,8 @@ import queue
 from enum import Enum, auto
 from mind.utils.logging_handler import setup_logger
 
+from mind.core.base_agent import BaseAgent
+
 # Adapters and Utils
 from mind.simulation.scripts.screen_updater import ScreenUpdater
 from mind.simulation.scripts.av_orchestrator import AVOrchestrator
@@ -35,7 +37,7 @@ class RobotCommand(Enum):
     TIMER = auto()
 
 
-class MujocoBackend:
+class MujocoAgent(BaseAgent()):
     def __init__(self, scene_path=XML_PATH):
         # 1. MuJoCo Model Setup
         self.model = mujoco.MjModel.from_xml_path(scene_path)
@@ -178,7 +180,7 @@ class MujocoBackend:
 
     def stop(self):
         """Signals the loop to exit."""
-        self._stop_event.set()
+        self._stop_event.set() #when called stop shutdown should happen. rather than shut_down being a sperate one when shut down complete then event will be set.
 
     def wait_until_ready(self, timeout=None):
         """Blocks caller until the viewer is actually running."""
@@ -189,6 +191,12 @@ class MujocoBackend:
     # -----------------------------------------------------
     def wake_up(self, duration=4.0):
         self._command_queue.put((RobotCommand.WAKE_UP, {"duration": duration}))
+
+    def sleep(self):
+        pass #implemented to avoid that ABC error.
+
+    def status(self):
+        pass # to avoid error.
 
     def shut_down_animation(self, duration=5.0):
         self._command_queue.put((RobotCommand.SHUT_DOWN, {"duration": duration}))

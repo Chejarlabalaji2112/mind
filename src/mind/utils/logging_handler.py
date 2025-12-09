@@ -1,21 +1,19 @@
 import logging
 import os
 from typing import Optional
-
+from mind.utils import BASE_DIR
 
 def setup_logger(
     name: str,
-    log_file: str = "logs/app.log",
+    log_file: str = "app.log",
     level: int = logging.DEBUG,
     console: bool = True,
     handler_level: Optional[int] = None,
 ) -> logging.Logger:
     """Configure and return a module-level logger."""
-    full_log_file_path = os.path.abspath(log_file)
-    log_dir = os.path.dirname(full_log_file_path)
-    if log_dir:
-        print(log_dir)
-        os.makedirs(log_dir, exist_ok=True)
+    log_dir = os.path.join(BASE_DIR, "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    full_log_file_path = os.path.join(log_dir, log_file)
 
     logger = logging.getLogger(name)
     logger.setLevel(level)
