@@ -1,25 +1,20 @@
-import mujoco
-import mujoco.viewer
-import time
-import numpy as np
 import os
-import threading
+import time
 import queue
+import mujoco
+import threading
+import numpy as np
+import mujoco.viewer
 from enum import Enum, auto
-from mind.utils.logging_handler import setup_logger
-
-from mind.core.base_agent import BaseAgent
-
-# Adapters and Utils
-from mind.simulation.scripts.screen_updater import ScreenUpdater
-from mind.simulation.scripts.av_orchestrator import AVOrchestrator
-from mind.adapters.audio_adapters.sd_adapter import AudioManager
-from mind.adapters.camera_handler import CameraSource
-from mind.simulation.scripts.motion_controller import MotionController
-from mind.utils.robo_eyes import RoboEyes, HAPPY
-
-#constants
 from mind.utils import SIMULATION_DIR
+from mind.utils.robo_eyes import RoboEyes, HAPPY
+from mind.utils.logging_handler import setup_logger
+from mind.adapters.camera_handler import CameraSource
+from mind.adapters.audio_adapters.sd_adapter import AudioManager
+from mind.simulation.scripts.screen_updater import ScreenUpdater        # Adapters and Utils
+from mind.simulation.scripts.av_orchestrator import AVOrchestrator
+from mind.ports.base_robot_controller_port import BaseRobotController
+from mind.simulation.scripts.motion_controller import MotionController
 
 
 # Paths (Keep these configurable or constants)
@@ -37,7 +32,7 @@ class RobotCommand(Enum):
     TIMER = auto()
 
 
-class MujocoAgent(BaseAgent()):
+class MujocoRobot(BaseRobotController):
     def __init__(self, scene_path=XML_PATH):
         # 1. MuJoCo Model Setup
         self.model = mujoco.MjModel.from_xml_path(scene_path)

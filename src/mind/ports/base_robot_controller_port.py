@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 
-class BaseAgent(ABC):
+class BaseRobotController(ABC):
 
     @abstractmethod
-    def wakeup():
+    def wake_up():
         pass
 
     @abstractmethod

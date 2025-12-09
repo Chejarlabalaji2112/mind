@@ -1,16 +1,28 @@
-import argparse
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+import os
+import time
 import uvicorn
+import argparse
+import threading
+from fastapi import FastAPI
+from mind.utils import BASE_DIR             #constants
 from dataclasses import dataclass
+from mind.core.agent import Agent
+from fastapi.responses import FileResponse
+from contextlib import asynccontextmanager
+from fastapi.staticfiles import StaticFiles
+from mind.utils.logging_handler import setup_logger
+from mind.adapters.robot_controller_adapters.mujoco_robot_adapter import MujocoRobot
 
-#constants
-from mind.utils import BASE_DIR
+
+
+logger = setup_logger(__name__)
+
+llm = None
 
 @dataclass
 class Args:
     """Arguments for configuring the root entry."""
-    sim: bool = True
+    sim: bool = False
     scene:str = "empty"
 
     wake_up_on_start: bool = False
@@ -21,11 +33,51 @@ class Args:
     localhost_only: bool = False
 
 def create_app(args: Args) -> FastAPI:
-    app = FastAPI()
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        robot_controller = None
+        try:
+            if args.sim:
+                robot_controller = MujocoRobot()
+                app.state.robot_controller = robot_controller
+                agent = Agent(llm, robot_controller)
+                app.state.agent = agent
+                sim_thread = threading.Thread(target=robot_controller.run, daemon=True, name="Mujocorobot_loop")
+                app.state.sim_thread = sim_thread
+                logger.info("created the sim robot thread and not started the thread yet.")
+                sim_thread.start()
+                logger.info("started the thread and waiting for viewer..")
+
+                if robot_controller.wait_until_ready(timeout=10):
+                    logger.info("Viewer is ready now ")
+                else:
+                    logger.warning("Timed out waiting for viewer") #should I use warning or error here.
+
+            yield
+
+        finally:
+            if robot_controller:
+                try:
+                    logger.info("Shutting down robot_controller...")
+                    robot_controller.stop()
+
+                except Exception as e:
+                    logger.error(f"Error closing app: {e}")
+
+
+
+
+    app = FastAPI(lifespan=lifespan)
+    app.mount("/static", StaticFiles(directory=f"{BASE_DIR}/adapters/fastapi_adapters/static"), name="static")
+
 
     @app.get("/")
     def read_index():
         return FileResponse(f"{BASE_DIR}/adapters/fastapi_adapters/static/index.html")
+    
+    @app.get("/favicon.ico")
+    def favicon():
+        return FileResponse(os.path.join(BASE_DIR, "adapters/fastapi_adapters/static/favicon.ico")) #use os for joining or fstrings
 
     return app
     
@@ -33,8 +85,14 @@ def create_app(args: Args) -> FastAPI:
 def run_app(args: Args) -> None:
     """Run the FastAPI app with Uvicorn."""
     app    = create_app(args)
-    config = uvicorn.config(app, host=args.fastapi_host, port=args.fastapi_port)
-    server = uvicorn.serve(config)
+    # config = uvicorn.config(app, host=args.fastapi_host, port=args.fastapi_port)
+    # server = uvicorn.serve(config)
+    try:
+        uvicorn.run(app,host=args.fastapi_host, port=args.fastapi_port)
+    except Exception as e:
+        logger.error(f"error in run_app:{e}")
+
+
     
 def main() -> None:
     """Run the FastAPI app with Uvicorn"""
@@ -75,10 +133,6 @@ def main() -> None:
     args = parser.parse_args()
 
     run_app(Args(**vars(args)))
-
-
-
-
 
 
 

@@ -1,5 +1,5 @@
 
-from mind.simulation.scripts.mind_engine import MujocoAgent 
+from mind.simulation.scripts.mind_engine import MujocoRobot 
 
 BOOT_VIDEO_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/videos/pupil_boot.mp4"
 import threading
@@ -11,7 +11,7 @@ logger = setup_logger(__name__)
 def main():
 
     # 1. Initialize the backend
-    bot = MujocoAgent()
+    bot = MujocoRobot()
 
  
     # 2. Create the thread explicitly in MAIN

@@ -1,32 +1,29 @@
 # core/agent.py
-from mind.ports.decision_making import DecisionMaker
+from mind.ports.decision_making_port import DecisionMaker
 from mind.ports.act_port import Manipulator
 from mind.utils.logging_handler import setup_logger
-from mind.core.base_agent import BaseAgent
+from mind.ports.base_robot_controller_port import BaseRobotController
 
 logger = setup_logger(__name__)
 
-class Agent(BaseAgent):
+class Agent():
     """Orchestrates tools using a DecisionMaker (LLM or other)."""
 
-    def __init__(self, decision_maker: DecisionMaker, agent: BaseAgent ):
+    def __init__(self, decision_maker: DecisionMaker, robot_controller: BaseRobotController ):
         self.decision_maker = decision_maker
-        self._agent = agent
+        self.robot_controller = robot_controller
 
     def wake_up(self):
-        self._agent.wakeup()
+        self.robot_controller.wakeup()
 
     def sleep(self):
-        self._agent.sleep()
+        self.robot_controller.sleep()
 
     def status(self):
-        self._agent.status()
-
-    def run(self):
-        self._agent.run()
+        self.robot_controller.status()
 
     def stop(self):
-        self._agent.stop()
+        self.robot_controller.stop()
 
     def handle_input(self, user_input: str):
         """

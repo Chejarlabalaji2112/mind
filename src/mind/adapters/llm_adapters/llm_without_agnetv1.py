@@ -2,7 +2,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 import dotenv
 dotenv.load_dotenv()
 # Custom/Local Imports
-from mind.ports.decision_making import DecisionMaker
+from mind.ports.decision_making_port import DecisionMaker
 
 
 class GeminiLLMAdapter(DecisionMaker):

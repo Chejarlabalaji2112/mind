@@ -2,8 +2,8 @@ from langchain_ollama import ChatOllama
 from langchain.memory import ConversationBufferMemory
 from langchain.agents import initialize_agent, AgentType
 from langchain.tools import StructuredTool,Tool
-from ports.decision_making import DecisionMaker
-from tools.tool_registry import ToolRegistry
+from mind.ports.decision_making_port import DecisionMaker
+from mind.tools.tool_registry import ToolRegistry
 from langchain.prompts import MessagesPlaceholder
 
 
