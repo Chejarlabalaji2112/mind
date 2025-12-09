@@ -3,6 +3,9 @@ import mujoco.viewer
 import numpy as np
 import time
 from PIL import Image  # For robust PNG loading (handles alpha, transparency); install with pip if needed
+from mind.utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 
 # The full XML from your model (paste it here as a string)
 xml_string = """
@@ -83,7 +86,10 @@ if texid < model.ntex - 1:
 else:
     tex_size = model.ntexdata - model.tex_adr[texid]
 channels = tex_size // (width * height)
-print(f"Texture '{texname.decode()}': {width}x{height}, {channels} channels (RGB/RGBA)")
+logger.info(
+    "Texture details",
+    extra={"name": texname.decode(), "width": width, "height": height, "channels": channels},
+)
 
 def update_texture_from_image(model, texid, png_path):
     """
@@ -122,21 +128,21 @@ def update_texture_from_image(model, texid, png_path):
         else:
             rgb_array = img_array
         data = rgb_array.ravel()
-        print(f"Converted {c}-channel PNG to 3-channel RGB for texture {texid}")
+        logger.debug("Converted PNG to RGB for texture", extra={"channels": c, "texture_id": texid})
     elif tex_channels == 4:  # RGBA texture: Add alpha=255 if missing
         if c == 3:
             rgba_array = np.dstack([img_array, np.full((h, w, 1), 255, dtype=np.uint8)])
         else:
             rgba_array = img_array
         data = rgba_array.ravel()
-        print(f"Converted {c}-channel PNG to 4-channel RGBA for texture {texid}")
+        logger.debug("Converted PNG to RGBA for texture", extra={"channels": c, "texture_id": texid})
     else:
         raise ValueError(f"Unsupported texture channels: {tex_channels}")
     
     # Update the buffer
     offset = model.tex_adr[texid]
     model.tex_data[offset:offset + tex_size] = data
-    print(f"Updated texture {texid} from {png_path}")
+    logger.info("Updated texture from image", extra={"texture_id": texid, "path": png_path})
 
 # Example video playback: List your PNG paths here (must be 512x512)
 image_paths = ['images/image1.png', 'images/image2.png', 'images/image3.png']  # Replace with your sequence
@@ -166,4 +172,4 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         viewer.sync()
         time.sleep(0.001)
 
-print("Viewer closed.")
+logger.info("Viewer closed")

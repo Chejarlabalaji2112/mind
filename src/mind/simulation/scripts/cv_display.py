@@ -3,6 +3,9 @@ import cv2
 import threading
 import time
 import numpy as np
+from mind.utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 #TODO:may be we need to put this outside of simulation
 class CvDisplay:
     """
@@ -47,8 +50,7 @@ class CvDisplay:
             frame_to_show = self._pending_frame.copy()
             self._pending_frame = None
 
-        print("DEBUG type:", type(frame_to_show))
-        print("DEBUG shape:", getattr(frame_to_show, "shape", None))
+        logger.debug("Display frame", extra={"type": str(type(frame_to_show)), "shape": getattr(frame_to_show, "shape", None)})
 
         cv2.imshow(self.window_name, frame_to_show)
         if cv2.waitKey(1) & 0xFF == ord('q'):

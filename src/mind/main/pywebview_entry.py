@@ -59,13 +59,13 @@ class AdapterAPI:
 
     def _sync_pomodoro_phase(self, previous_phase, current_cycle, **kwargs):
         # Optional: Send a notification or sound here
-        print(f"Phase {previous_phase} ended!")
+        logger.info("Pomodoro phase ended", extra={"previous_phase": previous_phase, "cycle": current_cycle})
 
     # --- RECEIVER (JS -> Python) ---
     def receive_from_ui(self, data):
         command = data.get('command')
         payload = data.get('payload', {})
-        print(f"Command: {command} | Payload: {payload}")
+        logger.debug("Received command from UI", extra={"command": command, "payload": payload})
 
         # --- ROUTER ---
         
@@ -114,7 +114,7 @@ def start_app():
     html_path = '/home/badri/mine/hitomi/mind/adapters/pywebview_adapters/assets/index.html' #TODO: need a better way to manage paths   
 
     if not os.path.exists(html_path):
-        print(f"Error: Could not find {html_path}")
+        logger.error("UI HTML not found", extra={"path": html_path})
         return
 
     window = webview.create_window(

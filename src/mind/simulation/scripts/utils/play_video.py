@@ -4,6 +4,9 @@ import numpy as np
 import time
 import cv2
 from PIL import Image  # For robust PNG loading (handles alpha, transparency
+from mind.utils.logging_handler import setup_logger
+
+logger = setup_logger(__name__)
 # Load the model from XML string
 model = mujoco.MjModel.from_xml_path("/home/badri/mine/hitomi/mind/simulation/description/scene.xml")
 data = mujoco.MjData(model)
@@ -23,7 +26,7 @@ if texid < model.ntex - 1:
 else:
     tex_size = model.ntexdata - model.tex_adr[texid]
 channels = tex_size // (width * height)
-print(f"Texture: {width}×{height}, {channels} channels")
+logger.info("Texture details", extra={"width": width, "height": height, "channels": channels})
 
 # ==================== VIDEO READER ====================
 VIDEO_PATH = "/home/badri/mine/hitomi/mind/simulation/videos/shin.mp4"          # ← CHANGE THIS
@@ -58,7 +61,7 @@ def set_frame_texture(frame_bgr):
 sim_timestep = model.opt.timestep
 steps_per_video_frame = int(frame_delay / sim_timestep)
 
-print(f"Syncing: Running {steps_per_video_frame} physics steps per video frame.")
+logger.info("Syncing video playback", extra={"steps_per_video_frame": steps_per_video_frame})
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
     start_time = time.time()
@@ -91,7 +94,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             time.sleep(sleep_time)
 
 cap.release()
-print("Done")
+logger.info("Video playback loop finished")
 
 
 import cv2
@@ -133,7 +136,7 @@ class UniversalScreen:
                 self.is_video = True
                 self.fps = self.cap.get(cv2.CAP_PROP_FPS) or 30.0
                 self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0) # Reset to start
-                print(f"Loaded VIDEO: {file_path} ({self.fps} FPS)")
+                logger.info("Loaded video file", extra={"file_path": file_path, "fps": self.fps})
                 return
         
         # If not a video (or read failed), treat as Image
@@ -141,7 +144,7 @@ class UniversalScreen:
         self.image_frame = cv2.imread(file_path)
         if self.image_frame is None:
             raise ValueError(f"Could not load file as image or video: {file_path}")
-        print(f"Loaded IMAGE: {file_path}")
+        logger.info("Loaded image file", extra={"file_path": file_path})
         
         # Pre-process image immediately
         self.image_frame = self._process_frame(self.image_frame)

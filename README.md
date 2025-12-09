@@ -1,5 +1,4 @@
-[Under development.]
-usable code is in the branches rule-based and llm_agent
+A simultation available 
 # 🤖 Personalized Companion Robot — HITOMI Architecture
 
 > _Adaptive Interaction · Emotional Understanding · Causal Intelligence_
@@ -14,7 +13,7 @@ The architecture follows a **Ports & Adapters** (Hexagonal) model — ensuring m
 ---
 
 ## 🧩 System Architecture
-![Hitomi Architecture](./src/mind/assets/architecture.png)
+![Hitomi Architecture](./src/mind/assets/images/architecture.png)
 Above image is a base architecture. New sub-agents will be added.
 
 ### 🔸 Core Concept

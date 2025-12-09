@@ -4,6 +4,7 @@ import math
 import queue
 import time
 import numpy as np
+from mind.utils.logging_handler import setup_logger
 
 # --- Kivy Imports ---
 from kivy.app import App
@@ -20,9 +21,12 @@ try:
     import sounddevice as sd
     from scipy.signal import fftconvolve
 except ImportError:
-    print("ERROR: Missing dependencies.")
-    print("Please run: pip install sounddevice numpy scipy")
+    logger = setup_logger(__name__)
+    logger.error("Missing dependencies.")
+    logger.info("Please run: pip install sounddevice numpy scipy")
     sys.exit(1)
+
+logger = setup_logger(__name__)
 
 # ==========================================
 # PART 1: AUDIO MATH HELPER FUNCTIONS
@@ -446,7 +450,7 @@ class AudioThread(threading.Thread):
 
     def audio_callback(self, indata, frames, time_info, status):
         if status:
-            print(f"Audio Status: {status}")
+            logger.warning("Audio status", extra={"status": str(status)})
         if indata.shape[1] < 2:
             return
         try:
@@ -455,7 +459,7 @@ class AudioThread(threading.Thread):
             pass
 
     def run(self):
-        print("--- Audio Thread Started ---")
+        logger.info("Audio thread started")
         
         # Audio Settings
         samplerate = 48000
@@ -508,12 +512,15 @@ class AudioThread(threading.Thread):
                     # 6. Update UI (Thread-safe)
                     if new_dir != self.current_dir:
                         self.current_dir = new_dir
-                        print(f"Sound Direction: {smooth_angle:.1f}° -> Looking {new_dir.name}")
+                            logger.info(
+                                "Sound direction detected",
+                                extra={"angle": round(smooth_angle, 1), "direction": new_dir.name},
+                            )
                         # Schedule the visual update on the main Kivy thread
                         Clock.schedule_once(lambda dt: self.eyes.set_pos(self.current_dir))
 
         except Exception as e:
-            print(f"Audio Error: {e}")
+            logger.error("Audio error", exc_info=e)
 
     def stop(self):
         self.running = False
