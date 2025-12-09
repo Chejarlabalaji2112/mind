@@ -15,9 +15,13 @@ from mind.adapters.camera_handler import CameraSource
 from mind.simulation.scripts.motion_controller import MotionController
 from mind.utils.robo_eyes import RoboEyes, HAPPY
 
+#constants
+from mind.utils import SIMULATION_DIR
+
+
 # Paths (Keep these configurable or constants)
-XML_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/description/scene.xml"
-CLOSE_AUDIO_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/audio/shutdown.mp3"
+XML_PATH = f"{SIMULATION_DIR}/description/scene.xml"
+CLOSE_AUDIO_PATH = f"{SIMULATION_DIR}/media/audio/shutdown.mp3"
 
 class RobotCommand(Enum):
     WAKE_UP = auto()

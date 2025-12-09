@@ -1,1 +1,5 @@
-ASSETS_ROOT_PATH = "/home/badri/mine/hitomi/mind/src/mind/assets"
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+SIMULATION_DIR = BASE_DIR / "simulation" 
