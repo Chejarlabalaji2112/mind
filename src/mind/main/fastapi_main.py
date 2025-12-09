@@ -3,16 +3,17 @@ import time
 import uvicorn
 import argparse
 import threading
-from fastapi import FastAPI
 from mind.utils import BASE_DIR             #constants
 from dataclasses import dataclass
 from mind.core.agent import Agent
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from mind.utils.logging_handler import setup_logger
+from mind.adapters.llm_adapters.llm_without_agnetv1 import OllamaAdapter
 from mind.adapters.robot_controller_adapters.mujoco_robot_adapter import MujocoRobot
-
 
 
 logger = setup_logger(__name__)
@@ -68,12 +69,12 @@ def create_app(args: Args) -> FastAPI:
 
 
     app = FastAPI(lifespan=lifespan)
-    app.mount("/static", StaticFiles(directory=f"{BASE_DIR}/adapters/fastapi_adapters/static"), name="static")
-
+    app.mount("/static", StaticFiles(directory = os.path.join(BASE_DIR, "adapters/fastapi_adapters/static")), name="static")
+    templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "adapters/fastapi_adapters/templates"))
 
     @app.get("/")
-    def read_index():
-        return FileResponse(f"{BASE_DIR}/adapters/fastapi_adapters/static/index.html")
+    def root(request: Request):
+        return templates.TemplateResponse("index.html", {"request": request})
     
     @app.get("/favicon.ico")
     def favicon():

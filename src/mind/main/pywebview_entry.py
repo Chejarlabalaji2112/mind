@@ -1,12 +1,11 @@
-import mujoco
-from mind.utils.logging_handler import setup_logger
+import os
+import sys
+import time
+import json
 import webview
 import threading
-import time
-import os
-import json
-import sys
 from mind.tools import Stopwatch, Pomodoro, Timer
+from mind.utils.logging_handler import setup_logger
 from mind.adapters.llm_adapters.llm_without_agnetv1 import GeminiLLMAdapter
 
 logger = setup_logger(__name__)
