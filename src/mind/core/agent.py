@@ -14,7 +14,7 @@ class Agent():
         self.robot_controller = robot_controller
 
     def wake_up(self):
-        self.robot_controller.wakeup()
+        self.robot_controller.wake_up()
 
     def sleep(self):
         self.robot_controller.sleep()

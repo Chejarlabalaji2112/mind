@@ -192,3 +192,44 @@ header .btn-icon[tooltip]::after { bottom: auto; top: 125%; }
 .doubt-input-row { padding: 15px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
 .doubt-input-row input { flex-grow: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 6px; outline: none; }
 .doubt-input-row input:focus { border-color: var(--primary); }
+
+/* --- STATUS INDICATOR --- */
+.status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background-color: #333; /* Default/Off */
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+.status-active {
+    background-color: #00ff41; /* Green */
+    box-shadow: 0 0 15px #00ff41;
+}
+
+.status-sleep {
+    background-color: #ff9d00; /* Orange */
+    box-shadow: 0 0 15px #ff9d00;
+}
+
+.status-shutdown {
+    background-color: #ff0000; /* Red */
+    box-shadow: 0 0 5px #ff0000;
+}
+
+/* Pulse for sleep/shutdown */
+@keyframes statusPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.status-sleep,
+.status-shutdown {
+    animation: statusPulse 2s infinite ease-in-out;
+}
+
+/* Power Menu */
+.power-menu {
+    position: absolute; right: 0; top: 100%; background: var(--surface); border: 1px solid var(--primary); border-radius: 8px; padding: 5px 0; z-index: 101;
+}
+.power-menu button { display: block; width: 100%; padding: 10px; border: none; background: transparent; color: var(--text); text-align: left; cursor: pointer; }
+.power-menu button:hover { background: var(--primary-glow); color: #000; }
+.power-menu.hidden { display: none; }

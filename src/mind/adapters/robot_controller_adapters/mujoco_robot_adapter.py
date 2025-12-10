@@ -20,12 +20,19 @@ from mind.simulation.scripts.motion_controller import MotionController
 # Paths (Keep these configurable or constants)
 XML_PATH = f"{SIMULATION_DIR}/description/scene.xml"
 CLOSE_AUDIO_PATH = f"{SIMULATION_DIR}/media/audio/shutdown.mp3"
+SLEEP_AUDIO_PATH = f"{SIMULATION_DIR}/media/audio/sleep.mp3"  # Add if available
 
 logger = setup_logger(__name__)
+
+class RobotStatus(Enum):  # Mirror backend enum
+    SHUTDOWN = "shutdown"
+    SLEEP = "sleep"
+    ACTIVE = "active"
 
 class RobotCommand(Enum):
     WAKE_UP = auto()
     SHUT_DOWN = auto()
+    SLEEP = auto()  # New
     PLAY_VIDEO = auto()
     SET_EYES = auto()
     UPDATE_SCREEN = auto()
@@ -57,14 +64,14 @@ class MujocoRobot(BaseRobotController):
         # 3. Control Flags
         self._command_queue = queue.Queue()
         self._stop_event = threading.Event()
-        self._is_ready_event = threading.Event() # Changed to an Event for thread safety
+        self._is_ready_event = threading.Event()
+
+        # New: Status Tracking (thread-safe)
+        self._status_lock = threading.Lock()
+        self._current_status = RobotStatus.SHUTDOWN  # Start shutdown
 
         self.model.opt.timestep = 0.002
-
         self.show_clock = True
-
-
-
 
     # -----------------------------------------------------
     # LIFECYCLE API
@@ -155,31 +162,22 @@ class MujocoRobot(BaseRobotController):
                 time_to_sleep = self.model.opt.timestep - process_time
                 if time_to_sleep > 0:
                     time.sleep(time_to_sleep)
-                    
 
                 # ------------------------------------
-                # 5. FPS Calculation
-                # # ------------------------------------
-                # loop_end = time.perf_counter()
-                # dt = loop_end - step_start
-                # loop_times.append(dt)
-                # if len(loop_times) > 100:
-                #     loop_times.pop(0)
-
-                # avg_dt = sum(loop_times) / len(loop_times)
-                # loop_hz = 1.0 / avg_dt
-                # if len(loop_times) % 50 == 0:
-                #     logger.debug("Loop frequency: %.2f Hz", loop_hz)
+                # 5. FPS Calculation (commented)
+                # ------------------------------------
 
             self._cleanup()
 
     def stop(self):
         """Signals the loop to exit."""
-        self._stop_event.set() #when called stop shutdown should happen. rather than shut_down being a sperate one when shut down complete then event will be set.
+        self.shut_down_animation()
+        self._stop_event.set()  # When called, shutdown should happen; rather than shut_down being separate, when shut down complete then event will be set.
+        self.set_status(RobotStatus.SHUTDOWN)  # Ensure final state
 
     def wait_until_ready(self, timeout=None):
         """Blocks caller until the viewer is actually running."""
-        return self._is_ready_event.wait(timeout)
+        return self._is_ready_event.wait()
 
     # -----------------------------------------------------
     # COMMAND API (Thread-Safe)
@@ -187,11 +185,12 @@ class MujocoRobot(BaseRobotController):
     def wake_up(self, duration=4.0):
         self._command_queue.put((RobotCommand.WAKE_UP, {"duration": duration}))
 
-    def sleep(self):
-        pass #implemented to avoid that ABC error.
+    def sleep(self, duration=3.0):  # New impl
+        self._command_queue.put((RobotCommand.SLEEP, {"duration": duration}))
 
     def status(self):
-        pass # to avoid error.
+        with self._status_lock:
+            return self._current_status.value  # Return string for backend compat
 
     def shut_down_animation(self, duration=5.0):
         self._command_queue.put((RobotCommand.SHUT_DOWN, {"duration": duration}))
@@ -205,50 +204,79 @@ class MujocoRobot(BaseRobotController):
     def show_text_bottom(self, text):
         self._command_queue.put((RobotCommand.UPDATE_SCREEN, {"text": text}))
 
+    # New: Get current status (for polling if needed)
+    def get_status(self):
+        return self.status()
+
+    # Internal: Set status (thread-safe)
+    def set_status(self, status: RobotStatus):
+        with self._status_lock:
+            self._current_status = status
+
     # -----------------------------------------------------
     # INTERNAL HELPERS
     # -----------------------------------------------------
     def _handle_command(self, cmd_type, payload, viewer):
-            """Internal command router"""
-            if cmd_type == RobotCommand.WAKE_UP:
-                qpos_open = self.model.key_qpos[self.open_id]
-                ctrl_open = self.model.key_ctrl[self.open_id]
-                self.motion.do_open(self.data, qpos_open, ctrl_open, payload['duration'])
-                
-            elif cmd_type == RobotCommand.SHUT_DOWN:
-                logger.info("Playing shutdown sequence")
-                self.player.stop()
+        """Internal command router"""
+        if cmd_type == RobotCommand.WAKE_UP:
+            self.set_status(RobotStatus.ACTIVE)  # Immediate update
+            qpos_open = self.model.key_qpos[self.open_id]
+            ctrl_open = self.model.key_ctrl[self.open_id]
+            self.motion.do_open(self.data, qpos_open, ctrl_open, payload['duration'])
+            # Timer for completion (optional: reset if interrupted)
+            
+        elif cmd_type == RobotCommand.SLEEP:  # New
+            self.set_status(RobotStatus.SLEEP)
+            logger.info("Entering sleep mode")
+            self.eyes.is_active = False  # Dim eyes
+            self.screen_top.show_text("Zzz...")
+            if os.path.exists(SLEEP_AUDIO_PATH):
+                self.player.play_file(SLEEP_AUDIO_PATH)
+            # Gentle close pose
+            self.motion.do_close(
+                self.data, 
+                self.model.key_qpos[self.home_id], 
+                self.model.key_ctrl[self.home_id], 
+                duration=payload['duration']
+            )
+
+        elif cmd_type == RobotCommand.SHUT_DOWN:
+            self.set_status(RobotStatus.SHUTDOWN)
+            logger.info("Playing shutdown sequence")
+            self.player.stop()
+            self.eyes.is_active = False
+            self.screen_top.show_text("Goodbye...")
+            if os.path.exists(CLOSE_AUDIO_PATH):
+                self.player.play_file(CLOSE_AUDIO_PATH)
+            
+            self.motion.do_close(
+                self.data, 
+                self.model.key_qpos[self.home_id], 
+                self.model.key_ctrl[self.home_id], 
+                duration=payload['duration']
+            )
+            # After duration, signal stop if needed (but stop() handles it)
+
+        elif cmd_type == RobotCommand.PLAY_VIDEO:
+            self.player.play_file(payload['path'])
+
+        elif cmd_type == RobotCommand.SET_EYES:
+            active = payload['active']
+            if active:
+                if not self.eyes.is_active:
+                    self.eyes.is_active = True
+                    self.eyes.begin()
+                    self.eyes.set_auto_blink(True)
+                    self.eyes.set_idle_mode(True)
+            else:
                 self.eyes.is_active = False
-                self.screen_top.show_text("Goodbye...")
-                if os.path.exists(CLOSE_AUDIO_PATH):
-                    self.player.play_file(CLOSE_AUDIO_PATH)
-                
-                self.motion.do_close(
-                    self.data, 
-                    self.model.key_qpos[self.home_id], 
-                    self.model.key_ctrl[self.home_id], 
-                    duration=payload['duration']
-                )
 
-            elif cmd_type == RobotCommand.PLAY_VIDEO:
-                self.player.play_file(payload['path'])
-
-            elif cmd_type == RobotCommand.SET_EYES:
-                active = payload['active']
-                if active:
-                    if not self.eyes.is_active:
-                        self.eyes.is_active = True
-                        self.eyes.begin()
-                        self.eyes.set_auto_blink(True)
-                        self.eyes.set_idle_mode(True)
-                else:
-                    self.eyes.is_active = False
-
-            elif cmd_type == RobotCommand.UPDATE_SCREEN:
-                self.screen_bottom.show_text(payload['text'])
+        elif cmd_type == RobotCommand.UPDATE_SCREEN:
+            self.screen_bottom.show_text(payload['text'])
 
     def _cleanup(self):
         logger.info("Cleaning up resources")
         self.player.stop()
         self.audio.close()
+        self.set_status(RobotStatus.SHUTDOWN)
         self._is_ready_event.clear()
