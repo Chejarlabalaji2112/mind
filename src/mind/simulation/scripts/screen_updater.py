@@ -4,6 +4,8 @@ import numpy as np
 import threading
 from mind.adapters.display_adapters import DisplayObj
 
+#TODO: implement clear screen.
+
 class ScreenUpdater(DisplayObj):
     def __init__(self, model, texture_name):
         self.model = model

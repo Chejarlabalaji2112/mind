@@ -1,5 +1,5 @@
 const app = {
-    state: { view: 'home', activeContext: null, autoHideEnabled: true, dockOpen: false, status: 'shutdown', ws: null },
+    state: { view: 'home', activeContext: null, autoHideEnabled: true, dockOpen: false, status: 'shutdown', ws: null, inDoubtMode: false },
     router: {
         navigate: (viewId) => {
             // Switch Views
@@ -21,19 +21,37 @@ const app = {
             console.log('WebSocket connected');
             // Request initial status if not received
         };
-        app.state.ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'chunk') {
+    app.state.ws.onmessage = (event) => {
+        let data;
+        try {
+            data = JSON.parse(event.data);
+        } catch (e) {
+            // Handle binary audio if needed
+            return;
+        }
+
+        if (data.type === 'chunk') {
+            if (app.state.inDoubtMode) {
+                // → We are inside the doubt modal → append here
+                const messagesDiv = document.getElementById('doubt-messages');
+                const lastBubble = messagesDiv.lastElementChild;
+                if (lastBubble && lastBubble.style.alignSelf === 'flex-start') {
+                    lastBubble.textContent += data.text;
+                }
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            } else {
+                // → Normal chat
                 app.chat.appendChunk(data.text);
-            } else if (data.type === 'status') {
-                app.power.updateStatus(data.data);
-            } else if (data.type === 'audio_response') {
-                // Placeholder: Play audio (e.g., new Audio(`data:audio/wav;base64,${data.data}`).play())
-                console.log('Audio response:', data.data);
-            } else if (data.type === 'error') {
-                console.error('Error:', data.data);
             }
-        };
+
+        } else if (data.type === 'status') {
+            app.power.updateStatus(data.data);
+        } else if (data.type === 'audio_response') {
+            console.log('Audio:', data.data);
+        } else if (data.type === 'error') {
+            console.error('Error:', data.data);
+        }
+    };
         app.state.ws.onerror = (error) => console.error('WS Error:', error);
         app.state.ws.onclose = () => {
             console.log('WS Closed; reconnecting in 3s...');
@@ -87,14 +105,30 @@ const app = {
         showMenu: () => {
             const menu = document.getElementById('power-menu');
             const status = app.state.status;
-            // Hide all buttons, show relevant
-            menu.querySelectorAll('button').forEach(btn => btn.style.display = 'none');
+            
+            // 1. Hide all buttons first
+            const btnOn = menu.querySelector('[onclick="app.power.powerOn()"]');
+            const btnOff = menu.querySelector('[onclick="app.power.shutdown()"]');
+            const btnSleep = menu.querySelector('[onclick="app.power.sleep()"]');
+            
+            [btnOn, btnOff, btnSleep].forEach(b => b.style.display = 'none');
+
+            // 2. Show buttons based on specific state
             if (status === 'shutdown') {
-                menu.querySelector('[onclick="app.power.powerOn()"]').style.display = 'block';
-            } else {
-                menu.querySelector('[onclick="app.power.shutdown()"]').style.display = 'block';
-                menu.querySelector('[onclick="app.power.sleep()"]').style.display = 'block';
+                btnOn.style.display = 'block';     // Show Power On
+                btnOn.innerText = "Power On";      // Ensure text is Power On
+            } 
+            else if (status === 'sleep') {
+                btnOn.style.display = 'block';     // Show Power On (as Wake Up)
+                btnOn.innerText = "Wake Up";       // Change text to Wake Up
+                btnOff.style.display = 'block';    // Show Shutdown
+            } 
+            else { 
+                // Status is 'active'
+                btnOff.style.display = 'block';    // Show Shutdown
+                btnSleep.style.display = 'block';  // Show Sleep
             }
+
             menu.classList.toggle('hidden');
         },
         updateStatus: (status) => {
@@ -158,17 +192,51 @@ const app = {
         },
         openDoubt: (ctx) => {
             app.state.activeContext = ctx;
-            document.getElementById('doubt-overlay').classList.add('active');
-            document.getElementById('doubt-messages').innerHTML = `<div style="font-size:0.8rem;color:#888;margin-bottom:10px;"><strong>Ctx:</strong> ${ctx}</div>`;
+            app.state.inDoubtMode = true;                    // ← Enable doubt mode
+            const overlay = document.getElementById('doubt-overlay');
+            overlay.classList.add('active');
+            
+            const messages = document.getElementById('doubt-messages');
+            messages.innerHTML = `
+                <div style="font-size:0.82rem; color:#888; margin-bottom:12px; line-height:1.4;">
+                    <strong>Context:</strong><br>${ctx}
+                </div>`;
+            
+            // Focus input
+            setTimeout(() => document.getElementById('doubt-input').focus(), 100);
         },
-        closeDoubt: () => document.getElementById('doubt-overlay').classList.remove('active'),
+
+        closeDoubt: () => {
+            app.state.inDoubtMode = false;                   // ← Disable doubt mode
+            document.getElementById('doubt-overlay').classList.remove('active');
+        },
+
         sendDoubt: () => {
             const input = document.getElementById('doubt-input');
             const text = input.value.trim();
             if (!text || !app.state.ws || app.state.ws.readyState !== WebSocket.OPEN) return;
-            app.state.ws.send(JSON.stringify({ type: 'text', data: text }));
+
+            const messagesDiv = document.getElementById('doubt-messages');
+
+            // Add user message
+            messagesDiv.innerHTML += `
+                <div style="align-self: flex-end; background: var(--chat-user-bg); padding: 9px 14px; border-radius: 16px; max-width: 80%; margin: 8px 0 8px auto; font-size:0.95rem;">
+                    ${text}</div>`;
+
+            // Send to LLM (you can keep context if you want, optional)
+            app.state.ws.send(JSON.stringify({
+                type: 'text',
+                data: text
+                // Optional: add context so LLM remembers → data: `[About this text] ${app.state.activeContext}\n\nQuestion: ${text}`
+            }));
+
+            // Create AI response bubble (will be filled by chunks)
+            const aiBubble = document.createElement('div');
+            aiBubble.style = 'align-self: flex-start; background: var(--surface); border: 1px solid var(--border); padding: 10px 14px; border-radius: 16px; max-width: 85%; margin: 8px 0; word-wrap: break-word;';
+            messagesDiv.appendChild(aiBubble);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
             input.value = '';
-            app.chat.closeDoubt();  // Close modal after send
         },
         clearChat: () => { document.getElementById('message-container').innerHTML = ''; }
     },
@@ -209,6 +277,9 @@ const app = {
         document.getElementById('mic-btn').onclick = app.mic.start;
         document.getElementById('chat-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') app.chat.sendUserMessage();
+        });
+        document.getElementById('doubt-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') app.chat.sendDoubt();
         });
         // Close menu on outside click
         document.addEventListener('click', (e) => {

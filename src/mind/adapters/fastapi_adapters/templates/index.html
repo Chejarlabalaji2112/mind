@@ -12,16 +12,19 @@
             <svg viewBox="0 0 24 24"><path d="M2 6h20v12H2z" fill="none" stroke="currentColor" stroke-width="2" /><path d="M6 10h6M6 14h4M14 10h4M14 14h2" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
         </button>
         <div class="clock-widget" id="clock">12:00</div>
+        
         <div class="actions" style="display:flex; align-items:center; gap:15px;">
-            <button class="btn-icon" id="power-button" tooltip="System Power">
-                <svg viewBox="0 0 24 24"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42c1.33 1.33 2.17 3.14 2.17 5.07 0 4.2-3.8 7.7-8.5 7.7S3 14.89 3 10.89c0-1.93.84-3.74 2.17-5.07L4.17 5.17C2.45 6.89 1.48 9.07 1.48 11.39 1.48 16.4 5.9 20.3 11 20.3s9.52-3.9 9.52-8.91c0-2.32-.97-4.5-2.7-6.22z" /></svg>
-            </button>
-            <div id="robot-status" class="status-dot status-shutdown" tooltip="System Status"></div>
-            <div class="power-menu hidden" id="power-menu">
-                <button onclick="app.power.powerOn()">Power On</button>
-                <button onclick="app.power.shutdown()">Shutdown</button>
-                <button onclick="app.power.sleep()">Sleep</button>
+            <div class="relative-wrapper">
+                <button class="btn-icon" id="power-button" tooltip="System Power">
+                    <svg viewBox="0 0 24 24"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42c1.33 1.33 2.17 3.14 2.17 5.07 0 4.2-3.8 7.7-8.5 7.7S3 14.89 3 10.89c0-1.93.84-3.74 2.17-5.07L4.17 5.17C2.45 6.89 1.48 9.07 1.48 11.39 1.48 16.4 5.9 20.3 11 20.3s9.52-3.9 9.52-8.91c0-2.32-.97-4.5-2.7-6.22z" /></svg>
+                </button>
+                <div class="power-menu hidden" id="power-menu">
+                    <button onclick="app.power.powerOn()">Power On</button>
+                    <button onclick="app.power.shutdown()">Shutdown</button>
+                    <button onclick="app.power.sleep()">Sleep</button>
+                </div>
             </div>
+            <div id="robot-status" class="status-dot status-shutdown" tooltip="System Status"></div>
         </div>
     </header>
     <main id="main-stage">

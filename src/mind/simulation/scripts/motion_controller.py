@@ -1,7 +1,8 @@
-from mind.ports.act_port import Manipulator
 import mujoco
 import numpy as np
+from mind.ports.act_port import Manipulator
 from mind.utils.logging_handler import setup_logger
+from mind.ports.base_robot_controller_port import BaseRobotController
 
 logger = setup_logger(__name__)
 
@@ -17,9 +18,9 @@ class MotionController(Manipulator):
         - CLOSE (full body keyframe interpolation)
     """
 
-    def __init__(self, model):
+    def __init__(self, model, robot_controller: BaseRobotController):
         self.model = model
-
+        self.robot_controller = robot_controller
         # Individual actuators (head, antennae, etc.)
         self.act_y = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, "servo_top_y")
         self.act_z = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, "servo_top_z")
@@ -60,12 +61,14 @@ class MotionController(Manipulator):
         """Home → Open (non-blocking full-body keyframe interpolation)."""
         self.current_motion = self._interp_keyframe(target_qpos, target_ctrl, duration)
         next(self.current_motion)
+        self.robot_controller._is_opened = True
 
     def do_close(self, data, target_qpos, target_ctrl, duration=2.0):
         """Open → Home (non-blocking full-body keyframe interpolation)."""
         logger.info("Closing motion initiated", extra={"duration": duration})
         self.current_motion = self._interp_keyframe(target_qpos, target_ctrl, duration)
         next(self.current_motion)
+        self.robot_controller._is_opened = False
 
     # -----------------------------------------------------
     # Called every frame from main simulation loop
@@ -175,3 +178,5 @@ class MotionController(Manipulator):
             data.ctrl[:] = (1 - alpha) * start_ctrl + alpha * target_ctrl
 
             data = yield
+
+        

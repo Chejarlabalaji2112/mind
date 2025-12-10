@@ -75,8 +75,13 @@ def create_app(args: Args) -> FastAPI:
                 logger.info("Initiated stop")
                 if agent:
                     agent.stop()                  
-                # Wait brief for animation
-                time.sleep(1)
+                if hasattr(app.state, "sim_thread") and app.state.sim_thread.is_alive():
+                    logger.info("Waiting for simulation thread to join...")
+                    
+                    # Wait indefinitely (or with a long timeout) for the thread to close the window
+                    app.state.sim_thread.join()
+                    
+                    logger.info("Simulation thread joined. Viewer closed.")
                 # Broadcast final status
                 final_status = robot_controller.get_status() if robot_controller else RobotStatus.SHUTDOWN.value
                 broadcast_msg = json.dumps({"type": "status", "data": final_status})
@@ -115,50 +120,72 @@ def create_app(args: Args) -> FastAPI:
             await websocket.send_text(json.dumps({"type": "status", "data": initial_status}))
             
             while True:
-                data = await websocket.receive()
-                if 'text' in data and data['text'] is not None:
-                    msg = json.loads(data['text'])
-                elif 'bytes' in data and data['bytes'] is not None:  # Binary for audio
-                    msg = {"type": "audio", "data": data['bytes']}
-                else:
-                    continue  #no msg
-                
-                msg_type = msg.get("type")
-                
-                if msg_type == "text":  # Chat
-                    async for chunk in stream_llm_response(msg["data"]):
-                        await websocket.send_text(chunk)
-                        
-                elif msg_type == "audio":  # Placeholder
-                    await websocket.send_text(json.dumps({"type": "audio_response", "data": "simulated_audio_base64"}))
-                
-                elif msg_type == "power":  # Delegate to agent
-                    action = msg["data"]["action"]
-                    if not agent:
-                        await websocket.send_text(json.dumps({"type": "error", "data": "Agent not ready"}))
-                        continue
-                    
-                    current_status = robot_controller.get_status() if robot_controller else RobotStatus.SHUTDOWN.value
-                    
-                    if action == "on" and current_status == RobotStatus.SHUTDOWN.value:
-                        agent.wake_up()
-                    elif action == "shutdown" and current_status == RobotStatus.ACTIVE.value:
-                        agent.shutdown()
-                    elif action == "sleep" and current_status == RobotStatus.ACTIVE.value:
-                        agent.sleep()
+                try:
+                    data = await websocket.receive()
+                    if 'text' in data and data['text'] is not None:
+                        msg = json.loads(data['text'])
+                    elif 'bytes' in data and data['bytes'] is not None:  # Binary for audio
+                        msg = {"type": "audio", "data": data['bytes']}
                     else:
-                        await websocket.send_text(json.dumps({"type": "error", "data": "Invalid action"}))
-                        continue
+                        continue  #no msg
                     
-                    # Get new status and broadcast
-                    new_status = robot_controller.get_status() if robot_controller else current_status
-                    broadcast_msg = json.dumps({"type": "status", "data": new_status})
-                    with ws_lock:
-                        for ws in list(active_websockets):
-                            try:
-                                await ws.send_text(broadcast_msg)
-                            except:
-                                active_websockets.discard(ws)
+                    msg_type = msg.get("type")
+                    
+                    if msg_type == "text":  # Chat
+                        async for chunk in stream_llm_response(msg["data"]):
+                            await websocket.send_text(chunk)
+                            
+                    elif msg_type == "audio":  # Placeholder
+                        await websocket.send_text(json.dumps({"type": "audio_response", "data": "simulated_audio_base64"}))
+                    
+                    elif msg_type == "power":  # Delegate to agent
+                        action = msg["data"]["action"]
+                        if not agent:
+                            await websocket.send_text(json.dumps({"type": "error", "data": "Agent not ready"}))
+                            continue
+                        
+                        current_status = robot_controller.get_status() if robot_controller else RobotStatus.SHUTDOWN.value
+                        
+                        # Allow Wake Up if Shutdown OR Sleep
+                        if action == "on" and current_status in [RobotStatus.SHUTDOWN.value, RobotStatus.SLEEP.value]:
+                            agent.wake_up()
+                        
+                        # Allow Shutdown if Active OR Sleep
+                        elif action == "shutdown" and current_status in [RobotStatus.ACTIVE.value, RobotStatus.SLEEP.value]:
+                            agent.shutdown()
+                            
+                        # Allow Sleep only if Active
+                        elif action == "sleep" and current_status == RobotStatus.ACTIVE.value:
+                            agent.sleep()
+
+                        else:
+                            # Log the rejection for debugging
+                            logger.warning(f"Invalid power transition: Action {action} not allowed in State {current_status}")
+                            await websocket.send_text(json.dumps({"type": "error", "data": "Invalid action for current state"}))
+                            continue
+                        
+                        # Get new status and broadcast
+                        new_status = robot_controller.get_status() if robot_controller else current_status
+                        broadcast_msg = json.dumps({"type": "status", "data": new_status})
+                        with ws_lock:
+                            for ws in list(active_websockets):
+                                try:
+                                    await ws.send_text(broadcast_msg)
+                                except:
+                                    active_websockets.discard(ws)
+                
+                except RuntimeError:
+                    logger.info("got the websocker forcible disconnect error")
+                    break
+                except WebSocketDisconnect:
+                    logger.info("webSocket disconnected")
+                    break
+                except Exception as e:
+                    if "disconnect" in str(e).lower():
+                        logger.info("break inside the websocket loop by converting to str")
+                        break
+                    logger.error(f"ws error: {e}")
+                    break
                             
         except WebSocketDisconnect:
             logger.info("WebSocket disconnected")
