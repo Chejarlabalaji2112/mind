@@ -72,11 +72,9 @@ def create_app(args: Args) -> FastAPI:
 
         finally:
             if robot_controller:
-                logger.info("Shutting down robot_controller...")
+                logger.info("Initiated stop")
                 if agent:
-                    agent.shut_down()  # Delegate to agent if available
-                robot_controller.shut_down_animation()  # Fallback
-                robot_controller.stop()
+                    agent.stop()                  
                 # Wait brief for animation
                 time.sleep(1)
                 # Broadcast final status
@@ -145,7 +143,7 @@ def create_app(args: Args) -> FastAPI:
                     if action == "on" and current_status == RobotStatus.SHUTDOWN.value:
                         agent.wake_up()
                     elif action == "shutdown" and current_status == RobotStatus.ACTIVE.value:
-                        agent.shut_down()
+                        agent.shutdown()
                     elif action == "sleep" and current_status == RobotStatus.ACTIVE.value:
                         agent.sleep()
                     else:

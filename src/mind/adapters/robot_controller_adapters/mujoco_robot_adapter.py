@@ -171,7 +171,7 @@ class MujocoRobot(BaseRobotController):
 
     def stop(self):
         """Signals the loop to exit."""
-        if RobotStatus == "shutdown":
+        if RobotStatus.SHUTDOWN.value == "shutdown":
             self._stop_event.set()  # When called, shutdown should happen; rather than shut_down being separate, when shut down complete then event will be set.
               # Ensure final state
         else:
@@ -198,7 +198,7 @@ class MujocoRobot(BaseRobotController):
         with self._status_lock:
             return self._current_status.value  # Return string for backend compat
 
-    def shut_down_animation(self, duration=5.0):
+    def shutdown(self, duration=5.0):
         self._command_queue.put((RobotCommand.SHUT_DOWN, {"duration": duration}))
 
     def play_video(self, video_path):

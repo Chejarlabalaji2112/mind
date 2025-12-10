@@ -23,7 +23,7 @@ class Agent():
         self.robot_controller.status()
 
     def shutdown(self):
-        self.robot_controller.shut_down_animation()
+        self.robot_controller.shutdown()
 
     def stop(self):
         self.robot_controller.stop()
