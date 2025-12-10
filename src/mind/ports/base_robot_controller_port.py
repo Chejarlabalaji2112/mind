@@ -21,3 +21,7 @@ class BaseRobotController(ABC):
     @abstractmethod
     def status():
         pass
+
+    @abstractmethod
+    def shutdown():
+        pass

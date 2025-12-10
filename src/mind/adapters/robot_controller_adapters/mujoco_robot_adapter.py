@@ -171,9 +171,15 @@ class MujocoRobot(BaseRobotController):
 
     def stop(self):
         """Signals the loop to exit."""
-        self.shut_down_animation()
-        self._stop_event.set()  # When called, shutdown should happen; rather than shut_down being separate, when shut down complete then event will be set.
-        self.set_status(RobotStatus.SHUTDOWN)  # Ensure final state
+        if RobotStatus == "shutdown":
+            self._stop_event.set()  # When called, shutdown should happen; rather than shut_down being separate, when shut down complete then event will be set.
+              # Ensure final state
+        else:
+            logger.warning("Trying to stop before shutdown... abrupt window closing will happen..")
+            self.set_status(RobotStatus.SHUTDOWN)
+            self.stop()
+
+
 
     def wait_until_ready(self, timeout=None):
         """Blocks caller until the viewer is actually running."""
@@ -278,5 +284,5 @@ class MujocoRobot(BaseRobotController):
         logger.info("Cleaning up resources")
         self.player.stop()
         self.audio.close()
-        self.set_status(RobotStatus.SHUTDOWN)
+        self.set_status(RobotStatus.SHUTDOWN) #I think tehre are so many set_status of shutdown..
         self._is_ready_event.clear()
