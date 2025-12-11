@@ -230,7 +230,8 @@ class MujocoRobot(BaseRobotController):
     # -----------------------------------------------------
     def _handle_command(self, cmd_type, payload, viewer):
         """Internal command router"""
-        if cmd_type == RobotCommand.WAKE_UP: 
+        if cmd_type == RobotCommand.WAKE_UP:
+            self.screen_top.clear_display() 
             qpos_open = self.model.key_qpos[self.open_id]
             ctrl_open = self.model.key_ctrl[self.open_id]
             self.motion.do_open(self.data, qpos_open, ctrl_open, payload['duration'])

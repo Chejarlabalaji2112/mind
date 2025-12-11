@@ -4,8 +4,6 @@ import numpy as np
 import threading
 from mind.adapters.display_adapters import DisplayObj
 
-#TODO: implement clear screen.
-
 class ScreenUpdater(DisplayObj):
     def __init__(self, model, texture_name):
         self.model = model
@@ -86,6 +84,20 @@ class ScreenUpdater(DisplayObj):
                     font, scale, text_color, thickness, cv2.LINE_AA)
         
         self.show(self._text_canvas)
+
+        
+    # =========================================================
+    #  Screen Clear
+    # =========================================================
+
+    def clear_display(self, clear_color=(0, 0, 0)):
+        clear_frame = np.zeros(
+            (self.height, self.width, 3), 
+            dtype=np.uint8
+        )
+        clear_frame[:, :] = clear_color
+        
+        self.show(clear_frame)
 
 
     # =========================================================

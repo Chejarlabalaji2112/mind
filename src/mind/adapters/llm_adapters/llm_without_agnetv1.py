@@ -23,9 +23,9 @@ class GeminiLLMAdapter(DecisionMaker):
         result = self.llm.invoke(user_input)
         return result.content
 
-    def stream(self, user_input: str):
+    async def stream(self, user_input: str):
         # Native streaming: Yields AIMessageChunk objects with .content
-        for chunk in self.llm.stream(user_input):
+        for chunk in self.llm.astream(user_input):
             if chunk.content:  # Skip empty chunks
                 yield chunk  # Yields full chunk (access .content in caller)
     
@@ -41,9 +41,9 @@ class OllamaAdapter(DecisionMaker):
         result = self.llm.invoke(user_input)
         return result.content
 
-    def stream(self, user_input: str):
+    async def stream(self, user_input: str):
         # Yield streaming chunks from Ollama
-        for chunk in self.llm.stream(user_input):
+        async for chunk in self.llm.astream(user_input):
             yield chunk
 
     

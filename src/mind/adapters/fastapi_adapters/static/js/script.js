@@ -1,5 +1,14 @@
 const app = {
-    state: { view: 'home', activeContext: null, autoHideEnabled: true, dockOpen: false, status: 'shutdown', ws: null, inDoubtMode: false },
+    state: { view: 'home', 
+        activeContext: null, 
+        autoHideEnabled: true, 
+        dockOpen: false, 
+        status: 'shutdown', 
+        ws: null, 
+        inDoubtMode: false,
+        reconnectDelay: 1000,       // Start with 1 second
+        maxReconnectDelay: 30000,   // Max wait 30 seconds
+        reconnectTimer: null },
     router: {
         navigate: (viewId) => {
             // Switch Views
@@ -16,46 +25,74 @@ const app = {
         }
     },
     connect: () => {
-        app.state.ws = new WebSocket('ws://localhost:8000/ws');  // Adjust host/port if needed
+       if (app.state.ws && (app.state.ws.readyState === WebSocket.CONNECTING || app.state.ws.readyState === WebSocket.OPEN)) {
+            return; 
+        }
+
+        const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const host = window.location.host; 
+        app.state.ws = new WebSocket(`${protocol}${host}/ws`);
+        
         app.state.ws.onopen = () => {
             console.log('WebSocket connected');
+            app.state.reconnectDelay = 1000;
             // Request initial status if not received
         };
-    app.state.ws.onmessage = (event) => {
-        let data;
-        try {
-            data = JSON.parse(event.data);
-        } catch (e) {
-            // Handle binary audio if needed
-            return;
-        }
-
-        if (data.type === 'chunk') {
-            if (app.state.inDoubtMode) {
-                // → We are inside the doubt modal → append here
-                const messagesDiv = document.getElementById('doubt-messages');
-                const lastBubble = messagesDiv.lastElementChild;
-                if (lastBubble && lastBubble.style.alignSelf === 'flex-start') {
-                    lastBubble.textContent += data.text;
-                }
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            } else {
-                // → Normal chat
-                app.chat.appendChunk(data.text);
+        app.state.ws.onmessage = (event) => {
+            let data;
+            try {
+                data = JSON.parse(event.data);
+            } catch (e) {
+                // Handle binary audio if needed
+                return;
             }
 
-        } else if (data.type === 'status') {
-            app.power.updateStatus(data.data);
-        } else if (data.type === 'audio_response') {
-            console.log('Audio:', data.data);
-        } else if (data.type === 'error') {
-            console.error('Error:', data.data);
-        }
-    };
+            if (data.type === 'chunk') {
+                if (app.state.inDoubtMode) {
+                    // → We are inside the doubt modal → append here
+                    const messagesDiv = document.getElementById('doubt-messages');
+                    const lastBubble = messagesDiv.lastElementChild;
+                    if (lastBubble && lastBubble.style.alignSelf === 'flex-start') {
+                        lastBubble.textContent += data.text;
+                    }
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                } else {
+                    // → Normal chat
+                    app.chat.appendChunk(data.text);
+                }
+
+            } else if (data.type === 'status') {
+                app.power.updateStatus(data.data);
+            } else if (data.type === 'audio_response') {
+                console.log('Audio:', data.data);
+            } else if (data.type === 'error') {
+                console.error('Error:', data.data);
+            }
+        };
         app.state.ws.onerror = (error) => console.error('WS Error:', error);
         app.state.ws.onclose = () => {
-            console.log('WS Closed; reconnecting in 3s...');
-            setTimeout(app.connect, 3000);  // Simple reconnect
+            // 1. Visually indicate offline
+            app.power.updateStatus('shutdown'); 
+            
+            // 2. Calculate next delay (Exponential Backoff)
+            const nextDelay = app.state.reconnectDelay;
+            console.log(`WS Closed. Reconnecting in ${nextDelay / 1000}s...`);
+
+            // 3. Set the timer
+            app.state.reconnectTimer = setTimeout(() => {
+                app.connect();
+            }, nextDelay);
+
+            // 4. Increase delay for next time (Double it, cap at max)
+            app.state.reconnectDelay = Math.min(
+                app.state.reconnectDelay * 2, 
+                app.state.maxReconnectDelay
+            );
+            if (app.state.reconnectDelay >= app.state.maxReconnectDelay) {
+                console.log("Server seems permanently offline. Stopping retries.");
+                // Show a UI banner: "Connection Lost. Please refresh to try again."
+                return; // Do not call setTimeout
+}
         };
     },
     ui: {
