@@ -33,6 +33,8 @@ class MotionController(Manipulator):
         # Smooth actuator factor
         self.k = 0.01
 
+        self._from_sleep = self._motion_type = None #these are temperary varibles for motion tracking.
+
     # -----------------------------------------------------
     # Public (abstract requirement)
     # -----------------------------------------------------
@@ -60,16 +62,16 @@ class MotionController(Manipulator):
     def do_open(self, data, target_qpos, target_ctrl, duration=2.5):
         """Home → Open (non-blocking full-body keyframe interpolation)."""
         self.current_motion = self._interp_keyframe(target_qpos, target_ctrl, duration)
+        self._motion_type = "open"
         next(self.current_motion)
-        self.robot_controller._is_opened = True
+        logger.info(f"Open motion started ")
 
     def do_close(self, data, target_qpos, target_ctrl, duration=2.0):
         """Open → Home (non-blocking full-body keyframe interpolation)."""
         logger.info("Closing motion initiated", extra={"duration": duration})
         self.current_motion = self._interp_keyframe(target_qpos, target_ctrl, duration)
+        self._motion_type = 'close'
         next(self.current_motion)
-        self.robot_controller._is_opened = False
-
     # -----------------------------------------------------
     # Called every frame from main simulation loop
     # -----------------------------------------------------
@@ -79,7 +81,11 @@ class MotionController(Manipulator):
         try:
             self.current_motion.send(data)
         except StopIteration:
+            # Motion complete: Queue event-as-comman
+
+            self.robot_controller.motion_complete(self._motion_type)
             self.current_motion = None
+            logger.info("Motion complete → called motion_complete")
 
     # -----------------------------------------------------
     # Smooth actuator interpolation

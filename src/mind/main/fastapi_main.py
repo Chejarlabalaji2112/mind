@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import asyncio
 import threading
 import uvicorn
@@ -62,19 +63,33 @@ class Args:
 def create_app(args):
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        monitor = ResourceMonitor(interval=5.0)
-        monitor.start()
+        # monitor = ResourceMonitor(interval=5.0)
+        # monitor.start()
         # 1. Instantiate Adapters (Driven)
         # Note: No global variable. We create it here.
+        
         llm_adapter = OllamaAdapter()
         robot_adapter =  None
+
         if args.sim:
             robot_adapter = MujocoRobot()
             # Start Sim Thread
-            sim_thread = threading.Thread(target=robot_adapter.run, daemon=True)
+            sim_thread = threading.Thread(target=robot_adapter.run, daemon=True, name="mujoco_sim_thread")
             sim_thread.start()
             robot_adapter.wait_until_ready(timeout=10)
             app.state.sim_thread = sim_thread
+
+        else:
+            # Handle the case where there is no robot
+            from mind.ports.base_robot_controller_port import BaseRobotController
+            class DummyRobot(BaseRobotController):
+                def status(self): return "shutdown"
+                def wake_up(self): pass
+                def sleep(self): pass
+                def shutdown(self): pass
+                def stop(self): pass
+
+            robot_adapter = DummyRobot()
 
         # 2. Instantiate Core (Hexagon) and Inject Adapters
         agent = Agent(decision_maker=llm_adapter, robot_controller=robot_adapter)
@@ -89,16 +104,20 @@ def create_app(args):
         yield
 
         # 4. Cleanup
-        monitor.stop()
+        # monitor.stop()
         
         if robot_adapter:
             agent.stop() # Agent stops the robot
             if hasattr(app.state, 'sim_thread'):
-                app.state.sim_thread.join(timeout=4.0)
+                logger.debug("need the sim_thread to join")
+                app.state.sim_thread.join(timeout=2)
+                
 
         if hasattr(app.state, "connection_manager"):
             # We explicitly send "shutdown" because the server is dying.
             await app.state.connection_manager.broadcast_status("shutdown")
+
+
 
     app = FastAPI(lifespan=lifespan)
     
@@ -190,4 +209,5 @@ def main() -> None:
     run_app(Args(**vars(parsed_args)))
 
 if __name__ == "__main__":
+    logger.info("="*50)
     main()

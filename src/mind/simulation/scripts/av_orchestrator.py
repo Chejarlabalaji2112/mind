@@ -40,11 +40,11 @@ class AVOrchestrator:
         self.running = False
         self.thread = None
 
-    def play_file(self, file_path, audio_track_index=0):
+    def play_file(self, file_path, audio_track_index=0, on_complete=None):
         """Play any file: audio-only, video-only, or A/V. Modular entry point."""
         self.stop()
         self.running = True
-        self.thread = threading.Thread(target=self._decoding_loop, args=(file_path, audio_track_index))
+        self.thread = threading.Thread(target=self._decoding_loop, args=(file_path, audio_track_index, on_complete))
         self.thread.start()
         self.no_video_playing = False
 
@@ -82,7 +82,7 @@ class AVOrchestrator:
         
         cam.release()
 
-    def _decoding_loop(self, file_path, audio_track_index=0):
+    def _decoding_loop(self, file_path, audio_track_index=0, on_complete=None):
         try:
             container = av.open(file_path)
         except Exception as e:
@@ -174,3 +174,5 @@ class AVOrchestrator:
             if has_audio:
                 self.audio.close()
             logger.info("Playback finished", extra={"file_path": file_path})
+            if on_complete:  # New: Call after clean finish
+                on_complete()

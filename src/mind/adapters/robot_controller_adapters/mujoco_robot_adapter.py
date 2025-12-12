@@ -18,9 +18,10 @@ from mind.simulation.scripts.motion_controller import MotionController
 
 
 # Paths (Keep these configurable or constants)
-XML_PATH = f"{SIMULATION_DIR}/description/scene.xml"
+XML_PATH         = f"{SIMULATION_DIR}/description/scene.xml"
 CLOSE_AUDIO_PATH = f"{SIMULATION_DIR}/media/audio/shutdown.mp3"
-SLEEP_AUDIO_PATH = f"{SIMULATION_DIR}/media/audio/sleep.mp3"  # Add if available
+SLEEP_AUDIO_PATH = f"{SIMULATION_DIR}/media/audio/sleep.mp3"
+BOOT_VIDEO_PATH  = f"{SIMULATION_DIR}/media/videos/pupil_boot.mp4"
 
 logger = setup_logger(__name__)
 
@@ -36,6 +37,8 @@ class RobotCommand(Enum):
     PLAY_VIDEO = auto()
     SET_EYES = auto()
     UPDATE_SCREEN = auto()
+    MOTION_COMPLETE = auto()
+    BOOT_COMPLETE = auto()
     TIMER = auto()
 
 
@@ -73,7 +76,8 @@ class MujocoRobot(BaseRobotController):
         self.model.opt.timestep = 0.002
         self.show_clock = True
 
-        self._is_opened = True
+        self._boot_played = False  # Session flag: True after first boot video
+        self._is_opened = False
 
     # -----------------------------------------------------
     # LIFECYCLE API
@@ -88,6 +92,7 @@ class MujocoRobot(BaseRobotController):
         with mujoco.viewer.launch_passive(
             self.model, self.data, show_left_ui=False, show_right_ui=False
         ) as viewer:
+            
             
             # Initial Camera Setup
             with viewer.lock():
@@ -104,7 +109,7 @@ class MujocoRobot(BaseRobotController):
             render_fps = 30  # Limit rendering to 30 FPS to save resources
             render_interval = 1.0 / render_fps
 
-            loop_times = []
+            # loop_times = []
 
             # --- THE MAIN LOOP ---
             while viewer.is_running() and not self._stop_event.is_set():
@@ -168,6 +173,16 @@ class MujocoRobot(BaseRobotController):
                 # ------------------------------------
                 # 5. FPS Calculation (commented)
                 # ------------------------------------
+                # loop_end = time.perf_counter()
+                # dt = loop_end - step_start
+                # loop_times.append(dt)
+                # if len(loop_times) > 100:
+                #     loop_times.pop(0)
+
+                # avg_dt = sum(loop_times) / len(loop_times)
+                # loop_hz = 1.0 / avg_dt
+                # if len(loop_times) % 50 == 0:
+                #     logger.debug("Loop frequency: %.2f Hz", loop_hz)
 
             self._cleanup()
 
@@ -178,6 +193,7 @@ class MujocoRobot(BaseRobotController):
             
             # 1. Force the loop in run() to break
             self._stop_event.set()
+            logger.info(f"Stop called: event.is_set()={self._stop_event.is_set()}")
             
             # 2. Ensure the status is updated so the frontend knows we are down
             self.set_status(RobotStatus.SHUTDOWN)
@@ -186,15 +202,24 @@ class MujocoRobot(BaseRobotController):
 
     def wait_until_ready(self, timeout=None):
         """Blocks caller until the viewer is actually running."""
-        return self._is_ready_event.wait()
+        return self._is_ready_event.wait(timeout=timeout)
 
     # -----------------------------------------------------
     # COMMAND API (Thread-Safe)
     # -----------------------------------------------------
-    def wake_up(self, duration=4.0):
-        self.set_status(RobotStatus.ACTIVE)
-        self._command_queue.put((RobotCommand.WAKE_UP, {"duration": duration}))
 
+    def wake_up(self, duration=4.0):
+        """Queue wake-up motion; completion auto-triggers sequence."""
+        self.set_status(RobotStatus.ACTIVE)
+        
+        # Queue motion (passes from_sleep for later)
+        self._command_queue.put((RobotCommand.WAKE_UP, {
+            "duration": duration
+        }))
+        
+        self.screen_top.clear_display()  # Prep screen (idempotent)
+        logger.info(f"Wake-up queued")
+    
     def sleep(self, duration=3.0):  # New impl
         self.set_status(RobotStatus.SLEEP)
         self._command_queue.put((RobotCommand.SLEEP, {"duration": duration}))
@@ -205,6 +230,7 @@ class MujocoRobot(BaseRobotController):
 
     def shutdown(self, duration=5.0):
         self.set_status(RobotStatus.SHUTDOWN)
+        self._boot_played = False
         self._command_queue.put((RobotCommand.SHUT_DOWN, {"duration": duration}))
 
     def play_video(self, video_path):
@@ -215,6 +241,15 @@ class MujocoRobot(BaseRobotController):
         
     def show_text_bottom(self, text):
         self._command_queue.put((RobotCommand.UPDATE_SCREEN, {"text": text}))
+
+    def motion_complete(self, motion_type ):
+        if motion_type == 'open':
+            self._is_opened = True
+            self.set_status(RobotStatus.ACTIVE)
+        elif motion_type == 'close':
+            self._is_opened = False
+
+        self._command_queue.put((RobotCommand.MOTION_COMPLETE, None))
 
     # New: Get current status (for polling if needed)
     def get_status(self):
@@ -231,16 +266,19 @@ class MujocoRobot(BaseRobotController):
     def _handle_command(self, cmd_type, payload, viewer):
         """Internal command router"""
         if cmd_type == RobotCommand.WAKE_UP:
+            payload = payload  # From queue
+            duration = payload.get('duration', 4.0)
+            from_sleep = payload.get('from_sleep', False)
             self.screen_top.clear_display() 
             qpos_open = self.model.key_qpos[self.open_id]
             ctrl_open = self.model.key_ctrl[self.open_id]
-            self.motion.do_open(self.data, qpos_open, ctrl_open, payload['duration'])
-            # Timer for completion (optional: reset if interrupted)
+            self.motion.do_open(self.data, qpos_open, ctrl_open, duration)
             
         elif cmd_type == RobotCommand.SLEEP:  # New
             logger.info("Entering sleep mode")
             self.eyes.is_active = False  # Dim eyes
-            self.screen_top.show_text("Zzz...")
+            self.player.stop()
+            self.screen_top.show_text("Zzz...")          
             if os.path.exists(SLEEP_AUDIO_PATH):
                 self.player.play_file(SLEEP_AUDIO_PATH)
             # Gentle close pose
@@ -269,7 +307,14 @@ class MujocoRobot(BaseRobotController):
             # After duration, signal stop if needed (but stop() handles it)
 
         elif cmd_type == RobotCommand.PLAY_VIDEO:
-            self.player.play_file(payload['path'])
+            if self._current_status != RobotStatus.ACTIVE:
+                return
+            path = payload['path']
+            is_boot = payload.get('is_boot', False)
+            def on_complete():
+                self._command_queue.put((RobotCommand.BOOT_COMPLETE, {}))
+            self.player.play_file(path, on_complete=on_complete if is_boot else None)
+            logger.info(f"Queued video: {path} {'(boot)' if is_boot else ''}")
 
         elif cmd_type == RobotCommand.SET_EYES:
             active = payload['active']
@@ -284,6 +329,29 @@ class MujocoRobot(BaseRobotController):
 
         elif cmd_type == RobotCommand.UPDATE_SCREEN:
             self.screen_bottom.show_text(payload['text'])
+
+        elif cmd_type == RobotCommand.MOTION_COMPLETE:
+            if self._current_status != RobotStatus.ACTIVE:
+                logger.warning("Dropping MOTION_COMPLETE (inactive status)")
+                return
+            boot_path = BOOT_VIDEO_PATH  # Your boot video
+            if (self._current_status == RobotStatus.ACTIVE) and not self._boot_played and os.path.exists(boot_path):
+                self._command_queue.put((RobotCommand.PLAY_VIDEO, {
+                    "path": boot_path,
+                    "is_boot": True  # Flag for callback
+                }))
+                self._boot_played = True
+                logger.info("MOTION_COMPLETE → Queued boot video")
+            else:
+                self._command_queue.put((RobotCommand.SET_EYES, {"active": True}))
+                logger.info("MOTION_COMPLETE → Queued eyes (skipped boot)")
+
+        elif cmd_type == RobotCommand.BOOT_COMPLETE:
+            if self._current_status != RobotStatus.ACTIVE:
+                logger.warning("Dropping BOOT_COMPLETE (inactive status)")
+                return
+            self._command_queue.put((RobotCommand.SET_EYES, {"active": True}))
+            logger.info("BOOT_COMPLETE → Queued eyes")
 
     def _cleanup(self):
         logger.info("Cleaning up resources")
