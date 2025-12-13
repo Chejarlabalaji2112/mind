@@ -1,35 +1,43 @@
-import inspect
 import asyncio
+import inspect
 from mind.utils import setup_logger
 
 logger = setup_logger(__name__)
 
 class Event:
-    def __init__(self, loop=None):
+    def __init__(self, loop: asyncio.AbstractEventLoop | None = None):
         self._listeners = []
-        self.loop = loop  # asyncio event loop to schedule async listeners
+        self.loop = loop
 
     def add_listener(self, listener):
-        if callable(listener):
-            self._listeners.append(listener)
-        else:
-            raise ValueError("Listener must be a callable function.")
+        if not callable(listener):
+            raise ValueError("Listener must be callable")
+        self._listeners.append(listener)
 
     def remove_listener(self, listener):
         if listener in self._listeners:
             self._listeners.remove(listener)
 
     def emit(self, *args, **kwargs):
-        for listener in self._listeners:
+        for listener in list(self._listeners):
             try:
-                if inspect.iscoroutinefunction(listener):
-                    if self.loop is None:
-                        raise RuntimeError("Async listener requires loop to be set")
-                    # schedule async listener on main loop thread-safely
+                result = listener(*args, **kwargs)
+
+                # If listener returned a coroutine, schedule it
+                if inspect.iscoroutine(result):
+                    if not self.loop:
+                        raise RuntimeError("Async listener requires event loop")
+
                     self.loop.call_soon_threadsafe(
-                        lambda l=listener: asyncio.create_task(l(*args, **kwargs))
+                        asyncio.create_task,
+                        self._safe_task(result)
                     )
-                else:
-                    listener(*args, **kwargs)
+
             except Exception as e:
-                logger.error(f"Error in event listener: {e}")
+                logger.exception("Error in event listener")
+
+    async def _safe_task(self, coro):
+        try:
+            await coro
+        except Exception:
+            logger.exception("Unhandled exception in async event listener")

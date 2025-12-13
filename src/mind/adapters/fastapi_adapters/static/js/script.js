@@ -63,6 +63,15 @@ const app = {
 
             } else if (data.type === 'status') {
                 app.power.updateStatus(data.data);
+
+            } else if (data.type === 'screen_update') {
+                // FIX: Ensure screen update logic is present and robust
+                if (data.data.active === false) {
+                    app.screen.reset();
+                } else {
+                    app.screen.render(data.data.content);
+                }
+
             } else if (data.type === 'audio_response') {
                 console.log('Audio:', data.data);
             } else if (data.type === 'error') {
@@ -90,9 +99,8 @@ const app = {
             );
             if (app.state.reconnectDelay >= app.state.maxReconnectDelay) {
                 console.log("Server seems permanently offline. Stopping retries.");
-                // Show a UI banner: "Connection Lost. Please refresh to try again."
-                return; // Do not call setTimeout
-}
+                return; 
+            }
         };
     },
     ui: {
@@ -260,11 +268,10 @@ const app = {
                 <div style="align-self: flex-end; background: var(--chat-user-bg); padding: 9px 14px; border-radius: 16px; max-width: 80%; margin: 8px 0 8px auto; font-size:0.95rem;">
                     ${text}</div>`;
 
-            // Send to LLM (you can keep context if you want, optional)
+            // Send to LLM
             app.state.ws.send(JSON.stringify({
                 type: 'text',
                 data: text
-                // Optional: add context so LLM remembers → data: `[About this text] ${app.state.activeContext}\n\nQuestion: ${text}`
             }));
 
             // Create AI response bubble (will be filled by chunks)
@@ -277,6 +284,35 @@ const app = {
         },
         clearChat: () => { document.getElementById('message-container').innerHTML = ''; }
     },
+    
+    screen: {
+        // Render ANY html string sent from backend
+        render: (htmlContent) => {
+            const identity = document.getElementById('home-identity');
+            const dynamic = document.getElementById('home-dynamic-content');
+            
+            // 1. Inject content
+            dynamic.innerHTML = htmlContent;
+
+            // 2. Swap views
+            identity.classList.add('hidden');
+            dynamic.classList.remove('hidden');
+        },
+
+        // Revert to default HITOMI text
+        reset: () => {
+            const identity = document.getElementById('home-identity');
+            const dynamic = document.getElementById('home-dynamic-content');
+
+            dynamic.classList.add('hidden');
+            identity.classList.remove('hidden');
+            
+            // Optional: Clear content after transition for cleanliness
+            setTimeout(() => dynamic.innerHTML = '', 300); 
+        }
+    },
+    
+    
     mic: {
         isRecording: false,
         start: async () => {
@@ -300,7 +336,7 @@ const app = {
                     document.getElementById('mic-btn').classList.remove('recording');
                 };
                 recorder.start();
-                document.getElementById('mic-btn').classList.add('recording');  // Visual feedback (add CSS for this)
+                document.getElementById('mic-btn').classList.add('recording');
                 setTimeout(() => recorder.stop(), 5000);  // 5s recording
             } catch (err) {
                 console.error('Mic access denied:', err);

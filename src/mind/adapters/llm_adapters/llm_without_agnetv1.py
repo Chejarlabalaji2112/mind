@@ -4,7 +4,10 @@ dotenv.load_dotenv()
 # Custom/Local Imports
 from mind.ports.decision_making_port import DecisionMaker
 from langchain_ollama import ChatOllama
+from mind.adapters.llm_adapters.stream_handler import StreamingResponseHandler
 
+
+  
 
 class GeminiLLMAdapter(DecisionMaker):
     """LLM adapter for Gemini models using LangChain agent + tools."""
@@ -38,13 +41,8 @@ class OllamaAdapter(DecisionMaker):
         self.llm = ChatOllama(model=self.model)
 
     def handle_input(self, user_input:str)-> str:
-        result = self.llm.invoke(user_input)
-        return result.content
+        return StreamingResponseHandler(self.llm, user_input)
 
-    async def stream(self, user_input: str):
-        # Yield streaming chunks from Ollama
-        async for chunk in self.llm.astream(user_input):
-            yield chunk
 
     
 if __name__ == "__main__":
