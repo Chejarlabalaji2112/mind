@@ -1,12 +1,11 @@
 from typing import AsyncIterator
 
-class StreamingResponseHandler: #I think I need  to store this class in different file
-    def __init__(self, llm, user_input: str):
+class StreamingResponseHandler:
+    def __init__(self, llm):
         self.llm = llm
-        self.user_input = user_input
 
-    async def astream(self) -> AsyncIterator[str]:
-        async for chunk in self.llm.astream(self.user_input):
+    async def astream(self, user_input) -> AsyncIterator[str]:
+        async for chunk in self.llm.astream(user_input):
             content = chunk.content if hasattr(chunk, 'content') else str(chunk)
             if content:
                 yield content

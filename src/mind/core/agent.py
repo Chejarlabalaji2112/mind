@@ -19,15 +19,18 @@ class Agent():
 
     def wake_up(self):
         self.robot_controller.wake_up()
+        self.notifier.notify_status("Activating")
 
     def sleep(self):
         self.robot_controller.sleep()
+        self.notifier.notify_status("To sleep")
 
     def status(self):
         self.robot_controller.status()
 
     def shutdown(self):
         self.robot_controller.shutdown()
+        self.notifier.notify_status("Shutting down")
 
     def stop(self):
         self.robot_controller.stop()
@@ -52,20 +55,15 @@ class Agent():
         else:
             # Logic for rejecting invalid states happens here, not in FastAPI
             logger.warning(f"Invalid transition: {current_status} -> {action}")
-        
+            
 
-    def handle_input(self, user_input: str):
-            """
-            Generator that yields chunks of the response.
-            This allows the Agent to intercept or modify the stream if needed later.
-            """
-            logger.info(f"Agent receiving request: {user_input}")
+    def input_handler(self):
+            logger.info(f"Agent receiving request")
 
             try:
-                response = self.decision_maker.handle_input(user_input)
-                            
+                response = self.decision_maker.input_handler()
                 return response
                 
             except Exception as e:
                 logger.error(f"Error during streaming: {e}")
-                yield f"[Error processing request: {e}]"
+                return f"[Error processing request: {e}]"

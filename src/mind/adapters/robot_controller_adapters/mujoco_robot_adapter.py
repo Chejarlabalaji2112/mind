@@ -206,7 +206,6 @@ class MujocoRobot(BaseRobotController):
             self.motion.do_open(self.data, qpos_open, ctrl_open, duration)
             
         elif cmd_type == RobotCommand.SLEEP:
-            # MOVED HERE
             logger.info("Entering sleep mode")
             self.eyes.is_active = False
             self.player.stop()
@@ -221,7 +220,6 @@ class MujocoRobot(BaseRobotController):
             )
 
         elif cmd_type == RobotCommand.SHUT_DOWN:
-            # MOVED HERE
             logger.info("Starting shutdown sequence")
             self.player.stop()
             self.eyes.is_active = False
@@ -235,8 +233,10 @@ class MujocoRobot(BaseRobotController):
                     self.model.key_ctrl[self.home_id], 
                     duration=payload['duration']
                 )
+            else:
+                self.set_status(RobotStatus.SHUTDOWN)
 
-        # ... [Rest of _handle_command cases remain same] ...
+
         elif cmd_type == RobotCommand.PLAY_VIDEO:
             if self._current_status != RobotStatus.ACTIVE: return
             path = payload['path']

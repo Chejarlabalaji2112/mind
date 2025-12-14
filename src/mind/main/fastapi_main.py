@@ -1,28 +1,32 @@
-#
 import os
 import json
+import html
 import time
 import asyncio
-import threading
-import uvicorn
 import argparse
+import threading
+import webbrowser
+from typing import Optional
+from urllib import response
 from pydantic import BaseModel
+from dataclasses import dataclass
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+
+import fastapi
+import uvicorn
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from dataclasses import dataclass
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 
 # Architecture Imports
+from mind.utils import BASE_DIR
 from mind.core.agent import Agent
 from mind.core.status import RobotStatus
-from mind.adapters.llm_adapters.llm_without_agnetv1 import OllamaAdapter
-from mind.adapters.robot_controller_adapters.mujoco_robot_adapter import MujocoRobot
-from mind.utils import BASE_DIR
 from mind.utils.logging_handler import setup_logger
 from mind.ports.notification_port import NotificationPort
-from typing import Optional
+from mind.adapters.llm_adapters.llm_without_agnetv1 import OllamaAdapter
+from mind.adapters.robot_controller_adapters.mujoco_robot_adapter import MujocoRobot
 
 
 logger = setup_logger(__name__)
@@ -70,41 +74,109 @@ class ConnectionManager:
             except:
                 self.disconnect(ws)
 
-class WebSocketNotifier(NotificationPort):
-    def __init__(self, connection_manager: ConnectionManager, loop: asyncio.AbstractEventLoop):
+
+
+class ScreenUpdater:
+    """Infrastructure-specific utility for screen updates: Generates payloads and broadcasts via WebSocket.
+    Encapsulates the full 'show on screen' concern (UI templating + delivery).
+    """
+    def __init__(self, connection_manager: ConnectionManager):
         self.manager = connection_manager
-        self.loop = loop
+        self._CIRCLE_TEMPLATE = """
+        <div class="circle-content">
+            {title_html}
+            {content_html}
+            {bottom_html}
+        </div>
+        """
 
-    # 3. FIX: Removed _schedule wrapper. 
-    # Calling self.manager.broadcast_*() is now fire-and-forget and thread-safe.
+    def _generate_screen_payload(self, title: Optional[str] = None, content: str = "", bottom: Optional[str] = None) -> str:
+        """Internal: Generate HTML payload for a 25%/50%/25% circle layout."""
+        # Escape to prevent XSS (infrastructure concern)
+        escaped_title = html.escape(title) if title else ""
+        escaped_content = html.escape(content) if content else ""
+        escaped_bottom = html.escape(bottom) if bottom else ""
 
-    def notify_status(self, status):
+        title_html = f'<div class="circle-section top"><h4>{escaped_title}</h4></div>' if title else '<div class="circle-section top"></div>'
+        content_html = f'<div class="circle-section middle"><h1>{escaped_content}</h1></div>' if content else '<div class="circle-section middle"></div>'
+        bottom_html = f'<div class="circle-section bottom"><div class="subtitle">{escaped_bottom}</div></div>' if bottom else '<div class="circle-section bottom"></div>'
+
+        return self._CIRCLE_TEMPLATE.format(
+            title_html=title_html,
+            content_html=content_html,
+            bottom_html=bottom_html
+        )
+
+    def _generate_image_payload(self, image_url: str) -> str:
+        """Internal: Specialized payload for images (wrap in middle section)."""
+        img_html = f'<img src="{image_url}" class="circle-fit-img" alt="Notification Image" />'
+        return self._generate_screen_payload(title=None, content=img_html, bottom=None)
+
+    def _generate_content_payload(self, content: str) -> str:
+        """Internal: Simple text-only payload (full middle)."""
+        return self._generate_screen_payload(title=None, content=content, bottom=None)
+
+    def show(self, title: Optional[str] = None, content: str = "", bottom: Optional[str] = None):
+        """Public: Generate payload and broadcast screen update. Use for general screen notifications."""
+        payload = self._generate_screen_payload(title=title, content=content, bottom=bottom)
+        self.manager.broadcast_screen(active=True, content=payload)
+
+    def show_image(self, image_url: str):
+        """Public: Show image using the circle template (wrapped in middle)."""
+        payload = self._generate_image_payload(image_url)
+        self.manager.broadcast_screen(active=True, content=payload)
+
+    def show_content(self, content: str):
+        """Public: Show text content using the circle template."""
+        payload = self._generate_content_payload(content)
+        self.manager.broadcast_screen(active=True, content=payload)
+
+    def clear(self):
+        """Public: Broadcast clear command (no payload needed)."""
+        self.manager.broadcast_screen(active=False)
+
+
+class Notifier(NotificationPort):
+    """Adapter implementing NotificationPort: Broadcasts domain events to WebSocket clients.
+    Delegates full screen concerns to ScreenUpdater.
+    """
+    def __init__(self, manager: ConnectionManager):
+        self.screen_updater = ScreenUpdater(manager)  # Inject manager for broadcasting
+
+    def notify_status(self, status: str):
+        """Broadcast status event: Delegates to ScreenUpdater.show() for payload gen + broadcast."""
         if status == "active": 
-            main_text = "I'm awake!" 
+            main_text = "ACTIVE" 
             sub_text = "Ready to assist you." 
         elif status == "sleep": 
-            main_text = "Going to sleep." 
+            main_text = "SLEEPING" 
             sub_text = "See you later!" 
         elif status == "shutdown": 
-            main_text = "Shutting down." 
-            sub_text = "Goodbye!" 
-        html = ( 
-            f"<h1 class='hero-title' style='font-size:3.5rem'>{main_text}</h1>" 
-            f"<div class='subtitle'>{sub_text or ''}</div>")
-        # 5. FIX: Call manager directly (no _schedule wrapping)
-        self.manager.broadcast_screen(active=True, content=html)
+            main_text = "OFFLINE" 
+            sub_text = "Bye" 
+        else:
+            main_text = status
+            sub_text = "just a sec"
+        
+        # Delegate fully: Generate + broadcast inside ScreenUpdater
+        self.screen_updater.show(title="status", content=main_text, bottom=sub_text)
 
     def notify_content(self, content: str):
-        pass
+        """Broadcast content: Delegates to ScreenUpdater."""
+        self.screen_updater.show_content(content)
 
     def notify_image(self, image_url: str):
-        html = f"<img src='{image_url}' class='circle-fit-img' />"
-        # 5. FIX: Call manager directly
-        self.manager.broadcast_screen(active=True, content=html)
+        """Broadcast image: Delegates to ScreenUpdater."""
+        self.screen_updater.show_image(image_url)
 
     def notify_clear_display(self):
-        # 5. FIX: Call manager directly
-        self.manager.broadcast_screen(active=False)
+        """Broadcast clear command: Delegates to ScreenUpdater."""
+        self.screen_updater.clear()
+
+    # Future: Passthrough for direct structured calls from domain (if port evolves)
+    def notify_screen(self, title: Optional[str] = None, content: str = "", bottom: Optional[str] = None):
+        """Flexible screen notification; delegates to ScreenUpdater."""
+        self.screen_updater.show(title=title, content=content, bottom=bottom)
 
 
 @dataclass
@@ -120,15 +192,12 @@ class Args:
 def create_app(args):
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        # 1. Initialize Event Bus with the MAIN LOOP
-        loop = asyncio.get_running_loop()
-        
-        # 2. Setup Connection Manager (Pass loop here)
-        manager = ConnectionManager(loop=loop)
-        app.state.connection_manager = manager
-        notifier = WebSocketNotifier(manager, loop=loop)
 
-        # 4. Instantiate Adapters
+        loop = asyncio.get_running_loop()
+
+        manager = ConnectionManager(loop=loop)
+        notifier = Notifier(manager)
+
         llm_adapter = OllamaAdapter()
         robot_adapter = None
 
@@ -140,8 +209,6 @@ def create_app(args):
             robot_adapter.wait_until_ready(timeout=10)
             app.state.sim_thread = sim_thread
             
-            # These listeners are called from the Sim Thread. 
-            # Manager now handles thread-safety internally.
             robot_adapter.status_update_event.add_listener(manager.broadcast_status)
             robot_adapter.status_update_event.add_listener(notifier.notify_status)
             
@@ -153,6 +220,7 @@ def create_app(args):
                 def wake_up(self): pass
                 def sleep(self): pass
                 def shutdown(self): pass 
+                def run(self): pass
                 def stop(self): pass
 
             robot_adapter = DummyRobot()
@@ -160,6 +228,8 @@ def create_app(args):
         agent = Agent(decision_maker=llm_adapter, robot_controller=robot_adapter, notifier=notifier, loop=loop)
         
         app.state.agent = agent
+        app.state.connection_manager = manager
+        app.state.screen_updater = ScreenUpdater(manager)
         
         if args.wake_up_on_start and robot_adapter:
             agent.wake_up()
@@ -170,7 +240,6 @@ def create_app(args):
         if robot_adapter:
             agent.stop()
             if hasattr(app.state, 'sim_thread'):
-                # 6. FIX: Increased timeout to reduce chance of SegFault during cleanup
                 app.state.sim_thread.join(timeout=5.0)
         
         manager.broadcast_status("shutdown")
@@ -182,6 +251,10 @@ def create_app(args):
     @app.get("/")
     def root(request: Request):
         return templates.TemplateResponse("index.html", {"request": request})
+    
+    @app.get("favicon.ico", include_in_schema=False)
+    def favicon():
+        return FileResponse(os.path.join(BASE_DIR, "adapters/fastapi_adapters/static/favicon.ico"))
 
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket):
@@ -195,6 +268,11 @@ def create_app(args):
             if agent.robot_controller:
                 initial_status = agent.robot_controller.status()
             manager.broadcast_status(initial_status)
+            # app.state.screen_updater.show(title="status", content="Activating", bottom='just a sec')
+    
+
+            response_handler = agent.input_handler() # A single instance per connection.
+
             while True:
                 data = await websocket.receive_text()
                 try:
@@ -205,11 +283,10 @@ def create_app(args):
                 msg_type = msg.get("type")
 
                 if msg_type == "text":
-                    user_text = msg["data"]
-
-                    response_handler = agent.handle_input(user_text)
+                    user_text = msg["data"]  
+                    
                     if hasattr(response_handler, 'astream'):
-                        async for chunk in agent.response_handler.astream(user_text):
+                        async for chunk in response_handler.astream(user_text):
                             await websocket.send_text(json.dumps({"type": "chunk", "text": chunk}))
                             await asyncio.sleep(0.01)
 
@@ -219,8 +296,6 @@ def create_app(args):
 
                 elif msg_type == "power":
                     action = msg["data"]["action"]
-                    # We only call the agent. We DO NOT broadcast here. 
-                    # We wait for the Event listener to trigger broadcast.
                     agent.handle_power_command(action)
 
         except WebSocketDisconnect:

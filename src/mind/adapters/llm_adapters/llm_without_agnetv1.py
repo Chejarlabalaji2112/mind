@@ -41,7 +41,10 @@ class OllamaAdapter(DecisionMaker):
         self.llm = ChatOllama(model=self.model)
 
     def handle_input(self, user_input:str)-> str:
-        return StreamingResponseHandler(self.llm, user_input)
+        pass #just to avoid error
+
+    def input_handler(self)-> str:
+        return StreamingResponseHandler(self.llm)
 
 
     
