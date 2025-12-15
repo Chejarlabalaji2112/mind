@@ -23,6 +23,7 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from mind.utils import BASE_DIR
 from mind.core.agent import Agent
 from mind.core.status import RobotStatus
+from mind.ports.act_port import Presenter
 from mind.utils.logging_handler import setup_logger
 from mind.ports.notification_port import NotificationPort
 from mind.adapters.llm_adapters.llm_without_agnetv1 import OllamaAdapter
@@ -76,7 +77,7 @@ class ConnectionManager:
 
 
 
-class ScreenUpdater:
+class FNScreenUpdater(Presenter):
     """Infrastructure-specific utility for screen updates: Generates payloads and broadcasts via WebSocket.
     Encapsulates the full 'show on screen' concern (UI templating + delivery).
     """
@@ -141,7 +142,7 @@ class Notifier(NotificationPort):
     Delegates full screen concerns to ScreenUpdater.
     """
     def __init__(self, manager: ConnectionManager):
-        self.screen_updater = ScreenUpdater(manager)  # Inject manager for broadcasting
+        self.screen_updater = FNScreenUpdater(manager)  # Inject manager for broadcasting
 
     def notify_status(self, status: str):
         """Broadcast status event: Delegates to ScreenUpdater.show() for payload gen + broadcast."""
@@ -229,7 +230,7 @@ def create_app(args):
         
         app.state.agent = agent
         app.state.connection_manager = manager
-        app.state.screen_updater = ScreenUpdater(manager)
+        app.state.screen_updater = FNScreenUpdater(manager)
         
         if args.wake_up_on_start and robot_adapter:
             agent.wake_up()

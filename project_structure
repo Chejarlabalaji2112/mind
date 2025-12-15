@@ -1,79 +1,350 @@
 .
-├── adapters
-│   ├── esp32_adapter.py
-│   ├── __init__.py
-│   ├── llm_adapter.py
-│   ├── llm_gemini_adapter.py
-│   ├── __pycache__
-│   │   ├── esp32_adapter.cpython-312.pyc
-│   │   ├── __init__.cpython-312.pyc
-│   │   └── llm_gemini_adapter.cpython-312.pyc
-│   └── test.py
-├── core
-│   ├── agent.py
-│   ├── __init__.py
-│   ├── loop.py
-│   ├── __pycache__
-│   │   ├── agent.cpython-312.pyc
-│   │   ├── __init__.cpython-312.pyc
-│   │   ├── loop.cpython-312.pyc
-│   │   └── tool_registry.cpython-312.pyc
-│   └── tool_registry.py
-├── last_esp32_ip.txt
-├── memory
-│   └── memory.db
-├── mind.txt
-├── new updates.txt
-├── ports
-│   ├── act_port.py
-│   ├── decision_making.py
-│   ├── __init__.py
-│   ├── memory_port.py
-│   ├── percieve_port.py
-│   └── __pycache__
-│       ├── act_port.cpython-312.pyc
-│       ├── decision_making.cpython-312.pyc
-│       ├── __init__.cpython-312.pyc
-│       └── percieve_port.cpython-312.pyc
+├── logs
+│   └── app.log
+├── main.py
 ├── project_structure
-├── temp_files
-│   ├── gemini_test.ipynb
-│   ├── __pycache__
-│   │   └── time_tools_testing.cpython-312.pyc
-│   ├── time_tools_testing.py
-│   └── udp_init_test.py
-├── tools
-│   ├── tasks_skills_tools
+├── __pycache__
+│   └── main.cpython-313.pyc
+├── pyproject.toml
+├── README.md
+├── requirements
+│   ├── by_hitomi3_11requirements.txt
+│   └── hitomi_list.txt
+├── src
+│   ├── mind
+│   │   ├── adapters
+│   │   │   ├── audio_adapters
+│   │   │   │   ├── __pycache__
+│   │   │   │   │   └── sd_adapter.cpython-313.pyc
+│   │   │   │   └── sd_adapter.py
+│   │   │   ├── camera_handler.py
+│   │   │   ├── display_adapters
+│   │   │   │   ├── display_obj_base.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── __pycache__
+│   │   │   │       ├── display_obj_base.cpython-311.pyc
+│   │   │   │       ├── display_obj_base.cpython-313.pyc
+│   │   │   │       ├── __init__.cpython-311.pyc
+│   │   │   │       └── __init__.cpython-313.pyc
+│   │   │   ├── esp32_adapters
+│   │   │   │   ├── dummy_esp.py
+│   │   │   │   ├── esp32_adapter.py
+│   │   │   │   └── __init__.py
+│   │   │   ├── fastapi_adapters
+│   │   │   │   ├── static
+│   │   │   │   │   ├── css
+│   │   │   │   │   │   └── styles.css
+│   │   │   │   │   ├── favicon.ico
+│   │   │   │   │   ├── images
+│   │   │   │   │   │   ├── alphie.png
+│   │   │   │   │   │   ├── camera_hole.png
+│   │   │   │   │   │   └── hitomi.png
+│   │   │   │   │   └── js
+│   │   │   │   │       └── script.js
+│   │   │   │   └── templates
+│   │   │   │       └── index.html
+│   │   │   ├── __init__.py
+│   │   │   ├── llm_adapters
+│   │   │   │   ├── llm_adapter.py
+│   │   │   │   ├── llm_gemini_adapter.py
+│   │   │   │   ├── llm_smollm2_adapter.py
+│   │   │   │   ├── llm_without_agnetv1.py
+│   │   │   │   ├── __pycache__
+│   │   │   │   │   ├── llm_without_agnetv1.cpython-311.pyc
+│   │   │   │   │   ├── llm_without_agnetv1.cpython-313.pyc
+│   │   │   │   │   └── stream_handler.cpython-313.pyc
+│   │   │   │   └── stream_handler.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── audio_adapters.cpython-311.pyc
+│   │   │   │   ├── audio_adapters.cpython-313.pyc
+│   │   │   │   ├── camera_adapers.cpython-311.pyc
+│   │   │   │   ├── camera_adapters.cpython-311.pyc
+│   │   │   │   ├── camera_adapters.cpython-313.pyc
+│   │   │   │   ├── camera_handler.cpython-313.pyc
+│   │   │   │   ├── dummy_esp32.cpython-313.pyc
+│   │   │   │   ├── dummy_esp.cpython-313.pyc
+│   │   │   │   ├── esp32_adapter.cpython-312.pyc
+│   │   │   │   ├── esp32_adapter.cpython-313.pyc
+│   │   │   │   ├── __init__.cpython-311.pyc
+│   │   │   │   ├── __init__.cpython-312.pyc
+│   │   │   │   ├── __init__.cpython-313.pyc
+│   │   │   │   ├── llm_gemini_adapter.cpython-313.pyc
+│   │   │   │   ├── llm_smollm2_adapter.cpython-313.pyc
+│   │   │   │   ├── smollm2_langgraph.cpython-313.pyc
+│   │   │   │   ├── test.cpython-312.pyc
+│   │   │   │   └── test.cpython-313.pyc
+│   │   │   ├── pywebview_adapters
+│   │   │   │   ├── assets
+│   │   │   │   │   ├── css
+│   │   │   │   │   │   ├── global.css
+│   │   │   │   │   │   └── views.css
+│   │   │   │   │   ├── icons
+│   │   │   │   │   │   ├── chat.png
+│   │   │   │   │   │   ├── confused.png
+│   │   │   │   │   │   ├── eyes.png
+│   │   │   │   │   │   ├── home.png
+│   │   │   │   │   │   ├── laugh.png
+│   │   │   │   │   │   ├── pomodoro-technique.png
+│   │   │   │   │   │   ├── stopwatch.png
+│   │   │   │   │   │   └── timer.png
+│   │   │   │   │   ├── index.html
+│   │   │   │   │   ├── index_oldbkp.html
+│   │   │   │   │   ├── js
+│   │   │   │   │   │   ├── app.js
+│   │   │   │   │   │   └── roboeyes.js
+│   │   │   │   │   └── views
+│   │   │   │   │       ├── chat.html
+│   │   │   │   │       ├── eyes.html
+│   │   │   │   │       ├── home.html
+│   │   │   │   │       ├── pomodoro.html
+│   │   │   │   │       └── stopwatch.html
+│   │   │   │   ├── main_oldbkp.py
+│   │   │   │   └── main.py
+│   │   │   └── robot_controller_adapters
+│   │   │       ├── mujoco_robot_adapter.py
+│   │   │       └── __pycache__
+│   │   │           └── mujoco_robot_adapter.cpython-313.pyc
+│   │   ├── assets
+│   │   │   └── images
+│   │   │       └── architecture.png
+│   │   ├── core
+│   │   │   ├── agent.py
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── agent.cpython-312.pyc
+│   │   │   │   ├── agent.cpython-313.pyc
+│   │   │   │   ├── __init__.cpython-312.pyc
+│   │   │   │   ├── __init__.cpython-313.pyc
+│   │   │   │   ├── loop.cpython-312.pyc
+│   │   │   │   ├── loop.cpython-313.pyc
+│   │   │   │   ├── status.cpython-313.pyc
+│   │   │   │   ├── tool_registry.cpython-312.pyc
+│   │   │   │   └── tool_registry.cpython-313.pyc
+│   │   │   ├── status.py
+│   │   │   └── things2c.txt
+│   │   ├── __init__.py
+│   │   ├── logs
+│   │   │   ├── app.log
+│   │   │   └── resource.log
+│   │   ├── main
+│   │   │   ├── entry.py
+│   │   │   ├── fastapi_main.py
+│   │   │   ├── __init__.py
+│   │   │   ├── no_llm.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── entry.cpython-312.pyc
+│   │   │   │   ├── entry.cpython-313.pyc
+│   │   │   │   ├── fastapi_main.cpython-313.pyc
+│   │   │   │   ├── __init__.cpython-311.pyc
+│   │   │   │   ├── __init__.cpython-312.pyc
+│   │   │   │   ├── __init__.cpython-313.pyc
+│   │   │   │   ├── no_llm.cpython-312.pyc
+│   │   │   │   ├── no_llm.cpython-313.pyc
+│   │   │   │   └── pywebview_entry.cpython-311.pyc
+│   │   │   └── pywebview_entry.py
+│   │   ├── memory
+│   │   │   └── memory.db
+│   │   ├── other_files
+│   │   │   ├── coqui voice cloning.ipynb
+│   │   │   ├── coqui voice cloning.py
+│   │   │   ├── firmware.ino
+│   │   │   ├── gem_kivy
+│   │   │   │   ├── audio_eyes.py
+│   │   │   │   ├── emotion_mimic.py
+│   │   │   │   ├── gemini_eyes.py
+│   │   │   │   ├── main.py
+│   │   │   │   └── normal_html.html
+│   │   │   ├── gpt_kivy
+│   │   │   │   └── main.py
+│   │   │   └── __pycache__
+│   │   │       └── roboeyes.cpython-313.pyc
+│   │   ├── ports
+│   │   │   ├── act_port.py
+│   │   │   ├── base_robot_controller_port.py
+│   │   │   ├── decision_making_port.py
+│   │   │   ├── __init__.py
+│   │   │   ├── memory_port.py
+│   │   │   ├── notification_port.py
+│   │   │   ├── percieve_port.py
+│   │   │   └── __pycache__
+│   │   │       ├── act_port.cpython-311.pyc
+│   │   │       ├── act_port.cpython-312.pyc
+│   │   │       ├── act_port.cpython-313.pyc
+│   │   │       ├── base_robot_controller_port.cpython-313.pyc
+│   │   │       ├── decision_making.cpython-311.pyc
+│   │   │       ├── decision_making.cpython-312.pyc
+│   │   │       ├── decision_making.cpython-313.pyc
+│   │   │       ├── decision_making_port.cpython-313.pyc
+│   │   │       ├── __init__.cpython-311.pyc
+│   │   │       ├── __init__.cpython-312.pyc
+│   │   │       ├── __init__.cpython-313.pyc
+│   │   │       ├── notification_port.cpython-313.pyc
+│   │   │       ├── percieve_port.cpython-311.pyc
+│   │   │       ├── percieve_port.cpython-312.pyc
+│   │   │       └── percieve_port.cpython-313.pyc
 │   │   ├── __pycache__
-│   │   │   └── skilltracker.cpython-312.pyc
-│   │   └── skilltracker.py
-│   ├── time_tools
-│   │   ├── alarm.py
-│   │   ├── base_tool.py
-│   │   ├── clock.py
-│   │   ├── pomodoro.py
-│   │   ├── __pycache__
-│   │   │   ├── base_tool.cpython-312.pyc
-│   │   │   ├── clock.cpython-312.pyc
-│   │   │   ├── pomodoro.cpython-312.pyc
-│   │   │   ├── stopwatch.cpython-312.pyc
-│   │   │   └── timer.cpython-312.pyc
-│   │   ├── stopwatch.py
-│   │   └── timer.py
-│   └── weather_tools
-│       ├── adapters.py
-│       ├── core.py
-│       ├── ports.py
-│       └── __pycache__
-│           ├── core.cpython-312.pyc
-│           └── ports.cpython-312.pyc
-└── utils
-    ├── custom_exception.py
-    ├── logging_handler.py
-    ├── __pycache__
-    │   ├── custom_exception.cpython-312.pyc
-    │   ├── logging_handler.cpython-312.pyc
-    │   └── time_conversions.cpython-312.pyc
-    └── time_conversions.py
+│   │   │   └── __init__.cpython-313.pyc
+│   │   ├── simulation
+│   │   │   ├── description
+│   │   │   │   ├── cone_robot_c.xml
+│   │   │   │   ├── cone_robot.xml
+│   │   │   │   └── scene.xml
+│   │   │   ├── __init__.py
+│   │   │   ├── media
+│   │   │   │   ├── audio
+│   │   │   │   │   ├── boot.mp3
+│   │   │   │   │   ├── confused1.wav
+│   │   │   │   │   ├── count.wav
+│   │   │   │   │   ├── dance1.wav
+│   │   │   │   │   ├── go_sleep.wav
+│   │   │   │   │   ├── impatient1.wav
+│   │   │   │   │   ├── preview.mp3
+│   │   │   │   │   ├── shutdown.mp3
+│   │   │   │   │   ├── startupsound.mp3
+│   │   │   │   │   ├── startup-sound-variation-6-316850.mp3
+│   │   │   │   │   ├── startuptrim.mp3
+│   │   │   │   │   └── wake_up.wav
+│   │   │   │   ├── images
+│   │   │   │   │   ├── alphie.png
+│   │   │   │   │   ├── camera_hole.png
+│   │   │   │   │   └── hitomi.png
+│   │   │   │   └── videos
+│   │   │   │       ├── boot.mp4
+│   │   │   │       ├── Bootup2.mp4
+│   │   │   │       ├── enhanced startup.mp4
+│   │   │   │       ├── just_name.mp4
+│   │   │   │       └── pupil_boot.mp4
+│   │   │   ├── meshes
+│   │   │   │   ├── antenna_l.stl
+│   │   │   │   ├── antenna_r.stl
+│   │   │   │   ├── bottom1.stl
+│   │   │   │   ├── bottom.mtl
+│   │   │   │   ├── bottom.stl
+│   │   │   │   ├── camera.stl
+│   │   │   │   ├── car.stl
+│   │   │   │   ├── fl_wheel.stl
+│   │   │   │   ├── fr_wheel.stl
+│   │   │   │   ├── rl_wheel.stl
+│   │   │   │   ├── rr_wheel.stl
+│   │   │   │   ├── top1.stl
+│   │   │   │   ├── top.mtl
+│   │   │   │   └── top.stl
+│   │   │   ├── __pycache__
+│   │   │   │   ├── __init__.cpython-311.pyc
+│   │   │   │   ├── __init__.cpython-312.pyc
+│   │   │   │   └── __init__.cpython-313.pyc
+│   │   │   └── scripts
+│   │   │       ├── av_orchestrator.py
+│   │   │       ├── combined.py
+│   │   │       ├── cv_display.py
+│   │   │       ├── __init__.py
+│   │   │       ├── motion_controller.py
+│   │   │       ├── __pycache__
+│   │   │       │   ├── av_orchestrator.cpython-311.pyc
+│   │   │       │   ├── av_orchestrator.cpython-313.pyc
+│   │   │       │   ├── combined.cpython-311.pyc
+│   │   │       │   ├── combined.cpython-312.pyc
+│   │   │       │   ├── cv_display.cpython-311.pyc
+│   │   │       │   ├── cv_display.cpython-312.pyc
+│   │   │       │   ├── cv_display.cpython-313.pyc
+│   │   │       │   ├── __init__.cpython-313.pyc
+│   │   │       │   ├── mind_engine.cpython-311.pyc
+│   │   │       │   ├── mind_engine.cpython-313.pyc
+│   │   │       │   ├── motion_controller.cpython-311.pyc
+│   │   │       │   ├── motion_controller.cpython-313.pyc
+│   │   │       │   ├── run_robot.cpython-311.pyc
+│   │   │       │   ├── run_robot.cpython-313.pyc
+│   │   │       │   ├── screen_updater.cpython-311.pyc
+│   │   │       │   ├── screen_updater.cpython-313.pyc
+│   │   │       │   ├── test.cpython-311.pyc
+│   │   │       │   └── test.cpython-312.pyc
+│   │   │       ├── run_robot.py
+│   │   │       ├── screen_updater.py
+│   │   │       └── utils
+│   │   │           ├── actuators_range.json
+│   │   │           ├── check_KEY.py
+│   │   │           ├── play_1(only colors).py
+│   │   │           ├── play_2.py
+│   │   │           └── play_video.py
+│   │   ├── tools
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── __init__.cpython-311.pyc
+│   │   │   │   ├── __init__.cpython-313.pyc
+│   │   │   │   ├── tool_registry.cpython-312.pyc
+│   │   │   │   └── tool_registry.cpython-313.pyc
+│   │   │   ├── tasks_skills_tools
+│   │   │   │   ├── __pycache__
+│   │   │   │   │   ├── skilltracker.cpython-311.pyc
+│   │   │   │   │   ├── skilltracker.cpython-312.pyc
+│   │   │   │   │   └── skilltracker.cpython-313.pyc
+│   │   │   │   └── skilltracker.py
+│   │   │   ├── time_tools
+│   │   │   │   ├── alarm.py
+│   │   │   │   ├── base_tool.py
+│   │   │   │   ├── clock.py
+│   │   │   │   ├── pomodoro.py
+│   │   │   │   ├── __pycache__
+│   │   │   │   │   ├── base_tool.cpython-311.pyc
+│   │   │   │   │   ├── base_tool.cpython-312.pyc
+│   │   │   │   │   ├── base_tool.cpython-313.pyc
+│   │   │   │   │   ├── clock.cpython-312.pyc
+│   │   │   │   │   ├── clock.cpython-313.pyc
+│   │   │   │   │   ├── pomodoro.cpython-311.pyc
+│   │   │   │   │   ├── pomodoro.cpython-312.pyc
+│   │   │   │   │   ├── pomodoro.cpython-313.pyc
+│   │   │   │   │   ├── stopwatch.cpython-311.pyc
+│   │   │   │   │   ├── stopwatch.cpython-312.pyc
+│   │   │   │   │   ├── stopwatch.cpython-313.pyc
+│   │   │   │   │   ├── timer.cpython-311.pyc
+│   │   │   │   │   ├── timer.cpython-312.pyc
+│   │   │   │   │   └── timer.cpython-313.pyc
+│   │   │   │   ├── stopwatch.py
+│   │   │   │   └── timer.py
+│   │   │   ├── tool_registry
+│   │   │   │   ├── tool_registry_old.py
+│   │   │   │   └── tool_registry.py
+│   │   │   └── weather_tools
+│   │   │       ├── adapter.py
+│   │   │       ├── core.py
+│   │   │       ├── port.py
+│   │   │       └── __pycache__
+│   │   │           ├── core.cpython-312.pyc
+│   │   │           └── ports.cpython-312.pyc
+│   │   └── utils
+│   │       ├── constants.py
+│   │       ├── custom_exception.py
+│   │       ├── event.py
+│   │       ├── __init__.py
+│   │       ├── logging_handler.py
+│   │       ├── __pycache__
+│   │       │   ├── constants.cpython-313.pyc
+│   │       │   ├── custom_exception.cpython-311.pyc
+│   │       │   ├── custom_exception.cpython-312.pyc
+│   │       │   ├── custom_exception.cpython-313.pyc
+│   │       │   ├── event.cpython-313.pyc
+│   │       │   ├── __init__.cpython-311.pyc
+│   │       │   ├── __init__.cpython-312.pyc
+│   │       │   ├── __init__.cpython-313.pyc
+│   │       │   ├── logging_handler.cpython-311.pyc
+│   │       │   ├── logging_handler.cpython-312.pyc
+│   │       │   ├── logging_handler.cpython-313.pyc
+│   │       │   ├── resource_monitor.cpython-313.pyc
+│   │       │   ├── robo_eyes.cpython-311.pyc
+│   │       │   ├── robo_eyes.cpython-312.pyc
+│   │       │   ├── robo_eyes.cpython-313.pyc
+│   │       │   ├── time_conversions.cpython-311.pyc
+│   │       │   ├── time_conversions.cpython-312.pyc
+│   │       │   └── time_conversions.cpython-313.pyc
+│   │       ├── resource_monitor.py
+│   │       ├── robo_eyes.py
+│   │       └── time_conversions.py
+│   └── mind.egg-info
+│       ├── dependency_links.txt
+│       ├── PKG-INFO
+│       ├── requires.txt
+│       ├── SOURCES.txt
+│       └── top_level.txt
+└── uv.lock
 
-19 directories, 58 files
+67 directories, 281 files

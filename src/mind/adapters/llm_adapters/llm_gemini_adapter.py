@@ -3,7 +3,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.agents import initialize_agent, AgentType
 from langchain.tools import StructuredTool,Tool
 from mind.ports.decision_making_port import DecisionMaker
-from tools.tool_registry import ToolRegistry
+from tools.tool_registry.tool_registry_old import ToolRegistry
 from langchain.prompts import MessagesPlaceholder
 
 

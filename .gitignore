@@ -40,3 +40,5 @@ files_need_to_arrange/
 
 #media 
 src/mind/simulation/media/
+
+src/mind/mind.egg-info/
