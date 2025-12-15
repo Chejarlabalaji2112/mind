@@ -16,7 +16,7 @@ class ToolRegistry:
             self._registry[func.__name__] = func
             return func
 
-        # Case 2: Called as @register(name="foo") or @register()
+        # Case 2: Called as @register(name="func") or @register()
         def decorator(obj):
             tool_name = name_or_func if isinstance(name_or_func, str) else obj.__name__
             self._registry[tool_name] = obj
