@@ -1,4 +1,11 @@
 A simultation available 
+
+# Robot when closed
+![Hitomi Closed](./src/mind/assets/images/closed_cone.png)
+# Robot boot_up
+![Hitomi Closed](./src/mind/assets/images/opened_name_cone.png)
+# Robot running
+![Hitomi opened](./src/mind/assets/images/opened_eyes_cone.png)
 # 🤖 Personalized Companion Robot — HITOMI Architecture
 
 > _Adaptive Interaction · Emotional Understanding · Causal Intelligence_

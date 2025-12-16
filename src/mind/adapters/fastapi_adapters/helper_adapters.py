@@ -110,6 +110,9 @@ class FNScreenUpdater(Presenter):
         """Public: Broadcast clear command (no payload needed)."""
         self.manager.broadcast_screen(active=False)
 
+    def prepare_input(self, title="", content="", bottom=""):
+        return {"title": title, "content":content, "bottom": bottom}
+
 
 class Notifier(NotificationPort):
     """Adapter implementing NotificationPort: Broadcasts domain events to WebSocket clients.

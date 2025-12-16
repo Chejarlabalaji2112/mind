@@ -1,5 +1,5 @@
 
-from mind.simulation.scripts.mind_engine import MujocoRobot 
+from mind.simulation.scripts.animate_robot import MujocoRobot 
 
 BOOT_VIDEO_PATH = "/home/badri/mine/hitomi/mind/src/mind/simulation/media/videos/pupil_boot.mp4"
 import threading

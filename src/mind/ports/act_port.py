@@ -5,6 +5,10 @@ class Presenter(ABC):
     def show(self, content: str) -> bool:
         pass
 
+    @abstractmethod
+    def prepare_input(self):
+        pass 
+
 class Speaker(ABC): # Inherit from ABC
     """This class handles telling the output through sound. Uses an speaker provided to tell the ouput."""
     @abstractmethod

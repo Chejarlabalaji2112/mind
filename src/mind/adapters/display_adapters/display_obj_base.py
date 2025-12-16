@@ -12,3 +12,4 @@ class DisplayObj(Presenter):
 
     def update(self):
         raise NotImplementedError("update() must be implemented by subclasses.")
+    

@@ -115,6 +115,13 @@ class ScreenUpdater(DisplayObj):
                     self.font, scale, color, thickness, cv2.LINE_AA)
 
 
+    def prepare_input(title: str, content: str, bottom: str|list):
+        """
+        return a dict for show_layout based on usecase """
+        if type(bottom) == list:
+            return {"top_left": title, "center": content, "bottom_left":bottom[0], "bottom_right":bottom[1]}
+        return {"top_left": title, "center": content, "bottom_left": bottom}
+    
     def show_layout(self, data, bg_color=(0,0,0), styles=None):
         """
         data = {

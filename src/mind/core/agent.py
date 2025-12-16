@@ -2,7 +2,6 @@
 from mind.ports.decision_making_port import DecisionMaker
 from mind.core.status import RobotStatus
 from mind.utils.logging_handler import setup_logger
-from mind.utils import Event
 from mind.ports.base_robot_controller_port import BaseRobotController
 from mind.ports.notification_port import NotificationPort
 
@@ -12,7 +11,7 @@ logger = setup_logger(__name__)
 class Agent():
     """Orchestrates tools using a DecisionMaker (LLM or other)."""
 
-    def __init__(self, decision_maker: DecisionMaker, robot_controller: BaseRobotController, notifier: NotificationPort, loop=None ):
+    def __init__(self, decision_maker: DecisionMaker, robot_controller: BaseRobotController,notifier: NotificationPort, loop=None ):
         self.decision_maker = decision_maker
         self.robot_controller = robot_controller
         self.notifier = notifier
