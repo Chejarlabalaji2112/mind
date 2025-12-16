@@ -9,7 +9,7 @@ import mujoco.viewer
 from enum import Enum, auto
 from mind.utils import Event
 from mind.utils import SIMULATION_DIR
-from mind.utils.robo_eyes import RoboEyes, HAPPY
+from mind.utils.robo_eyes import RoboEyes, DEFAULT, TIRED, ANGRY ,HAPPY, N, S, E, W, NW, SW, SE, NE
 from mind.utils.logging_handler import setup_logger
 from mind.adapters.camera_handler import CameraSource
 from mind.adapters.audio_adapters.sd_adapter import AudioManager
@@ -39,7 +39,8 @@ class RobotCommand(Enum):
     UPDATE_SCREEN = auto()
     MOTION_COMPLETE = auto()
     BOOT_COMPLETE = auto()
-    TIMER = auto()
+    SET_EYES_MODE = auto()
+    SET_EYES_POS = auto()
 
 class MujocoRobot(BaseRobotController):
     # 1. Update Init to accept event_bus
@@ -182,6 +183,12 @@ class MujocoRobot(BaseRobotController):
     def status(self):
         with self._status_lock:
             return self._current_status.value
+        
+    def set_eyes_mode(self, mode):
+        self._command_queue.put((RobotCommand.SET_EYES_MODE, {"mode": mode}))
+
+    def set_eyes_position(self, position):
+        self._command_queue.put((RobotCommand.SET_EYES_POS, {"position": position}))
 
     # -----------------------------------------------------
     # INTERNAL HELPERS (Where status changes actually happen)
@@ -254,6 +261,34 @@ class MujocoRobot(BaseRobotController):
                     self.eyes.set_idle_mode(True)
             else:
                 self.eyes.is_active = False
+
+        elif cmd_type == RobotCommand.SET_EYES_MODE:
+            if self.eyes.is_active:
+                mode = payload['mode']
+                if mode == "HAPPY":
+                    _mode = HAPPY
+                elif mode == "ANGRY":
+                    _mode = ANGRY
+                elif mode == "TIRED":
+                    _mode = TIRED
+                else:
+                    _mode = DEFAULT
+                self.eyes.set_mode(mode)
+
+        elif cmd_type == RobotCommand.SET_EYES_POS:
+            if self.eyes.is_active:
+                position = payload['position']
+                pos_map = {
+                    "N": N,
+                    "S": S,
+                    "E": E,
+                    "W": W,
+                    "NE": NE,
+                    "NW": NW,
+                    "SE": SE,
+                    "SW": SW
+                }
+                self.eyes.set_position(pos_map[position])
 
         elif cmd_type == RobotCommand.UPDATE_SCREEN:
             self.screen_bottom.show_text(payload['text'])

@@ -7,7 +7,13 @@ from mind.utils.logging_handler import setup_logger
 logger = setup_logger(__name__)
 
 class Timer(TimeTool):
+    """
+    A countdown timer tool that inherits from TimeTool.
+    Manages a countdown from a specified duration, emitting tick events 
+    updates and a finished event when the time expires.
+    """
     def __init__(self, loop=None):
+        """Initializes the Timer, setting up the event loop and state variables."""
         super().__init__()
         self._duration = 0
         self._remaining_time = 0
@@ -17,6 +23,18 @@ class Timer(TimeTool):
         self.on_tick.loop = loop
 
     def start(self, duration):
+        """
+        Starts the timer for a specific duration.
+
+        Args:
+            duration (int/float): The duration of the timer in seconds.
+
+        Raises:
+            ValueError: If duration is less than or equal to 0.
+
+        Returns:
+            str: Status message indicating the timer has started.
+        """
         if self._is_running:
             logger.warning("Timer is already running.")
             return "Timer is already running."
@@ -36,6 +54,7 @@ class Timer(TimeTool):
         return f"Timer started for {duration} seconds."
 
     def reset(self):
+        """Resets the timer, clearing the duration and remaining time."""
         super().reset()
         self._duration = 0
         self._remaining_time = 0
@@ -43,6 +62,13 @@ class Timer(TimeTool):
         return "Timer reset."
 
     def get_status(self):
+        """
+        Retrieves the current status of the timer.
+
+        Returns:
+            dict: Contains 'is_running', 'duration', 'remaining_time', 'elapsed_time',
+                and their formatted string representations.
+        """
         if self._is_running:
             elapsed = time.time() - self._start_time
             self._remaining_time = max(0, self._duration - (self._elapsed_at_pause + elapsed))
@@ -56,6 +82,10 @@ class Timer(TimeTool):
         }
 
     def _run(self):
+        """
+        The internal loop running in a separate thread.
+        Continuously decrements remaining time and emits 'on_tick' events until time expires.
+        """
         first_time=True
         last_text = None
         formatted = format_seconds_to_hms(self._remaining_time)

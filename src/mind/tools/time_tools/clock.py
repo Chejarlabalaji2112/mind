@@ -5,6 +5,11 @@ from mind.utils.logging_handler import setup_logger
 logger = setup_logger(__name__)
 
 class Clock:
+    """
+    A static utility class for handling date and time retrieval.
+    Provides methods to get current datetime objects in UTC, local, or specific timezones,
+    as well as formatting them into strings.
+    """
     @staticmethod
     def get_current_utc_datetime():
         """Returns the current UTC datetime object."""

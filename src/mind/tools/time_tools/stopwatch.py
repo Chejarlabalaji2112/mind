@@ -7,6 +7,10 @@ from mind.utils.logging_handler import setup_logger
 logger = setup_logger(__name__)
 
 class Stopwatch(TimeTool):
+    """
+    A stopwatch tool that inherits from TimeTool.
+    Measures elapsed time from a start point and supports recording split/lap times.
+    """
     def __init__(self, loop=None):
         super().__init__()
         self._elapsed_time = 0
@@ -15,6 +19,7 @@ class Stopwatch(TimeTool):
         self.on_lap = Event()
 
     def start(self):
+        """Starts the stopwatch. if already running, logs a warning."""
         if self._is_running:
             logger.warning("Stopwatch is already running.")
             return
@@ -28,6 +33,7 @@ class Stopwatch(TimeTool):
         logger.info("Stopwatch started.")
 
     def reset(self):
+        """Resets the stopwatch elapsed time and clears all recorded laps."""
         super().reset()
         self._elapsed_time = 0
         self.on_reset.emit(elapsed_time=0, elapsed_time_formatted=format_seconds_to_hms(0))
@@ -35,6 +41,12 @@ class Stopwatch(TimeTool):
         logger.info("Stopwatch reset.")
 
     def lap(self):
+        """
+        Records the current elapsed time as a lap.
+        Emits an 'on_lap' event with the lap details.
+
+        Logs a warning if called when the stopwatch is not running.
+        """
         if self._is_running:
             current_elapsed = self._elapsed_at_pause + (time.time() - self._start_time)
             self._laps.append(current_elapsed)
@@ -44,6 +56,12 @@ class Stopwatch(TimeTool):
             logger.warning("Stopwatch is not running, cannot record lap.")
 
     def get_status(self):
+        """
+        Retrieves the current status of the stopwatch.
+
+        Returns:
+            dict: Contains 'is_running', 'elapsed_time', 'laps' (list), and formatted strings.
+        """
         if self._is_running:
             self._elapsed_time = self._elapsed_at_pause + (time.time() - self._start_time)
         return {
@@ -55,6 +73,10 @@ class Stopwatch(TimeTool):
         }
 
     def _run(self):
+        """
+        The internal loop running in a separate thread.
+        Updates the elapsed time and emits 'on_tick' events approximately every 100ms.
+        """
         last_text = None
         while self._is_running:
             current_elapsed = self._elapsed_at_pause + (time.time() - self._start_time)

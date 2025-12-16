@@ -4,9 +4,6 @@ Alarm management is a complex task in my opnion. this can be improved in many wa
 """
 
 
-
-
-
 import time
 import threading
 import datetime
@@ -20,6 +17,11 @@ from utils.logging_handler import setup_logger
 logger = setup_logger(__name__)
 
 class AlarmManager:
+    """
+    Manages the creation, storage, and triggering of alarms.
+    Persists alarms in an SQLite database and uses a background thread to 
+    monitor and trigger them.
+    """
     def __init__(self, db_path="memory/memory.db"):
         self._db_path = db_path
         self._monitor_thread = None

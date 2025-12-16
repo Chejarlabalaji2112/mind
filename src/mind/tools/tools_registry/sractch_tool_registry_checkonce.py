@@ -1,6 +1,12 @@
 import inspect
 from typing import Any, Dict, Optional, Union, Callable
+
+from torch import DictType
 from mind.tools import Timer
+from mind.utils import setup_logger
+
+
+logger = setup_logger(__name__)
 
 class ToolRegistry:
     def __init__(self):
@@ -16,7 +22,7 @@ class ToolRegistry:
             self._registry[func.__name__] = func
             return func
 
-        # Case 2: Called as @register(name="func") or @register()
+        # Case 2: Called as @register(name="fun") or @register()
         def decorator(obj):
             tool_name = name_or_func if isinstance(name_or_func, str) else obj.__name__
             self._registry[tool_name] = obj
@@ -36,7 +42,7 @@ class ToolRegistry:
         # Use provided name, or fallback to the tool's original name
         tool_name = name if name else tool.__name__
         self._registry[tool_name] = tool
-        print(f"✅ Registered '{tool_name}' manually.")
+        logger.info(f"Registered '{tool_name}' manually.")
 
     def get_instance(self, name: str, *args, **kwargs) -> Any:
         """
@@ -121,6 +127,11 @@ class ToolRegistry:
             return str(inspect.signature(obj))
         except ValueError:
             return "(...)"
+        
+    def list_tools(self):
+        return self._registry.keys()
+        
+        
 
 # --- USAGE DEMO ---
 
@@ -133,7 +144,7 @@ registry.add_tool(Timer, name="MyTimer")
 registry.add_tool(Timer.start, name="start_timer")
 
 # 1. List and Get Details
-print(registry.get_details("MyTimer", detailed=True))
+print((details:=registry.get_details("MyTimer", detailed=True)),"here is the type", type(details))
 
 # 2. Get Instance
 # This works for Class
@@ -147,3 +158,7 @@ print(f"/n/nFunction instance result: {func_result}")
 # 3. Instance Details
 # Now we inspect the instance we just made
 print(registry.get_details("start_timer", detailed=True))
+
+
+print("tools are:")
+print(registry.list_tools().items())
