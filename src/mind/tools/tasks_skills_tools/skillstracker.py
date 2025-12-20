@@ -1,7 +1,7 @@
 from datetime import datetime
 from mind.utils import custom_exception as ce
 from mind.utils.logging_handler import setup_logger
-from mind.ports.memory_port import MemoryPort
+from mind.core.ports.memory_port import MemoryPort
 
 class SkillsTracker:
     def __init__(self, memory_adapter: MemoryPort):

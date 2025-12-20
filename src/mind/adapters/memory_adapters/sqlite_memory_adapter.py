@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from mind.utils import custom_exception as ce
 from mind.utils.logging_handler import setup_logger
-from mind.ports.memory_port import MemoryPort  # Assuming memory_port.py is in the same dir
+from mind.core.ports.memory_port import MemoryPort  # Assuming memory_port.py is in the same dir
 
 class SqliteMemoryAdapter(MemoryPort):
     def __init__(self, db_path="/home/badri/mine/hitomi/mind/src/mind/memory/memory.db"):

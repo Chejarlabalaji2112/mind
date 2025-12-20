@@ -1,6 +1,6 @@
 from toolregistry import ToolRegistry
 import time
-from mind.ports.memory_port import MemoryPort
+from mind.core.ports.memory_port import MemoryPort
 from mind.tools import Timer, Stopwatch, Pomodoro, SkillsTracker, WeatherUpdater
 class ToolInstances:
     def __init__(self, loop=None, memory_adapter=None):

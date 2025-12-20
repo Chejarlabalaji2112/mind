@@ -10,7 +10,7 @@ from mind.utils.logging_handler import setup_logger
 from mind.simulation.scripts.screen_updater import ScreenUpdater
 from mind.simulation.scripts.av_orchestrator import AVOrchestrator
 from mind.adapters.audio_adapters.sd_adapter import AudioManager
-from mind.adapters.camera_handler import CameraSource
+from adapters.vision_adapters.camera_handler import CameraSource
 from mind.simulation.scripts.motion_controller import MotionController
 from mind.utils.robo_eyes import RoboEyes, HAPPY
 

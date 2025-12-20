@@ -1,9 +1,9 @@
 # core/agent.py
-from mind.ports.decision_making_port import DecisionMaker
+from mind.core.ports.decision_making_port import DecisionMaker
 from mind.core.status import RobotStatus
 from mind.utils.logging_handler import setup_logger
-from mind.ports.base_robot_controller_port import BaseRobotController
-from mind.ports.notification_port import NotificationPort
+from mind.core.ports.base_robot_controller_port import BaseRobotController
+from mind.core.ports.notification_port import NotificationPort
 
 
 logger = setup_logger(__name__)

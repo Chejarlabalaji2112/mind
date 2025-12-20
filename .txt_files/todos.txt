@@ -1,7 +1,0 @@
- I did not implemented alarm.
-whether tool.
-media player.
-
- pomodoro- agent should automatically start the pomodoro if I started workign on something, reading paper etc.
- skill-tracker- If I say it that I am going to learn python, it has to search the mind.db and check if the skill is there in the skills table and if not then create or else just create a new session.
- and the agent with camera constantly watch the user. If he get any call or need to go out then it has to end the session because intelligently it should know that the user stop the session becuase he go other work to do.

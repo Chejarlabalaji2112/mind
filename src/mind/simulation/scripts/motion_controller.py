@@ -1,8 +1,8 @@
 import mujoco
 import numpy as np
-from mind.ports.act_port import Manipulator
+from mind.core.ports.act_port import Manipulator
 from mind.utils.logging_handler import setup_logger
-from mind.ports.base_robot_controller_port import BaseRobotController
+from mind.core.ports.base_robot_controller_port import BaseRobotController
 
 logger = setup_logger(__name__)
 

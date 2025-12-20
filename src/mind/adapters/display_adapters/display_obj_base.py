@@ -1,4 +1,4 @@
-from mind.ports.act_port import Presenter
+from mind.core.ports.act_port import Presenter
 
 class DisplayObj(Presenter):
     """Base class for display objects used in AVOrchestrator.

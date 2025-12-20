@@ -2,7 +2,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 import dotenv
 dotenv.load_dotenv()
 # Custom/Local Imports
-from mind.ports.decision_making_port import DecisionMaker
+from mind.core.ports.decision_making_port import DecisionMaker
 from langchain_ollama import ChatOllama
 from mind.adapters.llm_adapters.stream_handler import StreamingResponseHandler
 

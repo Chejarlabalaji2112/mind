@@ -11,11 +11,11 @@ from mind.utils import Event
 from mind.utils import SIMULATION_DIR
 from mind.utils.robo_eyes import RoboEyes, DEFAULT, TIRED, ANGRY ,HAPPY, N, S, E, W, NW, SW, SE, NE
 from mind.utils.logging_handler import setup_logger
-from mind.adapters.camera_handler import CameraSource
+from adapters.vision_adapters.camera_handler import CameraSource
 from mind.adapters.audio_adapters.sd_adapter import AudioManager
 from mind.simulation.scripts.screen_updater import ScreenUpdater
 from mind.simulation.scripts.av_orchestrator import AVOrchestrator
-from mind.ports.base_robot_controller_port import BaseRobotController
+from mind.core.ports.base_robot_controller_port import BaseRobotController
 from mind.simulation.scripts.motion_controller import MotionController
 
 XML_PATH         = f"{SIMULATION_DIR}/description/scene.xml"

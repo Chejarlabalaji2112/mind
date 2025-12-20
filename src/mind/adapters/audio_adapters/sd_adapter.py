@@ -1,6 +1,6 @@
 #TODO:not working with wav files
-from mind.ports.percieve_port import Audition
-from mind.ports.act_port import Speaker
+from mind.core.ports.percieve_port import Audition
+from mind.core.ports.act_port import Speaker
 from mind.utils.logging_handler import setup_logger
 import sounddevice as sd
 

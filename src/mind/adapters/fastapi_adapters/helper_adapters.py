@@ -5,8 +5,8 @@ from json import tool
 import threading
 from typing import Optional
 from fastapi import WebSocket
-from mind.ports.act_port import Presenter
-from mind.ports.notification_port import NotificationPort
+from mind.core.ports.act_port import Presenter
+from mind.core.ports.notification_port import NotificationPort
 
 # --- CONNECTION MANAGER ---
 class ConnectionManager:

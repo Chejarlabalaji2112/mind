@@ -1,5 +1,5 @@
-from mind.ports.emotions_handler import EmotionsHandler
-from mind.ports.base_robot_controller_port import BaseRobotController
+from mind.core.ports.emotions_handler import EmotionsHandler
+from mind.core.ports.base_robot_controller_port import BaseRobotController
 
 class MyEmotionsHandler(EmotionsHandler):
     def __init__(self, robot_controller: BaseRobotController):

@@ -1,5 +1,5 @@
 import cv2 
-from mind.ports.percieve_port import Vision
+from mind.core.ports.percieve_port import Vision
 
 class CameraSource(Vision):
     """

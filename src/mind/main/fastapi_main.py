@@ -14,7 +14,7 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 
 # Architecture Imports
 from mind.utils import BASE_DIR
-from mind.core.agent import Agent
+from core.agents.agent import Agent
 from mind.core.status import RobotStatus
 
 from mind.utils.logging_handler import setup_logger
@@ -70,7 +70,7 @@ def create_app(args):
             robot_adapter.status_update_event.add_listener(notifier.notify_status)
             
         else:
-            from mind.ports.base_robot_controller_port import BaseRobotController
+            from mind.core.ports.base_robot_controller_port import BaseRobotController
             class DummyRobot(BaseRobotController):
                 def __init__(self, bus=None): self.bus = bus
                 def status(self): return "shutdown"
