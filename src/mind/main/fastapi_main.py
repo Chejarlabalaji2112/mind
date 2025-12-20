@@ -14,7 +14,7 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 
 # Architecture Imports
 from mind.utils import BASE_DIR
-from core.agents.agent import Agent
+from mind.core.agents.agent import Agent
 from mind.core.status import RobotStatus
 
 from mind.utils.logging_handler import setup_logger
@@ -38,6 +38,9 @@ class Args:
     localhost_only: bool = False
 
 # --- APP FACTORY ---
+# ... (imports unchanged)
+
+# ... (Args, create_app lifespan unchanged, but add task tracking)
 def create_app(args):
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -105,7 +108,10 @@ def create_app(args):
     @app.get("/")
     def root(request: Request):
         return templates.TemplateResponse("index.html", {"request": request})
-    
+
+    @app.get("/chat")  # <--- ADD THIS LINE
+    def root(request: Request):
+        return templates.TemplateResponse("index.html", {"request": request})
     @app.get("favicon.ico", include_in_schema=False)
     def favicon():
         return FileResponse(os.path.join(BASE_DIR, "adapters/fastapi_adapters/static/favicon.ico"))
@@ -122,10 +128,10 @@ def create_app(args):
             if agent.robot_controller:
                 initial_status = agent.robot_controller.status()
             manager.broadcast_status(initial_status)
-            # app.state.screen_updater.show(title="status", content="Activating", bottom='just a sec')
-    
 
-            response_handler = agent.input_handler() # A single instance per connection.
+            response_handler = agent.input_handler()  # Single instance per connection
+            current_task = None  # NEW: Track streaming task
+            current_session = None  # NEW: Track session
 
             while True:
                 data = await websocket.receive_text()
@@ -138,28 +144,83 @@ def create_app(args):
 
                 if msg_type == "text":
                     user_text = msg["data"]  
+                    session = msg.get("session", "main")  # NEW: Get session
+                    current_session = session
                     
-                    if hasattr(response_handler, 'astream'):
-                        async for chunk in response_handler.astream(user_text):
-                            await websocket.send_text(json.dumps({"type": "chunk", "text": chunk}))
-                            await asyncio.sleep(0.01)
+                    # NEW: Cancel previous task if running
+                    if current_task and not current_task.done():
+                        current_task.cancel()
+                        try:
+                            await current_task
+                        except asyncio.CancelledError:
+                            pass
+                    
+                    # NEW: Create new task for streaming
+                    async def stream_response():
+                        try:
+                            if hasattr(response_handler, 'astream'):
+                                async for chunk in response_handler.astream(user_text):
+                                    await websocket.send_text(json.dumps({
+                                        "type": "chunk", 
+                                        "text": chunk, 
+                                        "session": session  # NEW: Include session
+                                    }))
+                                    await asyncio.sleep(0.01)
+                            else:
+                                full = response_handler.get_full_response()
+                                await websocket.send_text(json.dumps({
+                                    "type": "response", 
+                                    "text": full,
+                                    "session": session
+                                }))   
+                        except asyncio.CancelledError:
+                            # NEW: Graceful cancel
+                            pass
+                        finally:
+                            # NEW: Send end signal
+                            await websocket.send_text(json.dumps({
+                                "type": "stream_end", 
+                                "session": session
+                            }))
+                    
+                    current_task = asyncio.create_task(stream_response())
 
+                elif msg_type == "stop":  # UPDATED: Ensure end signal
+                    stop_session = msg.get("session")
+                    if stop_session == current_session and current_task and not current_task.done():
+                        current_task.cancel()
+                        logger.debug("called stop")
+                        try:
+                            await current_task
+                        except asyncio.CancelledError:
+                            pass
+                        # Force end signal
+                        await websocket.send_text(json.dumps({"type": "stream_end", "session": stop_session}))
+                        current_task = None
+                        current_session = None
                     else:
-                        full = response_handler.get_full_response()
-                        await websocket.send_text(json.dumps({"type": "response", "text": full}))   
+                        # If no task, still send end to reset frontend
+                        await websocket.send_text(json.dumps({"type": "stream_end", "session": stop_session}))
 
                 elif msg_type == "power":
                     action = msg["data"]["action"]
-                    agent.handle_power_command(action)
+                    new_status = agent.handle_power_command(action)  # NEW: Get new status
+                    manager.broadcast_status(new_status)  # NEW: Broadcast update
 
         except WebSocketDisconnect:
+            # NEW: Cancel task on disconnect
+            if current_task and not current_task.done():
+                current_task.cancel()
             manager.disconnect(websocket)
         except Exception as e:
             logger.error(f"WS Error: {e}")
+            if current_task and not current_task.done():
+                current_task.cancel()
             manager.disconnect(websocket)
 
     return app
 
+# ... (run_app, main unchanged)
 # ... run_app and main remain same ...
 def run_app(args: Args) -> None:
     app = create_app(args)

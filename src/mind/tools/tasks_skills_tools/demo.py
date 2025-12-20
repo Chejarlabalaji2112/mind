@@ -1,7 +1,7 @@
 import time
 import sys
 from mind.adapters.memory_adapters.sqlite_memory_adapter import SqliteMemoryAdapter
-from tools.tasks_skills_tools.skillstracker import SkillTracker
+from mind.tools.tasks_skills_tools.skillstracker import SkillTracker
 
 # Ensure simple logging to console for the demo
 import logging

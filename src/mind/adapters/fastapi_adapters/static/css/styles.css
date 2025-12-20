@@ -143,6 +143,25 @@ header .btn-icon[tooltip]::after { bottom: auto; top: 125%; }
     pointer-events: auto;
 }
 .input-oval input { flex-grow: 1; background: transparent; border: none; color: var(--text); font-size: 1rem; outline: none; padding: 5px; }
+/* UPDATED: Stop mode for buttons */
+.btn-icon.stop-mode,
+.doubt-input-row button.stop-mode {
+    background-color: #ff4444 !important;  /* Force red bg */
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 0 10px #ff4444aa;
+}
+
+.btn-icon.stop-mode:hover,
+.doubt-input-row button.stop-mode:hover {
+    background-color: #ff3333 !important;
+    transform: scale(1.05);
+}
+
+/* Ensure SVG fills correctly in stop mode */
+.btn-icon.stop-mode svg path {
+    fill: #000 !important;  /* Black fill on red bg */
+}
+
 /* --- DOCK SYSTEM --- */
 .dock-container {
     position: fixed;
@@ -396,4 +415,20 @@ header .btn-icon[tooltip]::after { bottom: auto; top: 125%; }
 /* Fade transition for sections (optional polish) */
 .circle-section {
     transition: opacity 0.3s ease;
+}
+
+.input-area .btn-icon,
+.doubt-input-row button {
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.input-area .btn-icon:hover,
+.doubt-input-row button:hover {
+    transform: scale(1.05);
+}
+
+/* NEW: Stop button glow (red) */
+.input-area .btn-icon[style*="ff4444"],
+.doubt-input-row button[style*="ff4444"] {
+    box-shadow: 0 0 10px #ff4444aa;
 }

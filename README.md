@@ -1,12 +1,13 @@
 A simultation available 
 
-# Robot when closed
+# Companion desgin
+# when closed
 ![Hitomi Closed](./src/mind/assets/images/closed_cone.png)
-# Robot boot_up
+# boot_up
 ![Hitomi Closed](./src/mind/assets/images/opened_name_cone.png)
-# Robot running
+# running
 ![Hitomi opened](./src/mind/assets/images/opened_eyes_cone.png)
-# 🤖 Personalized Companion Robot — HITOMI Architecture
+# 🤖 Personalized Companion — HITOMI Architecture
 
 > _Adaptive Interaction · Emotional Understanding · Causal Intelligence_
 
@@ -14,7 +15,7 @@ A simultation available
 
 ## 🧠 Overview
 
-**HITOMI** is the orchestrator agent powering a **Personalized Companion Robot** designed for adaptive interaction, emotional understanding, and causal reasoning.  
+**HITOMI** is the orchestrator agent powering a **Personalized Companion** designed for adaptive interaction, emotional understanding, and causal reasoning.  
 The architecture follows a **Ports & Adapters** (Hexagonal) model — ensuring modularity, transparency, and integration between perception, cognition, and action.
 
 ---

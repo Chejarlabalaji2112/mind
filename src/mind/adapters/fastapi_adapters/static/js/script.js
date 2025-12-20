@@ -1,14 +1,19 @@
 const app = {
-    state: { view: 'home', 
+    state: { 
+        view: 'home', 
         activeContext: null, 
         autoHideEnabled: true, 
         dockOpen: false, 
         status: 'shutdown', 
         ws: null, 
         inDoubtMode: false,
-        reconnectDelay: 1000,       // Start with 1 second
-        maxReconnectDelay: 30000,   // Max wait 30 seconds
-        reconnectTimer: null },
+        reconnectDelay: 1000,       
+        maxReconnectDelay: 30000,   
+        reconnectTimer: null,
+        isGeneratingMain: false,    
+        isGeneratingDoubt: false,   
+        currentSession: null        
+    },
     router: {
         navigate: (viewId) => {
             // Switch Views
@@ -48,18 +53,27 @@ const app = {
             }
 
             if (data.type === 'chunk') {
-                if (app.state.inDoubtMode) {
-                    // → We are inside the doubt modal → append here
+                console.log('Received chunk for session:', data.session, 'Doubt mode:', app.state.inDoubtMode);  // DEBUG: Confirm routing
+                // Route based on session
+                if (data.session === 'doubt' && app.state.inDoubtMode) {
+                    // Append to doubt modal
                     const messagesDiv = document.getElementById('doubt-messages');
                     const lastBubble = messagesDiv.lastElementChild;
                     if (lastBubble && lastBubble.style.alignSelf === 'flex-start') {
                         lastBubble.textContent += data.text;
+                    } else {
+                        // Fallback: Create new AI bubble if none
+                        const aiBubble = document.createElement('div');
+                        aiBubble.style = 'align-self: flex-start; background: var(--surface); border: 1px solid var(--border); padding: 10px 14px; border-radius: 16px; max-width: 85%; margin: 8px 0; word-wrap: break-word;';
+                        aiBubble.textContent = data.text;
+                        messagesDiv.appendChild(aiBubble);
                     }
                     messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                } else {
-                    // → Normal chat
+                } else if (data.session === 'main') {
+                    // Append to main chat
                     app.chat.appendChunk(data.text);
                 }
+                // Ignore chunks for closed doubt sessions
 
             } else if (data.type === 'status') {
                 app.power.updateStatus(data.data);
@@ -76,12 +90,32 @@ const app = {
                 console.log('Audio:', data.data);
             } else if (data.type === 'error') {
                 console.error('Error:', data.data);
+            } else if (data.type === 'stream_end') {
+                const session = data.session;
+                
+                // UPDATED: More detailed log
+                console.log('Stream ended via WS:', session, 'Full data:', data);
+                
+                if (session === 'main') {
+                    app.state.isGeneratingMain = false;
+                    app.chat.updateSendButton();  // Reset button
+                } else if (session === 'doubt') {
+                    app.state.isGeneratingDoubt = false;
+                    app.chat.updateDoubtButton();  // Reset button
+                }
+                app.state.currentSession = null;
             }
         };
         app.state.ws.onerror = (error) => console.error('WS Error:', error);
         app.state.ws.onclose = () => {
             // 1. Visually indicate offline
             app.power.updateStatus('shutdown'); 
+            // NEW: Reset gen states on close
+            app.state.isGeneratingMain = false;
+            app.state.isGeneratingDoubt = false;
+            app.state.currentSession = null;
+            app.chat.updateSendButton();
+            app.chat.updateDoubtButton();
             
             // 2. Calculate next delay (Exponential Backoff)
             const nextDelay = app.state.reconnectDelay;
@@ -202,34 +236,131 @@ const app = {
     },
     chat: {
         sendUserMessage: () => {
+            console.log('Send button clicked!');  // DEBUG: Confirm click fires
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
-            if(!text || !app.state.ws || app.state.ws.readyState !== WebSocket.OPEN) return;
+            if (!text || !app.state.ws || app.state.ws.readyState !== WebSocket.OPEN || app.state.isGeneratingMain) return;  // Safeguard: No dup sends
+            
+            console.log('Starting main generation');  // DEBUG
+            app.state.currentSession = 'main';
+            app.state.isGeneratingMain = true;
+            
+            // ADD THIS: Confirm state before toggle
+            console.log('State before button update:', { isGeneratingMain: app.state.isGeneratingMain, currentSession: app.state.currentSession });
+            
+            app.chat.updateSendButton();  // This triggers the visual change
+            
             app.chat.appendMessage('user', text);
             input.value = '';
-            app.state.ws.send(JSON.stringify({ type: 'text', data: text }));
-            // Start a placeholder AI row for streaming
-            app.chat.appendMessage('ai', '');  // Empty for incremental fill
+            app.state.ws.send(JSON.stringify({ type: 'text', data: text, session: 'main' }));
+            app.chat.appendMessage('ai', '');  // Placeholder
+        },
+        stopGeneration: () => {
+            const session = app.state.currentSession;
+            
+            // ADD THIS: Log entry
+            console.log('stopGeneration called - session:', session, 'isGeneratingMain:', app.state.isGeneratingMain);
+            
+            if (session && app.state.ws && app.state.ws.readyState === WebSocket.OPEN) {
+                app.state.ws.send(JSON.stringify({ type: 'stop', session: session }));
+            }
+            if (session === 'main') {
+                app.state.isGeneratingMain = false;
+                
+                // ADD THIS: Confirm reset
+                console.log('Resetting main gen state');
+                
+                app.chat.updateSendButton();
+            } else if (session === 'doubt') {
+                app.state.isGeneratingDoubt = false;
+                app.chat.updateDoubtButton();
+            }
+            app.state.currentSession = null;
+            
+            // ADD THIS: Log exit
+            console.log('stopGeneration done - final states:', { isGeneratingMain: app.state.isGeneratingMain, currentSession: app.state.currentSession });
+        },
+        // FIXED: Use innerHTML for SVG (more reliable than replaceChild) + force reflow
+        updateSendButton: () => {
+            const btn = document.querySelector('.input-area .btn-icon');
+            if (!btn) {
+                console.error('Send button not found!');  // DEBUG
+                return;
+            }
+            const svg = btn.querySelector('svg');
+            if (!svg) {
+                console.error('SVG not found in send button!');  // DEBUG
+                return;
+            }
+            
+            // ADD THIS: Log entry and current state
+            console.log('updateSendButton called - isGeneratingMain:', app.state.isGeneratingMain);
+            console.log('Button classes before:', btn.className);  // Check if 'stop-mode' is added/removed
+            console.log('SVG innerHTML before:', svg.innerHTML);  // Check path before swap
+            
+            if (app.state.isGeneratingMain) {
+                btn.classList.add('stop-mode');
+                btn.onclick = app.chat.stopGeneration;
+                btn.setAttribute('tooltip', 'Stop Generation');
+                
+                svg.innerHTML = '<path d="M6 6h12v12H6z" fill="currentColor"/>';
+            } else {
+                btn.classList.remove('stop-mode');
+                btn.onclick = app.chat.sendUserMessage;
+                btn.setAttribute('tooltip', 'Send');
+                
+                svg.innerHTML = '<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/>';
+            }
+            // Force reflow for visual update
+            btn.offsetHeight;
+            
+            // ADD THIS: Log exit and final state
+            console.log('updateSendButton done - Button classes after:', btn.className);
+            console.log('SVG innerHTML after:', svg.innerHTML);  // Should show square path during gen, arrow otherwise
+        },
+        // UPDATED: Text button for doubt (simpler, but with class)
+        updateDoubtButton: () => {
+            const btn = document.querySelector('.doubt-input-row button');
+            if (!btn) {
+                console.error('Doubt button not found!');  // DEBUG
+                return;
+            }
+            
+            console.log('Updating doubt button to:', app.state.isGeneratingDoubt ? 'stop' : 'send');  // DEBUG
+            
+            if (app.state.isGeneratingDoubt) {
+                btn.classList.add('stop-mode');
+                btn.textContent = 'Stop';
+                btn.onclick = app.chat.stopGeneration;
+            } else {
+                btn.classList.remove('stop-mode');
+                btn.textContent = 'Send';
+                btn.onclick = app.chat.sendDoubt;
+            }
+            // Force reflow
+            btn.offsetHeight;
         },
         appendMessage: (role, text) => {
             const container = document.getElementById('message-container');
             const row = document.createElement('div');
             row.className = `message-row ${role}`;
             let inner = role === 'ai'
-                ? `<div class="avatar ai">H</div><div class="bubble"><p class="streaming-text">${text}</p><div class="doubt-trigger-wrapper"><button class="doubt-btn" onclick="app.chat.openDoubt('${text}')"><span>?</span> Ask Doubt</button></div></div>`
+                ? `<div class="avatar ai">H</div><div class="bubble"><p class="streaming-text">${text}</p><div class="doubt-trigger-wrapper"><button class="doubt-btn" onclick="app.chat.openDoubt('${text.replace(/'/g, "\\'")}')"><span>?</span> Ask Doubt</button></div></div>`
                 : `<div class="bubble"><p>${text}</p></div><div class="avatar">U</div>`;
             row.innerHTML = inner;
             container.appendChild(row);
             document.getElementById('scroller').scrollTop = document.getElementById('scroller').scrollHeight;
         },
         appendChunk: (chunk) => {
-            // Append to last AI message incrementally
             const lastAiBubble = document.querySelector('.message-row.ai:last-child .bubble p');
             if (lastAiBubble) {
                 lastAiBubble.textContent += chunk;
-                // Update doubt onclick with full text
+                // Update doubt onclick with full text (escaped)
                 const doubtBtn = lastAiBubble.parentElement.querySelector('.doubt-btn');
-                if (doubtBtn) doubtBtn.onclick = () => app.chat.openDoubt(lastAiBubble.textContent);
+                if (doubtBtn) {
+                    const fullText = lastAiBubble.textContent;
+                    doubtBtn.onclick = () => app.chat.openDoubt(fullText.replace(/'/g, "\\'"));
+                }
             } else {
                 app.chat.appendMessage('ai', chunk);
             }
@@ -237,44 +368,52 @@ const app = {
         },
         openDoubt: (ctx) => {
             app.state.activeContext = ctx;
-            app.state.inDoubtMode = true;                    // ← Enable doubt mode
+            app.state.inDoubtMode = true;
             const overlay = document.getElementById('doubt-overlay');
             overlay.classList.add('active');
             
             const messages = document.getElementById('doubt-messages');
             messages.innerHTML = `
                 <div style="font-size:0.82rem; color:#888; margin-bottom:12px; line-height:1.4;">
-                    <strong>Context:</strong><br>${ctx}
+                    <strong>Context:</strong><br>${ctx.replace(/</g, '&lt;').replace(/>/g, '&gt;')}  <!-- XSS safe -->
                 </div>`;
             
-            // Focus input
             setTimeout(() => document.getElementById('doubt-input').focus(), 100);
+            app.chat.updateDoubtButton();  // Ensure initial state
         },
-
         closeDoubt: () => {
-            app.state.inDoubtMode = false;                   // ← Disable doubt mode
+            console.log('Closing doubt modal');  // DEBUG
+            // FIXED: Reset states FIRST to ignore incoming chunks immediately
+            app.state.inDoubtMode = false;
+            if (app.state.isGeneratingDoubt) {
+                app.state.isGeneratingDoubt = false;
+                app.chat.updateDoubtButton();
+                app.chat.stopGeneration();  // Then send stop
+            }
             document.getElementById('doubt-overlay').classList.remove('active');
+            app.state.activeContext = null;
         },
-
         sendDoubt: () => {
             const input = document.getElementById('doubt-input');
             const text = input.value.trim();
-            if (!text || !app.state.ws || app.state.ws.readyState !== WebSocket.OPEN) return;
+            if (!text || !app.state.ws || app.state.ws.readyState !== WebSocket.OPEN || app.state.isGeneratingDoubt) return;  // Safeguard
+
+            console.log('Starting doubt generation');  // DEBUG
+            app.state.currentSession = 'doubt';
+            app.state.isGeneratingDoubt = true;
+            app.chat.updateDoubtButton();
 
             const messagesDiv = document.getElementById('doubt-messages');
-
-            // Add user message
             messagesDiv.innerHTML += `
                 <div style="align-self: flex-end; background: var(--chat-user-bg); padding: 9px 14px; border-radius: 16px; max-width: 80%; margin: 8px 0 8px auto; font-size:0.95rem;">
-                    ${text}</div>`;
+                    ${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;  // XSS safe
 
-            // Send to LLM
             app.state.ws.send(JSON.stringify({
                 type: 'text',
-                data: text
+                data: text,
+                session: 'doubt'
             }));
 
-            // Create AI response bubble (will be filled by chunks)
             const aiBubble = document.createElement('div');
             aiBubble.style = 'align-self: flex-start; background: var(--surface); border: 1px solid var(--border); padding: 10px 14px; border-radius: 16px; max-width: 85%; margin: 8px 0; word-wrap: break-word;';
             messagesDiv.appendChild(aiBubble);
@@ -349,10 +488,10 @@ const app = {
         document.getElementById('power-button').onclick = app.power.showMenu;
         document.getElementById('mic-btn').onclick = app.mic.start;
         document.getElementById('chat-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') app.chat.sendUserMessage();
+            if (e.key === 'Enter' && !app.state.isGeneratingMain) app.chat.sendUserMessage();
         });
         document.getElementById('doubt-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') app.chat.sendDoubt();
+            if (e.key === 'Enter' && !app.state.isGeneratingDoubt) app.chat.sendDoubt();
         });
         // Close menu on outside click
         document.addEventListener('click', (e) => {
@@ -362,6 +501,8 @@ const app = {
         });
         // Defaults
         app.router.navigate('home');
+        app.chat.updateSendButton();  // Initial setup
+        app.chat.updateDoubtButton();  // Initial for doubt (harmless if hidden)
     }
 };
 

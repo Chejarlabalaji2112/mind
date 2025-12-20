@@ -7,7 +7,7 @@ import cv2  # For fallback
 from mind.simulation.scripts.screen_updater import ScreenUpdater  # Optional MuJoCo import
 from mind.simulation.scripts.cv_display import CvDisplay  # Fallback import
 from mind.adapters.audio_adapters.sd_adapter import AudioManager
-from adapters.vision_adapters.camera_handler import CameraSource
+from mind.adapters.vision_adapters.camera_handler import CameraSource
 from mind.adapters.display_adapters import DisplayObj
 from mind.utils.logging_handler import setup_logger
 

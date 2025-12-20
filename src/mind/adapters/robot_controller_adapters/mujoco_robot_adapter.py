@@ -11,7 +11,7 @@ from mind.utils import Event
 from mind.utils import SIMULATION_DIR
 from mind.utils.robo_eyes import RoboEyes, DEFAULT, TIRED, ANGRY ,HAPPY, N, S, E, W, NW, SW, SE, NE
 from mind.utils.logging_handler import setup_logger
-from adapters.vision_adapters.camera_handler import CameraSource
+from mind.adapters.vision_adapters.camera_handler import CameraSource
 from mind.adapters.audio_adapters.sd_adapter import AudioManager
 from mind.simulation.scripts.screen_updater import ScreenUpdater
 from mind.simulation.scripts.av_orchestrator import AVOrchestrator
