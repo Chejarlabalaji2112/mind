@@ -33,3 +33,23 @@ Human Mind
 └── Consciousness
     ├── Awareness of self
     └── Awareness of environment
+
+Perception / Thought
+        ↓
+ENCODE        (raw → internal representation)
+        ↓
+CREATE        (new memory trace)
+        ↓
+STORE         (commit to memory system)
+        ↓
+ACCESS
+   ├── RETRIEVE (cue-based recall)
+   ├── UPDATE   (reconsolidation)
+   └── DELETE   (forgetting / pruning)
+        ↓
+CONSOLIDATE   (short-term → long-term, abstraction)
+
+this project first become a cognitive architecture then becomes better in cosolidation then gets meta-cognition.
+
+
+research proposal -- skill tracker. the multi-model that has multi-model input and acting has reason about what is has learnt and use it future learning and problem-solving.

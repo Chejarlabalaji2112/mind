@@ -85,10 +85,6 @@ def create_app(args):
         agent = Agent(decision_maker=llm_adapter, robot_controller=robot_adapter, notifier=notifier, loop=loop)
         app.state.agent = agent
         
-        
-        
-        
-        
         if args.wake_up_on_start and robot_adapter:
             agent.wake_up()
 
