@@ -1,3 +1,6 @@
+import re
+
+
 def convert_to_seconds(hours=0, minutes=0, seconds=0):
     """
     Converts hours, minutes, and seconds into a total duration in seconds.
@@ -31,3 +34,37 @@ def format_seconds_to_hms(total_seconds):
     minutes = (total_seconds % 3600) // 60
     seconds = total_seconds % 60
     return f"{hours:02}:{minutes:02}:{seconds:02}"
+
+def parse_time_string(time_str: str) -> int:
+    """
+    Parses a string representing time (e.g., '1h 30m', '20m', '45s') into seconds.
+    """
+    if not time_str:
+        return 0
+    
+    time_str = time_str.lower().replace(" ", "")
+    
+    # Check for simple number (assume seconds)
+    if time_str.isdigit():
+        return int(time_str)
+
+    hours = 0
+    minutes = 0
+    seconds = 0
+
+    # Extract hours
+    h_match = re.search(r'(\d+)h', time_str)
+    if h_match:
+        hours = int(h_match.group(1))
+
+    # Extract minutes
+    m_match = re.search(r'(\d+)m', time_str)
+    if m_match:
+        minutes = int(m_match.group(1))
+
+    # Extract seconds
+    s_match = re.search(r'(\d+)s', time_str)
+    if s_match:
+        seconds = int(s_match.group(1))
+
+    return convert_to_seconds(hours, minutes, seconds)

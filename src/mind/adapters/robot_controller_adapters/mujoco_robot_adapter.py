@@ -37,10 +37,33 @@ class RobotCommand(Enum):
     PLAY_VIDEO = auto()
     SET_EYES = auto()
     UPDATE_SCREEN = auto()
+    UPDATE_SCREEN_B = auto()
     MOTION_COMPLETE = auto()
     BOOT_COMPLETE = auto()
     SET_EYES_MODE = auto()
     SET_EYES_POS = auto()
+
+class BottomScreenHelper:
+    def __init__(self, show):
+        self.show = show
+
+    def prepare_input(self,**payload):
+        bottom = payload["bottom"].split("--")
+        if len(bottom) < 2:
+            bottom.append("")
+
+        data = {
+            "top_left":payload["title"],
+            "top_center": time.strftime("%H:%M:%S"),
+            "center" :payload["content"],
+            "bottom_left" : bottom[0],
+            "bottom_right": bottom[1]
+        }
+        return data
+
+    @classmethod    
+    def clear():
+        pass
 
 class MujocoRobot(BaseRobotController):
     # 1. Update Init to accept event_bus
@@ -77,6 +100,8 @@ class MujocoRobot(BaseRobotController):
         self.status_update_event = Event(loop=loop)
 
         self._requested_state = None
+
+        self.bsh =  BottomScreenHelper(self.show_text_bottom) #this one provides way to use show method for this object.
 
     # ... [run, stop, wait_until_ready methods remain unchanged] ...
 
@@ -164,8 +189,10 @@ class MujocoRobot(BaseRobotController):
     def set_eye_mode(self, active=True):
         self._command_queue.put((RobotCommand.SET_EYES, {"active": active}))
         
-    def show_text_bottom(self, text):
-        self._command_queue.put((RobotCommand.UPDATE_SCREEN, {"text": text}))
+    def show_text_bottom(self, **data):
+        self.show_clock = False
+        self._command_queue.put((RobotCommand.UPDATE_SCREEN_B, data))
+
 
     def motion_complete(self, motion_type ):
         if motion_type == 'open':
@@ -290,8 +317,8 @@ class MujocoRobot(BaseRobotController):
                 }
                 self.eyes.set_position(pos_map[position])
 
-        elif cmd_type == RobotCommand.UPDATE_SCREEN:
-            self.screen_bottom.show_text(payload['text'])
+        elif cmd_type == RobotCommand.UPDATE_SCREEN_B:
+            self.screen_bottom.show_layout(payload)
 
         elif cmd_type == RobotCommand.MOTION_COMPLETE:
             if self._current_status != RobotStatus.ACTIVE: return

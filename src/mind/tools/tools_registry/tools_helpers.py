@@ -12,7 +12,7 @@ class ToolsHelpers:
         """Helper method to update all presenters to avoid code repetition."""
         for presenter in self.presenters:
             prepared_input = presenter.prepare_input(title=title, content=content, bottom=bottom)
-            presenter.show(prepared_input)
+            presenter.show(**prepared_input)
 
     # ==========================================
     # TIMER HANDLERS
@@ -129,30 +129,30 @@ class ToolsHelpers:
         # Formats the title to look like "Pomodoro - WORK"
         display_phase = phase.replace("_", " ").title()
         self._broadcast(
-            title=f"Pomodoro - {display_phase}", 
+            title=f"Pomodoro", 
             content=remaining_time_formatted, 
-            bottom="Focus..." if phase == "WORK" else "Relax..."
+            bottom=display_phase
         )
 
     def pomodoro_on_work_start_handler(self, cycle):
         self._broadcast(
-            title="Pomodoro: Work", 
+            title="Pomodoro", 
             content="Focus Time Started", 
-            bottom=f"Cycle: {cycle}"
+            bottom=f"Work -- Cycle: {cycle}"
         )
 
     def pomodoro_on_short_break_start_handler(self, cycle):
         self._broadcast(
-            title="Pomodoro: Short Break", 
+            title="Pomodoro", 
             content="Take a quick break", 
-            bottom=f"Cycle: {cycle}"
+            bottom=f"SBreak -- Cycle: {cycle}"
         )
 
     def pomodoro_on_long_break_start_handler(self, cycle):
         self._broadcast(
-            title="Pomodoro: Long Break", 
+            title="Pomodoro", 
             content="Take a long rest", 
-            bottom=f"Cycle: {cycle}"
+            bottom=f"LBreak -- Cycle: {cycle}"
         )
 
     def pomodoro_on_phase_end_handler(self, previous_phase, current_cycle):

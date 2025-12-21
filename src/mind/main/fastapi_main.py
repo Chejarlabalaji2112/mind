@@ -20,10 +20,12 @@ from mind.core.status import RobotStatus
 from mind.utils.logging_handler import setup_logger
 
 from mind.adapters.llm_adapters.llm_without_agnetv1 import OllamaAdapter
-# from mind.adapters.llm_adapters.ollama_adapter import OllamaAdapter
 from mind.adapters.robot_controller_adapters.mujoco_robot_adapter import MujocoRobot
 from mind.adapters.fastapi_adapters.helper_adapters import ConnectionManager, FNScreenUpdater, Notifier, output_tuner
 from mind.tools.tools_registry.core import Register
+from mind.tools.tools_registry.tools_helpers import ToolsHelpers
+from mind.adapters.fastapi_adapters.symbolic_handler import SymbolicHandler
+from mind.adapters.memory_adapters.sqlite_memory_adapter import SqliteMemoryAdapter
 
 logger = setup_logger(__name__)
 
@@ -39,9 +41,7 @@ class Args:
     localhost_only: bool = False
 
 # --- APP FACTORY ---
-# ... (imports unchanged)
 
-# ... (Args, create_app lifespan unchanged, but add task tracking)
 def create_app(args):
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -56,10 +56,51 @@ def create_app(args):
         robot_adapter = None
         screen_updater = FNScreenUpdater(manager)
         presenters = [screen_updater]
-        register = Register(loop=loop)
+        
+        # Initialize Memory Adapter (using default path or configured path)
+        db_path = os.path.join(BASE_DIR, "memory/memory.db")
+        memory_adapter = SqliteMemoryAdapter(db_path=db_path)
+        
+        # Initialize Registry and Tools
+        register = Register(loop=loop, memory_adapter=memory_adapter)
         registry = register.registry
         app.state.register = register
         app.state.registry = registry
+        
+        # Initialize Tools Helpers and Bind Listeners
+        tools_helpers = ToolsHelpers(presenters)
+        tool_instances = register.tool_instances
+
+        # -- Timer Events --
+        tool_instances.timer.on_start.add_listener(tools_helpers.timer_on_start_handler)
+        tool_instances.timer.on_tick.add_listener(tools_helpers.timer_on_tick_handler)
+        tool_instances.timer.on_pause.add_listener(tools_helpers.timer_on_pause_handler)
+        tool_instances.timer.on_resume.add_listener(tools_helpers.timer_on_resume_handler)
+        tool_instances.timer.on_stop.add_listener(tools_helpers.timer_on_stop_handler)
+        tool_instances.timer.on_reset.add_listener(tools_helpers.timer_on_reset_handler)
+        tool_instances.timer.on_finished.add_listener(tools_helpers.timer_on_finished_handler)
+
+        # -- Stopwatch Events --
+        tool_instances.stopwatch.on_start.add_listener(tools_helpers.stopwatch_on_start_handler)
+        tool_instances.stopwatch.on_tick.add_listener(tools_helpers.stopwatch_on_tick_handler)
+        tool_instances.stopwatch.on_pause.add_listener(tools_helpers.stopwatch_on_pause_handler)
+        tool_instances.stopwatch.on_resume.add_listener(tools_helpers.stopwatch_on_resume_handler)
+        tool_instances.stopwatch.on_stop.add_listener(tools_helpers.stopwatch_on_stop_handler)
+        tool_instances.stopwatch.on_reset.add_listener(tools_helpers.stopwatch_on_reset_handler)
+        tool_instances.stopwatch.on_lap.add_listener(tools_helpers.stopwatch_on_lap_handler)
+
+        # -- Pomodoro Events --
+        tool_instances.pomodoro.on_tick.add_listener(tools_helpers.pomodoro_on_tick_handler)
+        tool_instances.pomodoro.on_work_start.add_listener(tools_helpers.pomodoro_on_work_start_handler)
+        tool_instances.pomodoro.on_short_break_start.add_listener(tools_helpers.pomodoro_on_short_break_start_handler)
+        tool_instances.pomodoro.on_long_break_start.add_listener(tools_helpers.pomodoro_on_long_break_start_handler)
+        tool_instances.pomodoro.on_phase_end.add_listener(tools_helpers.pomodoro_on_phase_end_handler)
+        tool_instances.pomodoro.on_cycle_complete.add_listener(tools_helpers.pomodoro_on_cycle_complete_handler)
+        tool_instances.pomodoro.on_pause.add_listener(tools_helpers.pomodoro_on_pause_handler)
+        tool_instances.pomodoro.on_resume.add_listener(tools_helpers.pomodoro_on_resume_handler)
+        tool_instances.pomodoro.on_stop.add_listener(tools_helpers.pomodoro_on_stop_handler)
+        tool_instances.pomodoro.on_reset.add_listener(tools_helpers.pomodoro_on_reset_handler)
+
 
 
         if args.sim:
@@ -72,11 +113,14 @@ def create_app(args):
             
             robot_adapter.status_update_event.add_listener(manager.broadcast_status)
             robot_adapter.status_update_event.add_listener(notifier.notify_status)
+            presenters.append(robot_adapter.bsh)
             
         else:
             from mind.core.ports.base_robot_controller_port import BaseRobotController
             class DummyRobot(BaseRobotController):
-                def __init__(self, bus=None): self.bus = bus
+                def __init__(self, bus=None): 
+                    self.bus = bus
+                    self.show_clock = True
                 def status(self): return "shutdown"
                 def wake_up(self): pass
                 def sleep(self): pass
@@ -85,7 +129,10 @@ def create_app(args):
                 def stop(self): pass
 
             robot_adapter = DummyRobot()
-
+ 
+        # Initialize Symbolic Handler
+        app.state.symbolic_handler = SymbolicHandler(tool_instances, presenters, robot_adapter)
+        
         agent = Agent(decision_maker=llm_adapter, robot_controller=robot_adapter, notifier=notifier, loop=loop)
         app.state.agent = agent
         
@@ -141,9 +188,19 @@ def create_app(args):
                 msg_type = msg.get("type")
 
                 if msg_type == "text":
-                    user_text = msg["data"]  
-                    session = msg.get("session", "main")  # NEW: Get session
+                    user_text = msg["data"]
+                    session = msg.get("session", "main")
                     current_session = session
+
+                    # Symbolic Handler Logic
+                    if user_text.strip().startswith("/"):
+                        await app.state.symbolic_handler.process(user_text)
+                        # Optionally send a confirmation "end of stream" signal so UI knows cmd is done
+                        await websocket.send_text(json.dumps({
+                            "type": "stream_end",
+                            "session": session
+                        }))
+                        continue
                     
                     # NEW: Cancel previous task if running
                     if current_task and not current_task.done():
@@ -218,8 +275,6 @@ def create_app(args):
 
     return app
 
-# ... (run_app, main unchanged)
-# ... run_app and main remain same ...
 def run_app(args: Args) -> None:
     app = create_app(args)
     try:
