@@ -20,6 +20,7 @@ from mind.core.status import RobotStatus
 from mind.utils.logging_handler import setup_logger
 
 from mind.adapters.llm_adapters.llm_without_agnetv1 import OllamaAdapter
+# from mind.adapters.llm_adapters.ollama_adapter import OllamaAdapter
 from mind.adapters.robot_controller_adapters.mujoco_robot_adapter import MujocoRobot
 from mind.adapters.fastapi_adapters.helper_adapters import ConnectionManager, FNScreenUpdater, Notifier, output_tuner
 from mind.tools.tools_registry.core import Register
@@ -109,9 +110,6 @@ def create_app(args):
     def root(request: Request):
         return templates.TemplateResponse("index.html", {"request": request})
 
-    @app.get("/chat")  # <--- ADD THIS LINE
-    def root(request: Request):
-        return templates.TemplateResponse("index.html", {"request": request})
     @app.get("favicon.ico", include_in_schema=False)
     def favicon():
         return FileResponse(os.path.join(BASE_DIR, "adapters/fastapi_adapters/static/favicon.ico"))

@@ -27,6 +27,7 @@
             <div id="robot-status" class="status-dot status-shutdown" tooltip="System Status"></div>
         </div>
     </header>
+
     <main id="main-stage">
         <section class="view-section active" id="view-home">
             <div class="hitomi-container">
@@ -44,7 +45,17 @@
                 <div id="home-dynamic-content" class="fade-transition hidden">
                 </div>
             </div>
+
+            <div class="home-text-layer">
+                <div class="home-text-col ai-side">
+                    <div id="home-ai-display" class="home-text-content"></div>
+                </div>
+                <div class="home-text-col user-side">
+                    <div id="home-user-display" class="home-text-content user"></div>
+                </div>
+            </div>
         </section>
+
         <section class="view-section chat-layout" id="view-chat">
             <aside class="chat-sidebar">
                 <button class="sidebar-btn active" onclick="app.chat.clearChat()">
@@ -78,12 +89,19 @@
             </div>
         </section>
     </main>
+
     <div class="dock-trigger" onmouseenter="app.ui.handleMouseEnter()"></div>
+    
     <nav class="dock-container hidden" id="dock" onmouseleave="app.ui.handleMouseLeave()">
         <button class="btn-icon active-mode" id="auto-mode-btn" tooltip="Auto-Hide: ON" onclick="app.ui.toggleAutoMode()">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><circle cx="12" cy="12" r="5" fill="currentColor"/></svg>
         </button>
         <div style="width:1px; background:var(--border); margin:0 5px;"></div>
+        
+        <button class="btn-icon" onclick="app.home.toggleDirectInput()" tooltip="Direct Chat">
+            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10h8M8 14h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+
         <button class="btn-icon" onclick="app.router.navigate('home')" tooltip="Home">
             <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
         </button>
@@ -94,9 +112,17 @@
             <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
         </button>
     </nav>
+
     <button class="dock-arrow-btn up-mode" id="dock-arrow" onclick="app.ui.manualToggle()" title="Open/Close Dock">
         <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" fill="currentColor"/></svg>
     </button>
+
+    <div class="direct-chat-bar" id="direct-chat-bar">
+        <div style="color:var(--primary); font-weight:bold;">H</div>
+        <input type="text" id="direct-input" placeholder="Type a command..." autocomplete="off">
+        <button class="direct-chat-close" onclick="app.home.toggleDirectInput()">✕</button>
+    </div>
+
     <div class="doubt-overlay" id="doubt-overlay">
         <div class="doubt-window">
             <div class="doubt-header">
@@ -106,10 +132,11 @@
             <div class="doubt-body" id="doubt-messages"></div>
             <div class="doubt-input-row">
                 <input type="text" id="doubt-input" placeholder="Ask specific question...">
-                <button id="doubt-send-btn" onclick="app.chat.sendDoubt()" style="background:var(--primary); border:none; padding:0 15px; border-radius:6px; cursor:pointer; font-weight:bold;">Send</button>  <!-- NEW: Add id for JS targeting -->
+                <button id="doubt-send-btn" onclick="app.chat.sendDoubt()" style="background:var(--primary); border:none; padding:0 15px; border-radius:6px; cursor:pointer; font-weight:bold;">Send</button>
             </div>
         </div>
     </div>
+    
     <script src="/static/js/script.js"></script>
 </body>
 </html>

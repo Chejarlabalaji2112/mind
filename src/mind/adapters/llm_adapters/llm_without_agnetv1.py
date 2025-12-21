@@ -5,7 +5,7 @@ dotenv.load_dotenv()
 from mind.core.ports.decision_making_port import DecisionMaker
 from langchain_ollama import ChatOllama
 from mind.adapters.llm_adapters.stream_handler import StreamingResponseHandler
-
+# from mind.adapters.llm_adapters.symbolic_handler import SymbolicResponseHandler
 
   
 
@@ -36,7 +36,7 @@ class GeminiLLMAdapter(DecisionMaker):
 class OllamaAdapter(DecisionMaker):
     "use local models.."
     
-    def __init__(self, model="smollm2:latest"):
+    def __init__(self, model:str ="smollm2:latest", base_url:str =""):
         self.model = model
         self.llm = ChatOllama(model=self.model)
 

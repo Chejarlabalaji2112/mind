@@ -12,27 +12,117 @@ const app = {
         reconnectTimer: null,
         isGeneratingMain: false,    
         isGeneratingDoubt: false,   
-        currentSession: null        
+        currentSession: null,
+        directChatActive: false  
     },
     router: {
         navigate: (viewId) => {
-            // Switch Views
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.getElementById(`view-${viewId}`).classList.add('active');
             app.state.view = viewId;
-            // If going to Chat, ensure WS connected
+            
             if(viewId === 'chat') {
                 if (!app.state.ws || app.state.ws.readyState !== WebSocket.OPEN) {
                     app.connect();
                 }
                 app.ui.setDock(false);
+                if(app.state.directChatActive) app.home.toggleDirectInput(); 
             }
         }
     },
-    connect: () => {
-       if (app.state.ws && (app.state.ws.readyState === WebSocket.CONNECTING || app.state.ws.readyState === WebSocket.OPEN)) {
-            return; 
+    
+    // --- HOME SCREEN & DIRECT CHAT LOGIC ---
+    home: {
+        // Display AI response on LEFT side
+        displayResponse: (text, append = true) => {
+            const el = document.getElementById('home-ai-display');
+            const container = el ? el.parentElement : null;
+            
+            if (el && container) {
+                if (append) {
+                    el.innerHTML += text;
+                } else {
+                    el.innerHTML = text;
+                }
+                // Auto-scroll to bottom
+                container.scrollTop = container.scrollHeight; 
+            }
+        },
+        
+        // Display User request on RIGHT side
+        displayRequest: (text) => {
+            const userEl = document.getElementById('home-user-display');
+            const aiEl = document.getElementById('home-ai-display');
+            const userContainer = userEl ? userEl.parentElement : null;
+
+            if (userEl && userContainer) {
+                // Append new user block
+                const newBlock = `<div style="margin-top:15px;">${text}</div>`;
+                userEl.innerHTML += newBlock;
+                
+                // Clear AI text for a "fresh" turn logic (optional, requested style)
+                if(aiEl) aiEl.innerHTML = ''; 
+
+                // Auto-scroll
+                userContainer.scrollTop = userContainer.scrollHeight;
+            }
+        },
+
+        // Toggle the Input Bar, Hide Dock, Clear on Close
+        toggleDirectInput: () => {
+            const bar = document.getElementById('direct-chat-bar');
+            const input = document.getElementById('direct-input');
+            const dock = document.getElementById('dock');
+            
+            const aiDisplay = document.getElementById('home-ai-display');
+            const userDisplay = document.getElementById('home-user-display');
+
+            app.state.directChatActive = !app.state.directChatActive;
+
+            if (app.state.directChatActive) {
+                // OPEN
+                bar.classList.add('active');
+                dock.classList.add('hidden'); 
+                app.ui.setDock(false); 
+                setTimeout(() => input.focus(), 100);
+            } else {
+                // CLOSE
+                app.chat.stopGeneration();
+                bar.classList.remove('active');
+                dock.classList.remove('hidden'); 
+                app.ui.setDock(true); 
+                input.value = ''; 
+                
+                // CLEAR OVERLAY TEXT (Return to pristine state)
+                if(aiDisplay) aiDisplay.innerHTML = '';
+                if(userDisplay) userDisplay.innerHTML = '';
+            }
+        },
+
+        sendDirectMessage: () => {
+            const input = document.getElementById('direct-input');
+            const text = input.value.trim();
+            if (!text || !app.state.ws || app.state.ws.readyState !== WebSocket.OPEN) return;
+
+            // 1. Display User Text on Home Screen (Right side)
+            app.home.displayRequest(text);
+
+            // 2. Send to backend
+            app.state.currentSession = 'main';
+            app.state.isGeneratingMain = true; 
+            app.state.ws.send(JSON.stringify({ type: 'text', data: text, session: 'main' }));
+            
+            // 3. Update Chat View history
+            app.chat.appendMessage('user', text);
+            app.chat.appendMessage('ai', ''); 
+
+            // 4. Clear input
+            input.value = '';
         }
+    },
+
+    connect: () => {
+       if (app.state.ws && (app.state.ws.readyState === WebSocket.CONNECTING || app.state.ws.readyState === WebSocket.OPEN)) return;
 
         const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
         const host = window.location.host; 
@@ -41,133 +131,103 @@ const app = {
         app.state.ws.onopen = () => {
             console.log('WebSocket connected');
             app.state.reconnectDelay = 1000;
-            // Request initial status if not received
         };
         app.state.ws.onmessage = (event) => {
             let data;
-            try {
-                data = JSON.parse(event.data);
-            } catch (e) {
-                // Handle binary audio if needed
-                return;
-            }
+            try { data = JSON.parse(event.data); } catch (e) { return; }
 
             if (data.type === 'chunk') {
-                console.log('Received chunk for session:', data.session, 'Doubt mode:', app.state.inDoubtMode);  // DEBUG: Confirm routing
-                // Route based on session
                 if (data.session === 'doubt' && app.state.inDoubtMode) {
-                    // Append to doubt modal
                     const messagesDiv = document.getElementById('doubt-messages');
                     const lastBubble = messagesDiv.lastElementChild;
                     if (lastBubble && lastBubble.style.alignSelf === 'flex-start') {
                         lastBubble.textContent += data.text;
                     } else {
-                        // Fallback: Create new AI bubble if none
                         const aiBubble = document.createElement('div');
                         aiBubble.style = 'align-self: flex-start; background: var(--surface); border: 1px solid var(--border); padding: 10px 14px; border-radius: 16px; max-width: 85%; margin: 8px 0; word-wrap: break-word;';
                         aiBubble.textContent = data.text;
                         messagesDiv.appendChild(aiBubble);
                     }
                     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
                 } else if (data.session === 'main') {
-                    // Append to main chat
                     app.chat.appendChunk(data.text);
+                    
+                    // Update Home Overlay if on Home View
+                    if (app.state.view === 'home') {
+                        app.home.displayResponse(data.text, true);
+                    }
                 }
-                // Ignore chunks for closed doubt sessions
 
             } else if (data.type === 'status') {
                 app.power.updateStatus(data.data);
 
             } else if (data.type === 'screen_update') {
-                // FIX: Ensure screen update logic is present and robust
                 if (data.data.active === false) {
                     app.screen.reset();
                 } else {
                     app.screen.render(data.data.content);
                 }
 
-            } else if (data.type === 'audio_response') {
-                console.log('Audio:', data.data);
-            } else if (data.type === 'error') {
-                console.error('Error:', data.data);
             } else if (data.type === 'stream_end') {
                 const session = data.session;
-                
-                // UPDATED: More detailed log
-                console.log('Stream ended via WS:', session, 'Full data:', data);
-                
                 if (session === 'main') {
                     app.state.isGeneratingMain = false;
-                    app.chat.updateSendButton();  // Reset button
+                    app.chat.updateSendButton();
                 } else if (session === 'doubt') {
                     app.state.isGeneratingDoubt = false;
-                    app.chat.updateDoubtButton();  // Reset button
+                    app.chat.updateDoubtButton();
                 }
                 app.state.currentSession = null;
             }
         };
         app.state.ws.onerror = (error) => console.error('WS Error:', error);
         app.state.ws.onclose = () => {
-            // 1. Visually indicate offline
             app.power.updateStatus('shutdown'); 
-            // NEW: Reset gen states on close
             app.state.isGeneratingMain = false;
             app.state.isGeneratingDoubt = false;
             app.state.currentSession = null;
             app.chat.updateSendButton();
             app.chat.updateDoubtButton();
             
-            // 2. Calculate next delay (Exponential Backoff)
             const nextDelay = app.state.reconnectDelay;
-            console.log(`WS Closed. Reconnecting in ${nextDelay / 1000}s...`);
-
-            // 3. Set the timer
             app.state.reconnectTimer = setTimeout(() => {
                 app.connect();
             }, nextDelay);
 
-            // 4. Increase delay for next time (Double it, cap at max)
-            app.state.reconnectDelay = Math.min(
-                app.state.reconnectDelay * 2, 
-                app.state.maxReconnectDelay
-            );
-            if (app.state.reconnectDelay >= app.state.maxReconnectDelay) {
-                console.log("Server seems permanently offline. Stopping retries.");
-                return; 
-            }
+            app.state.reconnectDelay = Math.min(app.state.reconnectDelay * 2, app.state.maxReconnectDelay);
         };
     },
+
     ui: {
-        // --- ARROW & VISIBILITY LOGIC ---
         setDock: (isOpen) => {
             app.state.dockOpen = isOpen;
             const dock = document.getElementById('dock');
             const arrowBtn = document.getElementById('dock-arrow');
+            
+            if(app.state.directChatActive) return;
+
             if(isOpen) {
                 dock.classList.remove('hidden');
-                arrowBtn.classList.remove('up-mode'); // Arrow points DOWN
+                arrowBtn.classList.remove('up-mode'); 
             } else {
                 dock.classList.add('hidden');
-                arrowBtn.classList.add('up-mode'); // Arrow points UP
+                arrowBtn.classList.add('up-mode'); 
             }
         },
-        // Manual Arrow Click
         manualToggle: () => {
             app.ui.setDock(!app.state.dockOpen);
         },
-        // Mouse Enter (Bottom Trigger)
         handleMouseEnter: () => {
-            if(app.state.autoHideEnabled && !app.state.dockOpen) {
+            if(app.state.autoHideEnabled && !app.state.dockOpen && !app.state.directChatActive) {
                 app.ui.setDock(true);
             }
         },
-        // Mouse Leave (Dock)
         handleMouseLeave: () => {
             if(app.state.autoHideEnabled && app.state.dockOpen) {
                 app.ui.setDock(false);
             }
         },
-        // --- AUTO MODE TOGGLE (The "Magnet" Button) ---
         toggleAutoMode: () => {
             app.state.autoHideEnabled = !app.state.autoHideEnabled;
             const btn = document.getElementById('auto-mode-btn');
@@ -180,34 +240,29 @@ const app = {
             }
         }
     },
+
     power: {
         showMenu: () => {
             const menu = document.getElementById('power-menu');
             const status = app.state.status;
             
-            // 1. Hide all buttons first
             const btnOn = menu.querySelector('[onclick="app.power.powerOn()"]');
             const btnOff = menu.querySelector('[onclick="app.power.shutdown()"]');
             const btnSleep = menu.querySelector('[onclick="app.power.sleep()"]');
             
             [btnOn, btnOff, btnSleep].forEach(b => b.style.display = 'none');
 
-            // 2. Show buttons based on specific state
             if (status === 'shutdown') {
-                btnOn.style.display = 'block';     // Show Power On
-                btnOn.innerText = "Power On";      // Ensure text is Power On
-            } 
-            else if (status === 'sleep') {
-                btnOn.style.display = 'block';     // Show Power On (as Wake Up)
-                btnOn.innerText = "Wake Up";       // Change text to Wake Up
-                btnOff.style.display = 'block';    // Show Shutdown
-            } 
-            else { 
-                // Status is 'active'
-                btnOff.style.display = 'block';    // Show Shutdown
-                btnSleep.style.display = 'block';  // Show Sleep
+                btnOn.style.display = 'block';     
+                btnOn.innerText = "Power On";      
+            } else if (status === 'sleep') {
+                btnOn.style.display = 'block';     
+                btnOn.innerText = "Wake Up";       
+                btnOff.style.display = 'block';    
+            } else { 
+                btnOff.style.display = 'block';    
+                btnSleep.style.display = 'block';  
             }
-
             menu.classList.toggle('hidden');
         },
         updateStatus: (status) => {
@@ -234,99 +289,59 @@ const app = {
             app.power.showMenu();
         }
     },
+
     chat: {
         sendUserMessage: () => {
-            console.log('Send button clicked!');  // DEBUG: Confirm click fires
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
-            if (!text || !app.state.ws || app.state.ws.readyState !== WebSocket.OPEN || app.state.isGeneratingMain) return;  // Safeguard: No dup sends
+            if (!text || !app.state.ws || app.state.ws.readyState !== WebSocket.OPEN || app.state.isGeneratingMain) return;
             
-            console.log('Starting main generation');  // DEBUG
             app.state.currentSession = 'main';
             app.state.isGeneratingMain = true;
+            app.chat.updateSendButton();
             
-            // ADD THIS: Confirm state before toggle
-            console.log('State before button update:', { isGeneratingMain: app.state.isGeneratingMain, currentSession: app.state.currentSession });
-            
-            app.chat.updateSendButton();  // This triggers the visual change
+            app.home.displayRequest(text); // Sync with home
             
             app.chat.appendMessage('user', text);
             input.value = '';
             app.state.ws.send(JSON.stringify({ type: 'text', data: text, session: 'main' }));
-            app.chat.appendMessage('ai', '');  // Placeholder
+            app.chat.appendMessage('ai', ''); 
         },
         stopGeneration: () => {
             const session = app.state.currentSession;
-            
-            // ADD THIS: Log entry
-            console.log('stopGeneration called - session:', session, 'isGeneratingMain:', app.state.isGeneratingMain);
-            
             if (session && app.state.ws && app.state.ws.readyState === WebSocket.OPEN) {
                 app.state.ws.send(JSON.stringify({ type: 'stop', session: session }));
             }
             if (session === 'main') {
                 app.state.isGeneratingMain = false;
-                
-                // ADD THIS: Confirm reset
-                console.log('Resetting main gen state');
-                
                 app.chat.updateSendButton();
             } else if (session === 'doubt') {
                 app.state.isGeneratingDoubt = false;
                 app.chat.updateDoubtButton();
             }
             app.state.currentSession = null;
-            
-            // ADD THIS: Log exit
-            console.log('stopGeneration done - final states:', { isGeneratingMain: app.state.isGeneratingMain, currentSession: app.state.currentSession });
         },
-        // FIXED: Use innerHTML for SVG (more reliable than replaceChild) + force reflow
         updateSendButton: () => {
             const btn = document.querySelector('.input-area .btn-icon');
-            if (!btn) {
-                console.error('Send button not found!');  // DEBUG
-                return;
-            }
+            if (!btn) return;
             const svg = btn.querySelector('svg');
-            if (!svg) {
-                console.error('SVG not found in send button!');  // DEBUG
-                return;
-            }
-            
-            // ADD THIS: Log entry and current state
-            console.log('updateSendButton called - isGeneratingMain:', app.state.isGeneratingMain);
-            console.log('Button classes before:', btn.className);  // Check if 'stop-mode' is added/removed
-            console.log('SVG innerHTML before:', svg.innerHTML);  // Check path before swap
             
             if (app.state.isGeneratingMain) {
                 btn.classList.add('stop-mode');
                 btn.onclick = app.chat.stopGeneration;
                 btn.setAttribute('tooltip', 'Stop Generation');
-                
                 svg.innerHTML = '<path d="M6 6h12v12H6z" fill="currentColor"/>';
             } else {
                 btn.classList.remove('stop-mode');
                 btn.onclick = app.chat.sendUserMessage;
                 btn.setAttribute('tooltip', 'Send');
-                
                 svg.innerHTML = '<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/>';
             }
-            // Force reflow for visual update
             btn.offsetHeight;
-            
-            // ADD THIS: Log exit and final state
-            console.log('updateSendButton done - Button classes after:', btn.className);
-            console.log('SVG innerHTML after:', svg.innerHTML);  // Should show square path during gen, arrow otherwise
         },
-        // UPDATED: Text button for doubt (simpler, but with class)
         updateDoubtButton: () => {
             const btn = document.querySelector('.doubt-input-row button');
-            if (!btn) {
-                console.error('Doubt button not found!');  // DEBUG
-                return;
-            }
-            
-            console.log('Updating doubt button to:', app.state.isGeneratingDoubt ? 'stop' : 'send');  // DEBUG
+            if (!btn) return;
             
             if (app.state.isGeneratingDoubt) {
                 btn.classList.add('stop-mode');
@@ -337,7 +352,6 @@ const app = {
                 btn.textContent = 'Send';
                 btn.onclick = app.chat.sendDoubt;
             }
-            // Force reflow
             btn.offsetHeight;
         },
         appendMessage: (role, text) => {
@@ -355,7 +369,6 @@ const app = {
             const lastAiBubble = document.querySelector('.message-row.ai:last-child .bubble p');
             if (lastAiBubble) {
                 lastAiBubble.textContent += chunk;
-                // Update doubt onclick with full text (escaped)
                 const doubtBtn = lastAiBubble.parentElement.querySelector('.doubt-btn');
                 if (doubtBtn) {
                     const fullText = lastAiBubble.textContent;
@@ -375,20 +388,18 @@ const app = {
             const messages = document.getElementById('doubt-messages');
             messages.innerHTML = `
                 <div style="font-size:0.82rem; color:#888; margin-bottom:12px; line-height:1.4;">
-                    <strong>Context:</strong><br>${ctx.replace(/</g, '&lt;').replace(/>/g, '&gt;')}  <!-- XSS safe -->
+                    <strong>Context:</strong><br>${ctx.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
                 </div>`;
             
             setTimeout(() => document.getElementById('doubt-input').focus(), 100);
-            app.chat.updateDoubtButton();  // Ensure initial state
+            app.chat.updateDoubtButton();
         },
         closeDoubt: () => {
-            console.log('Closing doubt modal');  // DEBUG
-            // FIXED: Reset states FIRST to ignore incoming chunks immediately
             app.state.inDoubtMode = false;
             if (app.state.isGeneratingDoubt) {
                 app.state.isGeneratingDoubt = false;
                 app.chat.updateDoubtButton();
-                app.chat.stopGeneration();  // Then send stop
+                app.chat.stopGeneration();
             }
             document.getElementById('doubt-overlay').classList.remove('active');
             app.state.activeContext = null;
@@ -396,9 +407,8 @@ const app = {
         sendDoubt: () => {
             const input = document.getElementById('doubt-input');
             const text = input.value.trim();
-            if (!text || !app.state.ws || app.state.ws.readyState !== WebSocket.OPEN || app.state.isGeneratingDoubt) return;  // Safeguard
+            if (!text || !app.state.ws || app.state.ws.readyState !== WebSocket.OPEN || app.state.isGeneratingDoubt) return;
 
-            console.log('Starting doubt generation');  // DEBUG
             app.state.currentSession = 'doubt';
             app.state.isGeneratingDoubt = true;
             app.chat.updateDoubtButton();
@@ -406,13 +416,9 @@ const app = {
             const messagesDiv = document.getElementById('doubt-messages');
             messagesDiv.innerHTML += `
                 <div style="align-self: flex-end; background: var(--chat-user-bg); padding: 9px 14px; border-radius: 16px; max-width: 80%; margin: 8px 0 8px auto; font-size:0.95rem;">
-                    ${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;  // XSS safe
+                    ${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
 
-            app.state.ws.send(JSON.stringify({
-                type: 'text',
-                data: text,
-                session: 'doubt'
-            }));
+            app.state.ws.send(JSON.stringify({ type: 'text', data: text, session: 'doubt' }));
 
             const aiBubble = document.createElement('div');
             aiBubble.style = 'align-self: flex-start; background: var(--surface); border: 1px solid var(--border); padding: 10px 14px; border-radius: 16px; max-width: 85%; margin: 8px 0; word-wrap: break-word;';
@@ -425,42 +431,31 @@ const app = {
     },
     
     screen: {
-        // Render ANY html string sent from backend
         render: (htmlContent) => {
             const identity = document.getElementById('home-identity');
             const dynamic = document.getElementById('home-dynamic-content');
-            
-            // 1. Inject content
             dynamic.innerHTML = htmlContent;
-
-            // 2. Swap views
             identity.classList.add('hidden');
             dynamic.classList.remove('hidden');
         },
-
-        // Revert to default HITOMI text
         reset: () => {
             const identity = document.getElementById('home-identity');
             const dynamic = document.getElementById('home-dynamic-content');
-
             dynamic.classList.add('hidden');
             identity.classList.remove('hidden');
-            
-            // Optional: Clear content after transition for cleanliness
             setTimeout(() => dynamic.innerHTML = '', 300); 
         }
     },
-    
     
     mic: {
         isRecording: false,
         start: async () => {
             if (!app.state.ws || app.state.ws.readyState !== WebSocket.OPEN) {
                 app.connect();
-                setTimeout(app.mic.start, 1000);  // Retry after connect
+                setTimeout(app.mic.start, 1000);
                 return;
             }
-            if (app.mic.isRecording) return;  // Prevent multiple
+            if (app.mic.isRecording) return;
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 const recorder = new MediaRecorder(stream);
@@ -469,44 +464,53 @@ const app = {
                 recorder.ondataavailable = (e) => chunks.push(e.data);
                 recorder.onstop = async () => {
                     const blob = new Blob(chunks, { type: 'audio/wav' });
-                    app.state.ws.send(blob);  // Binary over WS
+                    app.state.ws.send(blob);
                     stream.getTracks().forEach(track => track.stop());
                     app.mic.isRecording = false;
                     document.getElementById('mic-btn').classList.remove('recording');
                 };
                 recorder.start();
                 document.getElementById('mic-btn').classList.add('recording');
-                setTimeout(() => recorder.stop(), 5000);  // 5s recording
+                setTimeout(() => recorder.stop(), 5000);
             } catch (err) {
                 console.error('Mic access denied:', err);
             }
         }
     },
+
     init: () => {
-        app.connect();  // Connect WS on load
-        // Event listeners
+        app.connect();
+        
         document.getElementById('power-button').onclick = app.power.showMenu;
         document.getElementById('mic-btn').onclick = app.mic.start;
+        
         document.getElementById('chat-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !app.state.isGeneratingMain) app.chat.sendUserMessage();
         });
+        
         document.getElementById('doubt-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !app.state.isGeneratingDoubt) app.chat.sendDoubt();
         });
-        // Close menu on outside click
+        
+        const directInput = document.getElementById('direct-input');
+        if(directInput) {
+            directInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') app.home.sendDirectMessage();
+            });
+        }
+
         document.addEventListener('click', (e) => {
             if (!e.target.closest('#power-button') && !e.target.closest('#power-menu')) {
                 document.getElementById('power-menu').classList.add('hidden');
             }
         });
-        // Defaults
+        
         app.router.navigate('home');
-        app.chat.updateSendButton();  // Initial setup
-        app.chat.updateDoubtButton();  // Initial for doubt (harmless if hidden)
+        app.chat.updateSendButton();
+        app.chat.updateDoubtButton();
     }
 };
 
-// Clock & Init
 function updateClock() {
     const now = new Date();
     document.getElementById('clock').textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;

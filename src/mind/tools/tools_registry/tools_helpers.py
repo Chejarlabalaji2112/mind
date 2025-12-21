@@ -11,7 +11,7 @@ class ToolsHelpers:
     def _broadcast(self, title, content, bottom=""):
         """Helper method to update all presenters to avoid code repetition."""
         for presenter in self.presenters:
-            prepared_input = presenter.prepare_input(title=title, content=content, botttom=bottom)
+            prepared_input = presenter.prepare_input(title=title, content=content, bottom=bottom)
             presenter.show(prepared_input)
 
     # ==========================================
