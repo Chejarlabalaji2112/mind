@@ -10,7 +10,9 @@ A simultation available
 
 # UI demo
 <!-- <video src="./src/mind/assets/videos/ui_demo.mp4" width="640" controls> not supported</video> -->
-![](./src/mind/assets/videos/ui_demo.mp4)
+<p align="center">
+  <img alt="ui demo" src="./src/mind/assets/videos/ui_demo.mp4" width="640px">
+</p>
 ---
 
 # 🤖 Personalized Companion — HITOMI Architecture
