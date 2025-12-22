@@ -9,9 +9,9 @@ A simultation available
 ![Hitomi opened](./src/mind/assets/images/opened_eyes_cone.png)
 
 # UI demo
-<!-- <video src="./src/mind/assets/videos/ui_demo.mp4" width="640" controls> not supported</video> -->
-# UI demo
-![](./src/mind/assets/videos/ui_demo.mp4)
+<video src="./src/mind/assets/videos/ui_demo.mp4" width="640" height="360" controls autoplay loop muted>
+  Your browser does not support the video tag. <a href="./src/mind/assets/videos/ui_demo.mp4">Download the video</a> to view it.
+</video>
 ---
 
 # 🤖 Personalized Companion — HITOMI Architecture
