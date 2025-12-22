@@ -7,6 +7,11 @@ A simultation available
 ![Hitomi Closed](./src/mind/assets/images/opened_name_cone.png)
 # running
 ![Hitomi opened](./src/mind/assets/images/opened_eyes_cone.png)
+
+# UI demo
+<video src="./src/mind/assets/videos/ui_demo.mp4" width="640" controls> not supported</video>
+---
+
 # 🤖 Personalized Companion — HITOMI Architecture
 
 > _Adaptive Interaction · Emotional Understanding · Causal Intelligence_

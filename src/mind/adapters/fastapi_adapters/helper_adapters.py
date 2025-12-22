@@ -164,3 +164,45 @@ def output_tuner(tool_name: str, message: str, extra: str = "") -> str:
               "bottom":{extra}}
     return output
 
+
+class AddEventListeners:
+    def __init__(self, tools_instances=None, tools_helpers=None):
+        if not tools_instances  or not tools_helpers:
+            raise ValueError
+        self.tools_instances = tools_instances
+        self.tools_helpers = tools_helpers
+
+    def to_timer(self):
+        # -- Timer Events --
+        self.tools_instances.timer.on_start.add_listener(self.tools_helpers.timer_on_start_handler)
+        self.tools_instances.timer.on_tick.add_listener(self.tools_helpers.timer_on_tick_handler)
+        self.tools_instances.timer.on_pause.add_listener(self.tools_helpers.timer_on_pause_handler)
+        self.tools_instances.timer.on_resume.add_listener(self.tools_helpers.timer_on_resume_handler)
+        self.tools_instances.timer.on_stop.add_listener(self.tools_helpers.timer_on_stop_handler)
+        self.tools_instances.timer.on_reset.add_listener(self.tools_helpers.timer_on_reset_handler)
+        self.tools_instances.timer.on_finished.add_listener(self.tools_helpers.timer_on_finished_handler)
+
+
+    def to_stopwatch(self):
+        # -- Stopwatch Events --
+        self.tools_instances.stopwatch.on_start.add_listener(self.tools_helpers.stopwatch_on_start_handler)
+        self.tools_instances.stopwatch.on_tick.add_listener(self.tools_helpers.stopwatch_on_tick_handler)
+        self.tools_instances.stopwatch.on_pause.add_listener(self.tools_helpers.stopwatch_on_pause_handler)
+        self.tools_instances.stopwatch.on_resume.add_listener(self.tools_helpers.stopwatch_on_resume_handler)
+        self.tools_instances.stopwatch.on_stop.add_listener(self.tools_helpers.stopwatch_on_stop_handler)
+        self.tools_instances.stopwatch.on_reset.add_listener(self.tools_helpers.stopwatch_on_reset_handler)
+        self.tools_instances.stopwatch.on_lap.add_listener(self.tools_helpers.stopwatch_on_lap_handler)
+
+    def to_pomodoro(self):
+        # -- Pomodoro Events --
+        self.tools_instances.pomodoro.on_tick.add_listener(self.tools_helpers.pomodoro_on_tick_handler)
+        self.tools_instances.pomodoro.on_work_start.add_listener(self.tools_helpers.pomodoro_on_work_start_handler)
+        self.tools_instances.pomodoro.on_short_break_start.add_listener(self.tools_helpers.pomodoro_on_short_break_start_handler)
+        self.tools_instances.pomodoro.on_long_break_start.add_listener(self.tools_helpers.pomodoro_on_long_break_start_handler)
+        self.tools_instances.pomodoro.on_phase_end.add_listener(self.tools_helpers.pomodoro_on_phase_end_handler)
+        self.tools_instances.pomodoro.on_cycle_complete.add_listener(self.tools_helpers.pomodoro_on_cycle_complete_handler)
+        self.tools_instances.pomodoro.on_pause.add_listener(self.tools_helpers.pomodoro_on_pause_handler)
+        self.tools_instances.pomodoro.on_resume.add_listener(self.tools_helpers.pomodoro_on_resume_handler)
+        self.tools_instances.pomodoro.on_stop.add_listener(self.tools_helpers.pomodoro_on_stop_handler)
+        self.tools_instances.pomodoro.on_reset.add_listener(self.tools_helpers.pomodoro_on_reset_handler)
+

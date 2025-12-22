@@ -21,7 +21,7 @@ from mind.utils.logging_handler import setup_logger
 
 from mind.adapters.llm_adapters.llm_without_agnetv1 import OllamaAdapter
 from mind.adapters.robot_controller_adapters.mujoco_robot_adapter import MujocoRobot
-from mind.adapters.fastapi_adapters.helper_adapters import ConnectionManager, FNScreenUpdater, Notifier, output_tuner
+from mind.adapters.fastapi_adapters.helper_adapters import AddEventListeners, ConnectionManager, FNScreenUpdater, Notifier, output_tuner
 from mind.tools.tools_registry.core import Register
 from mind.tools.tools_registry.tools_helpers import ToolsHelpers
 from mind.adapters.fastapi_adapters.symbolic_handler import SymbolicHandler
@@ -69,38 +69,12 @@ def create_app(args):
         
         # Initialize Tools Helpers and Bind Listeners
         tools_helpers = ToolsHelpers(presenters)
-        tool_instances = register.tool_instances
+        tools_instances = register.tools_instances
 
-        # -- Timer Events --
-        tool_instances.timer.on_start.add_listener(tools_helpers.timer_on_start_handler)
-        tool_instances.timer.on_tick.add_listener(tools_helpers.timer_on_tick_handler)
-        tool_instances.timer.on_pause.add_listener(tools_helpers.timer_on_pause_handler)
-        tool_instances.timer.on_resume.add_listener(tools_helpers.timer_on_resume_handler)
-        tool_instances.timer.on_stop.add_listener(tools_helpers.timer_on_stop_handler)
-        tool_instances.timer.on_reset.add_listener(tools_helpers.timer_on_reset_handler)
-        tool_instances.timer.on_finished.add_listener(tools_helpers.timer_on_finished_handler)
-
-        # -- Stopwatch Events --
-        tool_instances.stopwatch.on_start.add_listener(tools_helpers.stopwatch_on_start_handler)
-        tool_instances.stopwatch.on_tick.add_listener(tools_helpers.stopwatch_on_tick_handler)
-        tool_instances.stopwatch.on_pause.add_listener(tools_helpers.stopwatch_on_pause_handler)
-        tool_instances.stopwatch.on_resume.add_listener(tools_helpers.stopwatch_on_resume_handler)
-        tool_instances.stopwatch.on_stop.add_listener(tools_helpers.stopwatch_on_stop_handler)
-        tool_instances.stopwatch.on_reset.add_listener(tools_helpers.stopwatch_on_reset_handler)
-        tool_instances.stopwatch.on_lap.add_listener(tools_helpers.stopwatch_on_lap_handler)
-
-        # -- Pomodoro Events --
-        tool_instances.pomodoro.on_tick.add_listener(tools_helpers.pomodoro_on_tick_handler)
-        tool_instances.pomodoro.on_work_start.add_listener(tools_helpers.pomodoro_on_work_start_handler)
-        tool_instances.pomodoro.on_short_break_start.add_listener(tools_helpers.pomodoro_on_short_break_start_handler)
-        tool_instances.pomodoro.on_long_break_start.add_listener(tools_helpers.pomodoro_on_long_break_start_handler)
-        tool_instances.pomodoro.on_phase_end.add_listener(tools_helpers.pomodoro_on_phase_end_handler)
-        tool_instances.pomodoro.on_cycle_complete.add_listener(tools_helpers.pomodoro_on_cycle_complete_handler)
-        tool_instances.pomodoro.on_pause.add_listener(tools_helpers.pomodoro_on_pause_handler)
-        tool_instances.pomodoro.on_resume.add_listener(tools_helpers.pomodoro_on_resume_handler)
-        tool_instances.pomodoro.on_stop.add_listener(tools_helpers.pomodoro_on_stop_handler)
-        tool_instances.pomodoro.on_reset.add_listener(tools_helpers.pomodoro_on_reset_handler)
-
+        add_event_listeners = AddEventListeners(tools_instances=tools_instances ,tools_helpers=tools_helpers)
+        add_event_listeners.to_timer()
+        add_event_listeners.to_stopwatch()
+        add_event_listeners.to_pomodoro()
 
 
         if args.sim:
@@ -131,7 +105,7 @@ def create_app(args):
             robot_adapter = DummyRobot()
  
         # Initialize Symbolic Handler
-        app.state.symbolic_handler = SymbolicHandler(tool_instances, presenters, robot_adapter)
+        app.state.symbolic_handler = SymbolicHandler(tools_instances, presenters, robot_adapter)
         
         agent = Agent(decision_maker=llm_adapter, robot_controller=robot_adapter, notifier=notifier, loop=loop)
         app.state.agent = agent
@@ -159,7 +133,7 @@ def create_app(args):
 
     @app.get("favicon.ico", include_in_schema=False)
     def favicon():
-        return FileResponse(os.path.join(BASE_DIR, "adapters/fastapi_adapters/static/favicon.ico"))
+        return FileResponse(os.path.join(BASE_DIR, "adapters/fastapi_adapters/static"))
 
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket):
