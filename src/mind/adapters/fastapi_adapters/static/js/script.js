@@ -358,31 +358,82 @@ const app = {
             const container = document.getElementById('message-container');
             const row = document.createElement('div');
             row.className = `message-row ${role}`;
-            let inner = role === 'ai'
-                ? `<div class="avatar ai">H</div><div class="bubble"><p class="streaming-text">${text}</p><div class="doubt-trigger-wrapper"><button class="doubt-btn" onclick="app.chat.openDoubt('${text.replace(/'/g, "\\'")}')"><span>?</span> Ask Doubt</button></div></div>`
-                : `<div class="bubble"><p>${text}</p></div><div class="avatar">U</div>`;
+            
+            // --- CHANGE START ---
+            let inner;
+            if (role === 'ai') {
+                // 1. Parse existing text if any (for non-streaming history)
+                const renderedHtml = window.marked ? marked.parse(text) : text;
+                
+                // 2. Use a DIV instead of P for the content container
+                // 3. Add 'markdown-content' class for styling
+                inner = `
+                    <div class="avatar ai">H</div>
+                    <div class="bubble">
+                        <div class="streaming-text markdown-content" data-raw="${text.replace(/"/g, '&quot;')}">${renderedHtml}</div>
+                        <div class="doubt-trigger-wrapper">
+                            <button class="doubt-btn" onclick="app.chat.openDoubt(this)"><span>?</span> Ask Doubt</button>
+                        </div>
+                    </div>`;
+            } else {
+                inner = `<div class="bubble"><p>${text}</p></div><div class="avatar">U</div>`;
+            }
+            // --- CHANGE END ---
+
             row.innerHTML = inner;
             container.appendChild(row);
             document.getElementById('scroller').scrollTop = document.getElementById('scroller').scrollHeight;
         },
         appendChunk: (chunk) => {
-            const lastAiBubble = document.querySelector('.message-row.ai:last-child .bubble p');
-            if (lastAiBubble) {
-                lastAiBubble.textContent += chunk;
-                const doubtBtn = lastAiBubble.parentElement.querySelector('.doubt-btn');
+            // Select the DIV we created above
+            const lastAiDiv = document.querySelector('.message-row.ai:last-child .bubble .streaming-text');
+            
+            if (lastAiDiv) {
+                // 1. Retrieve current raw text from data attribute
+                let currentRaw = lastAiDiv.dataset.raw || "";
+                
+                // 2. Append new chunk
+                currentRaw += chunk;
+                lastAiDiv.dataset.raw = currentRaw;
+                
+                // 3. Render Markdown to HTML
+                if (window.marked) {
+                    lastAiDiv.innerHTML = marked.parse(currentRaw);
+                } else {
+                    lastAiDiv.textContent = currentRaw; // Fallback
+                }
+
+                // 4. Update the doubt button context (Special handling to find the button)
+                const bubble = lastAiDiv.parentElement;
+                const doubtBtn = bubble.querySelector('.doubt-btn');
                 if (doubtBtn) {
-                    const fullText = lastAiBubble.textContent;
-                    doubtBtn.onclick = () => app.chat.openDoubt(fullText.replace(/'/g, "\\'"));
+                    // We pass the button element 'this' in the onclick above, 
+                    // so we handle the context extraction in openDoubt now.
+                    doubtBtn.onclick = () => app.chat.openDoubt(currentRaw);
                 }
             } else {
+                // If no bubble exists yet (rare race condition), create one
                 app.chat.appendMessage('ai', chunk);
             }
-            document.getElementById('scroller').scrollTop = document.getElementById('scroller').scrollHeight;
+            
+            // Scroll to bottom
+            const scroller = document.getElementById('scroller');
+            scroller.scrollTop = scroller.scrollHeight;
         },
-        openDoubt: (ctx) => {
-            app.state.activeContext = ctx;
-            app.state.inDoubtMode = true;
-            const overlay = document.getElementById('doubt-overlay');
+    openDoubt: (ctx) => {
+        // If ctx is an object (HTML Element from 'this'), try to get text, otherwise use ctx string
+        let contextText = ctx;
+        if (typeof ctx === 'object') {
+            // Fallback if clicked directly without updated handler
+            const bubble = ctx.closest('.bubble');
+            const textDiv = bubble.querySelector('.streaming-text');
+            contextText = textDiv.dataset.raw || textDiv.innerText;
+        }
+
+        app.state.activeContext = contextText;
+        // ... rest of the function remains the same ...
+        app.state.inDoubtMode = true;
+        const overlay = document.getElementById('doubt-overlay');
             overlay.classList.add('active');
             
             const messages = document.getElementById('doubt-messages');

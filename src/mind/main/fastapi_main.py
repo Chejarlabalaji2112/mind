@@ -131,9 +131,9 @@ def create_app(args):
     def root(request: Request):
         return templates.TemplateResponse("index.html", {"request": request})
 
-    @app.get("favicon.ico", include_in_schema=False)
+    @app.get("/favicon.ico", include_in_schema=False)
     def favicon():
-        return FileResponse(os.path.join(BASE_DIR, "adapters/fastapi_adapters/static"))
+        return FileResponse(os.path.join(BASE_DIR, "adapters/fastapi_adapters/static/favicon.ico"))
 
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket):

@@ -417,3 +417,39 @@ header .btn-icon[tooltip]::after { bottom: auto; top: 125%; }
 .input-area .btn-icon, .doubt-input-row button { transition: background-color 0.2s ease, transform 0.1s ease; }
 .input-area .btn-icon:hover, .doubt-input-row button:hover { transform: scale(1.05); }
 .input-area .btn-icon[style*="ff4444"], .doubt-input-row button[style*="ff4444"] { box-shadow: 0 0 10px #ff4444aa; }
+
+/* Markdown Styles */
+.markdown-content {
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+.markdown-content p {
+    margin-bottom: 10px;
+}
+.markdown-content p:last-child {
+    margin-bottom: 0;
+}
+.markdown-content ul, .markdown-content ol {
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+.markdown-content code {
+    background: rgba(0,0,0,0.3);
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+.markdown-content pre {
+    background: #1e1e1e;
+    padding: 10px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin-bottom: 10px;
+}
+.markdown-content pre code {
+    background: none;
+    padding: 0;
+}
+.markdown-content strong {
+    color: var(--primary); /* Highlight bold text */
+}
