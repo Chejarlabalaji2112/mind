@@ -6,12 +6,13 @@ from mind.core.ports.base_robot_controller_port import BaseRobotController
 from mind.core.ports.notification_port import NotificationPort
 
 
+
 logger = setup_logger(__name__)
 
 class Agent():
     """Orchestrates tools using a DecisionMaker (LLM or other)."""
 
-    def __init__(self, decision_maker: DecisionMaker, robot_controller: BaseRobotController,notifier: NotificationPort, loop=None ):
+    def __init__(self, decision_maker: DecisionMaker, robot_controller: BaseRobotController, notifier: NotificationPort, loop=None ):
         self.decision_maker = decision_maker
         self.robot_controller = robot_controller
         self.notifier = notifier
@@ -33,6 +34,13 @@ class Agent():
 
     def stop(self):
         self.robot_controller.stop()
+
+    def head_control(self, do=None):
+        if do == "yes":
+            self.robot_controller.nod_yes()
+
+        elif do == "no":
+            self.robot_controller.shake_no()
 
     def handle_power_command(self, action: str) -> RobotStatus:
         """

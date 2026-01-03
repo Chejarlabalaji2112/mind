@@ -19,7 +19,7 @@ from mind.core.status import RobotStatus
 
 from mind.utils.logging_handler import setup_logger
 
-from mind.adapters.llm_adapters.llm_without_agnetv1 import OllamaAdapter
+from mind.adapters.llm_adapters.ollama_adapter import OllamaAdapter
 from mind.adapters.robot_controller_adapters.mujoco_robot_adapter import MujocoRobot
 from mind.adapters.fastapi_adapters.helper_adapters import AddEventListeners, ConnectionManager, FNScreenUpdater, Notifier, output_tuner
 from mind.tools.tools_registry.core import Register
@@ -52,7 +52,7 @@ def create_app(args):
         notifier = Notifier(manager)
         app.state.connection_manager = manager
         app.state.screen_updater = FNScreenUpdater(manager)
-        llm_adapter = OllamaAdapter()
+        llm_adapter = OllamaAdapter(model="gemma:latest", remote_base_url="http://10.159.109.99:11434")
         robot_adapter = None
         screen_updater = FNScreenUpdater(manager)
         presenters = [screen_updater]

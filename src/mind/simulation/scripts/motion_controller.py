@@ -47,10 +47,12 @@ class MotionController(Manipulator):
     def do_yes(self):
         self.current_motion = self._prepare(self._gen_yes())
         next(self.current_motion)
+        logger.info(f"nodding yes")
 
     def do_no(self):
         self.current_motion = self._prepare(self._gen_no())
         next(self.current_motion)
+        logger.info(f"doing no head shake")
 
     def do_say(self):
         self.current_motion = self._prepare(self._gen_say())
@@ -110,36 +112,64 @@ class MotionController(Manipulator):
         yield from gesture_gen
 
     # -----------------------------------------------------
+    # center neck
+    # -----------------------------------------------------
+    def _gen_center_z(self):
+        data = yield
+        while not self.smooth(data, self.act_z, 0.0):
+            data = yield
+
+    # -----------------------------------------------------
     # YES (nod)
     # -----------------------------------------------------
     def _gen_yes(self):
-        data = yield
-
-        # Down
-        while not self.smooth(data, self.act_y, 1.0):
-            data = yield
-
-        # Up
-        while not self.smooth(data, self.act_y, 0.0):
-            data = yield
+        yield from self._gen_down()
+        yield from self._gen_up()
 
     # -----------------------------------------------------
     # NO (shake)
     # -----------------------------------------------------
     def _gen_no(self):
-        data = yield
+        yield from self._gen_left_turn()
+        yield from self._gen_right_turn()
+        yield from self._gen_center_z()
 
-        # Left
+    # -----------------------------------------------------
+    # Turn left
+    # -----------------------------------------------------
+    def _gen_left_turn(self):
+        data = yield
+        #left
         while not self.smooth(data, self.act_z, -0.5):
             data = yield
 
-        # Right
+    # -----------------------------------------------------
+    # Turn right
+    # -----------------------------------------------------
+    def _gen_right_turn(self):
+        data = yield
+        #right
         while not self.smooth(data, self.act_z, 0.5):
             data = yield
 
-        # Center
-        while not self.smooth(data, self.act_z, 0.0):
+    # -----------------------------------------------------
+    # up
+    # -----------------------------------------------------
+    def _gen_up(self):
+        data = yield
+        # up
+        while not self.smooth(data, self.act_y, 0):
             data = yield
+
+    # -----------------------------------------------------
+    # down
+    # -----------------------------------------------------
+    def _gen_down(self):
+        data = yield
+        # Down
+        while not self.smooth(data, self.act_y, 1.0):
+            data = yield
+
 
     # -----------------------------------------------------
     # SAY gesture (slight head movement)

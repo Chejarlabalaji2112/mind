@@ -35,7 +35,7 @@ def main():
     bot.wake_up()
 
     time.sleep(4)
-    bot.play_video(BOOT_VIDEO_PATH)
+    bot.nod_yes()
     
 
     # Keep main thread alive or do other logic

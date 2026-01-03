@@ -1,3 +1,4 @@
+
 from mind.utils import setup_logger
 from mind.utils.time_conversions import parse_time_string
 
@@ -12,7 +13,7 @@ class SymbolicHandler:
     async def process(self, command: str):
         """
         Parses and executes a symbolic command starting with '/'.
-        Format: /tool_name action [args...]
+        Format: /request action [args...]
         Example: /timer start 10m
         """
         parts = command.strip().split()
@@ -20,25 +21,31 @@ class SymbolicHandler:
             return
 
         # Remove the leading '/' and get tool name
-        tool_name = parts[0][1:].lower()
+        request = parts[0][1:].lower()
         action = parts[1].lower() if len(parts) > 1 else None
         args = parts[2:]
 
         try:
-            if tool_name == "timer":
+            if request == "timer":
                 self._handle_timer(action, args)
-            elif tool_name == "stopwatch":
+            elif request == "stopwatch":
                 self._handle_stopwatch(action, args)
-            elif tool_name == "pomodoro":
+            elif request == "pomodoro":
                 self._handle_pomodoro(action, args)
-            elif tool_name == "sktracker":
+            elif request == "sktracker":
                 self._handle_skills_tracker(action, args)
-            elif tool_name == "clear":
+            elif request == "clear":
                 self.robot_controller.show_clock = True
                 for presenter in self.presenters:
                     presenter.clear()
+            elif request == "h_mov":
+                if action == "yes":
+                    self.robot_controller.nod_yes()
+                if action == "no":
+                    self.robot_controller.shake_no()
+                    
             else:
-                logger.warning(f"Unknown symbolic tool: {tool_name}")
+                logger.warning(f"Unknown symbolic tool: {request}")
         except Exception as e:
             logger.error(f"Error executing symbolic command '{command}': {e}")
 

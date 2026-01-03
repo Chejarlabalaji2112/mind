@@ -1,8 +1,11 @@
+# Inside the Mujoco simulation, we use this class instance to display text, images on top of any textures.
+
 import cv2
 import mujoco
 import numpy as np
 import threading
 from mind.adapters.display_adapters import DisplayObj
+
 
 class ScreenUpdater(DisplayObj):
     def __init__(self, model, texture_name):

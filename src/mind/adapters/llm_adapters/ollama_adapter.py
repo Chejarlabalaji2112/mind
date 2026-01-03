@@ -1,9 +1,10 @@
 from mind.core.ports.decision_making_port import DecisionMaker
 from langchain_ollama import ChatOllama
 from mind.adapters.llm_adapters.stream_handler import StreamingResponseHandler
-import logging
+from mind.utils import setup_logger
+import requests
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 
 class OllamaAdapter(DecisionMaker):
@@ -14,43 +15,59 @@ class OllamaAdapter(DecisionMaker):
         timeout: int = 5
     ):
         self.model = model
-        self.remote_base_url = remote_base_url
+        self.remote_base_url = remote_base_url.rstrip("/")
         self.timeout = timeout
 
         self.llm = self._init_llm_with_fallback()
 
-    def _init_llm_with_fallback(self):
-        # 1️⃣ Try remote Ollama
+    # ---------- Ollama capability probe (NON-BLOCKING) ----------
+    def _remote_has_model(self) -> bool:
+        
         try:
-            remote_llm = ChatOllama(
-                model=self.model,
-                base_url=self.remote_base_url,
-                temperature=0,
-                streaming=True,
+            response = requests.get(
+                f"{self.remote_base_url}/api/tags",
                 timeout=self.timeout
             )
+            response.raise_for_status()
 
-            # 🔍 Force a lightweight call to verify connectivity
-            remote_llm.invoke("ping")
-
-            logger.info(f"Connected to remote Ollama at {self.remote_base_url}")
-            return remote_llm
+            models = {
+                model["name"]
+                for model in response.json().get("models", [])
+            }
+            return self.model in models
 
         except Exception as e:
-            logger.warning(
-                f"Remote Ollama unavailable, falling back to local. Reason: {e}"
+            logger.debug(f"Ollama probe failed: {e}")
+            return False
+
+    # ---------- LLM initialization ----------
+    def _init_llm_with_fallback(self) -> ChatOllama:
+        if self._remote_has_model():
+            logger.info(
+                f"Using remote Ollama at {self.remote_base_url} "
+                f"with model '{self.model}'"
             )
 
-        # 2️⃣ Fallback to local Ollama
-        local_llm = ChatOllama(
-            model=self.model,
-            temperature=0,
-            streaming=True
+            return ChatOllama(
+                model=self.model,
+                base_url=self.remote_base_url,
+                keep_alive="-1m",
+                temperature=0,
+                streaming=True,
+            )
+
+        logger.info(
+            "Remote Ollama unavailable or model missing. "
+            "Falling back to local Ollama."
         )
 
-        logger.info("Using local Ollama")
-        return local_llm
+        return ChatOllama(
+            model=self.model,
+            temperature=0,
+            streaming=True,
+        )
 
+    # ---------- DecisionMaker interface ----------
     def handle_input(self, user_input: str) -> str:
         result = self.llm.invoke(user_input)
         return result.content

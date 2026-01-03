@@ -40,8 +40,10 @@ class RobotCommand(Enum):
     UPDATE_SCREEN_B = auto()
     MOTION_COMPLETE = auto()
     BOOT_COMPLETE = auto()
-    SET_EYES_MODE = auto()
+    SET_EYES_MOOD = auto()
     SET_EYES_POS = auto()
+    NOD_YES = auto()
+    SHAKE_NO = auto()
 
 class BottomScreenHelper:
     def __init__(self, show):
@@ -62,7 +64,7 @@ class BottomScreenHelper:
         return data
 
     @classmethod    
-    def clear():
+    def clear(nothing):
         pass
 
 class MujocoRobot(BaseRobotController):
@@ -82,7 +84,7 @@ class MujocoRobot(BaseRobotController):
         self.audio = AudioManager(rate=44100, channels=2)
         self.player = AVOrchestrator(self.screen_top, self.audio)
         self.eyes = RoboEyes(self.screen_top, width=512, height=512)
-        self.motion = MotionController(self.model, robot_controller=self)
+        self.motion_handler = MotionController(self.model, robot_controller=self)
 
         self._command_queue = queue.Queue()
         self._stop_event = threading.Event()
@@ -131,7 +133,7 @@ class MujocoRobot(BaseRobotController):
                 except queue.Empty:
                     pass
 
-                self.motion.update_motion(self.data)
+                self.motion_handler.update_motion(self.data)
                 mujoco.mj_step(self.model, self.data)
                 
                 if self.eyes.is_active:
@@ -211,11 +213,17 @@ class MujocoRobot(BaseRobotController):
         with self._status_lock:
             return self._current_status.value
         
-    def set_eyes_mode(self, mode):
-        self._command_queue.put((RobotCommand.SET_EYES_MODE, {"mode": mode}))
+    def set_eyes_mood(self, mood):
+        self._command_queue.put((RobotCommand.SET_EYES_MOOD, {"mood": mood}))
 
     def set_eyes_position(self, position):
         self._command_queue.put((RobotCommand.SET_EYES_POS, {"position": position}))
+
+    def nod_yes(self):
+        self._command_queue.put((RobotCommand.NOD_YES, None))
+
+    def shake_no(self):
+        self._command_queue.put((RobotCommand.SHAKE_NO, None))
 
     # -----------------------------------------------------
     # INTERNAL HELPERS (Where status changes actually happen)
@@ -237,7 +245,7 @@ class MujocoRobot(BaseRobotController):
             self.screen_top.clear_display() 
             qpos_open = self.model.key_qpos[self.open_id]
             ctrl_open = self.model.key_ctrl[self.open_id]
-            self.motion.do_open(self.data, qpos_open, ctrl_open, duration)
+            self.motion_handler.do_open(self.data, qpos_open, ctrl_open, duration)
             
         elif cmd_type == RobotCommand.SLEEP:
             logger.info("Entering sleep mode")
@@ -246,7 +254,7 @@ class MujocoRobot(BaseRobotController):
             self.screen_top.show_text("Zzz...")          
             if os.path.exists(SLEEP_AUDIO_PATH):
                 self.player.play_file(SLEEP_AUDIO_PATH)
-            self.motion.do_close(
+            self.motion_handler.do_close(
                 self.data, 
                 self.model.key_qpos[self.home_id], 
                 self.model.key_ctrl[self.home_id], 
@@ -261,7 +269,7 @@ class MujocoRobot(BaseRobotController):
             if (self._is_opened):    
                 if os.path.exists(CLOSE_AUDIO_PATH):
                     self.player.play_file(CLOSE_AUDIO_PATH)
-                self.motion.do_close(
+                self.motion_handler.do_close(
                     self.data, 
                     self.model.key_qpos[self.home_id], 
                     self.model.key_ctrl[self.home_id], 
@@ -289,18 +297,18 @@ class MujocoRobot(BaseRobotController):
             else:
                 self.eyes.is_active = False
 
-        elif cmd_type == RobotCommand.SET_EYES_MODE:
+        elif cmd_type == RobotCommand.SET_EYES_MOOD:
             if self.eyes.is_active:
-                mode = payload['mode']
-                if mode == "HAPPY":
-                    _mode = HAPPY
-                elif mode == "ANGRY":
-                    _mode = ANGRY
-                elif mode == "TIRED":
-                    _mode = TIRED
+                mood = payload['mood']
+                if mood == "HAPPY":
+                    _mood = HAPPY
+                elif mood == "ANGRY":
+                    _mood = ANGRY
+                elif mood == "TIRED":
+                    _mood = TIRED
                 else:
-                    _mode = DEFAULT
-                self.eyes.set_mode(mode)
+                    _mood = DEFAULT
+                self.eyes.set_mood(mood)
 
         elif cmd_type == RobotCommand.SET_EYES_POS:
             if self.eyes.is_active:
@@ -332,6 +340,12 @@ class MujocoRobot(BaseRobotController):
         elif cmd_type == RobotCommand.BOOT_COMPLETE:
             if self._current_status != RobotStatus.ACTIVE: return
             self._command_queue.put((RobotCommand.SET_EYES, {"active": True}))
+
+        elif cmd_type == RobotCommand.NOD_YES:
+            self.motion_handler.do_yes()
+
+        elif cmd_type == RobotCommand.SHAKE_NO:
+            self.motion_handler.do_no()
 
     def _cleanup(self):
         logger.info("Cleaning up resources")
