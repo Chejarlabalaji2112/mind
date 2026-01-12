@@ -1,43 +1,43 @@
 const app = {
-    state: { 
-        view: 'home', 
-        activeContext: null, 
-        autoHideEnabled: true, 
-        dockOpen: false, 
-        status: 'shutdown', 
-        ws: null, 
+    state: {
+        view: 'home',
+        activeContext: null,
+        autoHideEnabled: true,
+        dockOpen: false,
+        status: 'shutdown',
+        ws: null,
         inDoubtMode: false,
-        reconnectDelay: 1000,       
-        maxReconnectDelay: 30000,   
+        reconnectDelay: 1000,
+        maxReconnectDelay: 30000,
         reconnectTimer: null,
-        isGeneratingMain: false,    
-        isGeneratingDoubt: false,   
+        isGeneratingMain: false,
+        isGeneratingDoubt: false,
         currentSession: null,
-        directChatActive: false  
+        directChatActive: false
     },
     router: {
         navigate: (viewId) => {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.getElementById(`view-${viewId}`).classList.add('active');
             app.state.view = viewId;
-            
-            if(viewId === 'chat') {
+
+            if (viewId === 'chat') {
                 if (!app.state.ws || app.state.ws.readyState !== WebSocket.OPEN) {
                     app.connect();
                 }
                 app.ui.setDock(false);
-                if(app.state.directChatActive) app.home.toggleDirectInput(); 
+                if (app.state.directChatActive) app.home.toggleDirectInput();
             }
         }
     },
-    
+
     // --- HOME SCREEN & DIRECT CHAT LOGIC ---
     home: {
         // Display AI response on LEFT side
         displayResponse: (text, append = true) => {
             const el = document.getElementById('home-ai-display');
             const container = el ? el.parentElement : null;
-            
+
             if (el && container) {
                 if (append) {
                     el.innerHTML += text;
@@ -45,10 +45,10 @@ const app = {
                     el.innerHTML = text;
                 }
                 // Auto-scroll to bottom
-                container.scrollTop = container.scrollHeight; 
+                container.scrollTop = container.scrollHeight;
             }
         },
-        
+
         // Display User request on RIGHT side
         displayRequest: (text) => {
             const userEl = document.getElementById('home-user-display');
@@ -59,9 +59,9 @@ const app = {
                 // Append new user block
                 const newBlock = `<div style="margin-top:15px;">${text}</div>`;
                 userEl.innerHTML += newBlock;
-                
+
                 // Clear AI text for a "fresh" turn logic (optional, requested style)
-                if(aiEl) aiEl.innerHTML = ''; 
+                if (aiEl) aiEl.innerHTML = '';
 
                 // Auto-scroll
                 userContainer.scrollTop = userContainer.scrollHeight;
@@ -73,7 +73,7 @@ const app = {
             const bar = document.getElementById('direct-chat-bar');
             const input = document.getElementById('direct-input');
             const dock = document.getElementById('dock');
-            
+
             const aiDisplay = document.getElementById('home-ai-display');
             const userDisplay = document.getElementById('home-user-display');
 
@@ -82,20 +82,20 @@ const app = {
             if (app.state.directChatActive) {
                 // OPEN
                 bar.classList.add('active');
-                dock.classList.add('hidden'); 
-                app.ui.setDock(false); 
+                dock.classList.add('hidden');
+                app.ui.setDock(false);
                 setTimeout(() => input.focus(), 100);
             } else {
                 // CLOSE
                 app.chat.stopGeneration();
                 bar.classList.remove('active');
-                dock.classList.remove('hidden'); 
-                app.ui.setDock(true); 
-                input.value = ''; 
-                
+                dock.classList.remove('hidden');
+                app.ui.setDock(true);
+                input.value = '';
+
                 // CLEAR OVERLAY TEXT (Return to pristine state)
-                if(aiDisplay) aiDisplay.innerHTML = '';
-                if(userDisplay) userDisplay.innerHTML = '';
+                if (aiDisplay) aiDisplay.innerHTML = '';
+                if (userDisplay) userDisplay.innerHTML = '';
             }
         },
 
@@ -109,12 +109,12 @@ const app = {
 
             // 2. Send to backend
             app.state.currentSession = 'main';
-            app.state.isGeneratingMain = true; 
+            app.state.isGeneratingMain = true;
             app.state.ws.send(JSON.stringify({ type: 'text', data: text, session: 'main' }));
-            
+
             // 3. Update Chat View history
             app.chat.appendMessage('user', text);
-            app.chat.appendMessage('ai', ''); 
+            app.chat.appendMessage('ai', '');
 
             // 4. Clear input
             input.value = '';
@@ -122,12 +122,12 @@ const app = {
     },
 
     connect: () => {
-       if (app.state.ws && (app.state.ws.readyState === WebSocket.CONNECTING || app.state.ws.readyState === WebSocket.OPEN)) return;
+        if (app.state.ws && (app.state.ws.readyState === WebSocket.CONNECTING || app.state.ws.readyState === WebSocket.OPEN)) return;
 
         const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-        const host = window.location.host; 
+        const host = window.location.host;
         app.state.ws = new WebSocket(`${protocol}${host}/ws`);
-        
+
         app.state.ws.onopen = () => {
             console.log('WebSocket connected');
             app.state.reconnectDelay = 1000;
@@ -152,7 +152,7 @@ const app = {
 
                 } else if (data.session === 'main') {
                     app.chat.appendChunk(data.text);
-                    
+
                     // Update Home Overlay if on Home View
                     if (app.state.view === 'home') {
                         app.home.displayResponse(data.text, true);
@@ -183,13 +183,13 @@ const app = {
         };
         app.state.ws.onerror = (error) => console.error('WS Error:', error);
         app.state.ws.onclose = () => {
-            app.power.updateStatus('shutdown'); 
+            app.power.updateStatus('shutdown');
             app.state.isGeneratingMain = false;
             app.state.isGeneratingDoubt = false;
             app.state.currentSession = null;
             app.chat.updateSendButton();
             app.chat.updateDoubtButton();
-            
+
             const nextDelay = app.state.reconnectDelay;
             app.state.reconnectTimer = setTimeout(() => {
                 app.connect();
@@ -204,34 +204,34 @@ const app = {
             app.state.dockOpen = isOpen;
             const dock = document.getElementById('dock');
             const arrowBtn = document.getElementById('dock-arrow');
-            
-            if(app.state.directChatActive) return;
 
-            if(isOpen) {
+            if (app.state.directChatActive) return;
+
+            if (isOpen) {
                 dock.classList.remove('hidden');
-                arrowBtn.classList.remove('up-mode'); 
+                arrowBtn.classList.remove('up-mode');
             } else {
                 dock.classList.add('hidden');
-                arrowBtn.classList.add('up-mode'); 
+                arrowBtn.classList.add('up-mode');
             }
         },
         manualToggle: () => {
             app.ui.setDock(!app.state.dockOpen);
         },
         handleMouseEnter: () => {
-            if(app.state.autoHideEnabled && !app.state.dockOpen && !app.state.directChatActive) {
+            if (app.state.autoHideEnabled && !app.state.dockOpen && !app.state.directChatActive) {
                 app.ui.setDock(true);
             }
         },
         handleMouseLeave: () => {
-            if(app.state.autoHideEnabled && app.state.dockOpen) {
+            if (app.state.autoHideEnabled && app.state.dockOpen) {
                 app.ui.setDock(false);
             }
         },
         toggleAutoMode: () => {
             app.state.autoHideEnabled = !app.state.autoHideEnabled;
             const btn = document.getElementById('auto-mode-btn');
-            if(app.state.autoHideEnabled) {
+            if (app.state.autoHideEnabled) {
                 btn.classList.add('active-mode');
                 btn.setAttribute('tooltip', 'Auto-Hide: ON');
             } else {
@@ -245,23 +245,23 @@ const app = {
         showMenu: () => {
             const menu = document.getElementById('power-menu');
             const status = app.state.status;
-            
+
             const btnOn = menu.querySelector('[onclick="app.power.powerOn()"]');
             const btnOff = menu.querySelector('[onclick="app.power.shutdown()"]');
             const btnSleep = menu.querySelector('[onclick="app.power.sleep()"]');
-            
+
             [btnOn, btnOff, btnSleep].forEach(b => b.style.display = 'none');
 
             if (status === 'shutdown') {
-                btnOn.style.display = 'block';     
-                btnOn.innerText = "Power On";      
+                btnOn.style.display = 'block';
+                btnOn.innerText = "Power On";
             } else if (status === 'sleep') {
-                btnOn.style.display = 'block';     
-                btnOn.innerText = "Wake Up";       
-                btnOff.style.display = 'block';    
-            } else { 
-                btnOff.style.display = 'block';    
-                btnSleep.style.display = 'block';  
+                btnOn.style.display = 'block';
+                btnOn.innerText = "Wake Up";
+                btnOff.style.display = 'block';
+            } else {
+                btnOff.style.display = 'block';
+                btnSleep.style.display = 'block';
             }
             menu.classList.toggle('hidden');
         },
@@ -270,19 +270,19 @@ const app = {
             const dot = document.getElementById('robot-status');
             dot.className = `status-dot status-${status}`;
         },
-        async powerOn() { 
+        async powerOn() {
             if (app.state.ws && app.state.ws.readyState === WebSocket.OPEN) {
                 app.state.ws.send(JSON.stringify({ type: 'power', data: { action: 'on' } }));
             }
             app.power.showMenu();
         },
-        async shutdown() { 
+        async shutdown() {
             if (app.state.ws && app.state.ws.readyState === WebSocket.OPEN) {
                 app.state.ws.send(JSON.stringify({ type: 'power', data: { action: 'shutdown' } }));
             }
             app.power.showMenu();
         },
-        async sleep() { 
+        async sleep() {
             if (app.state.ws && app.state.ws.readyState === WebSocket.OPEN) {
                 app.state.ws.send(JSON.stringify({ type: 'power', data: { action: 'sleep' } }));
             }
@@ -295,17 +295,17 @@ const app = {
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
             if (!text || !app.state.ws || app.state.ws.readyState !== WebSocket.OPEN || app.state.isGeneratingMain) return;
-            
+
             app.state.currentSession = 'main';
             app.state.isGeneratingMain = true;
             app.chat.updateSendButton();
-            
+
             app.home.displayRequest(text); // Sync with home
-            
+
             app.chat.appendMessage('user', text);
             input.value = '';
             app.state.ws.send(JSON.stringify({ type: 'text', data: text, session: 'main' }));
-            app.chat.appendMessage('ai', ''); 
+            app.chat.appendMessage('ai', '');
         },
         stopGeneration: () => {
             const session = app.state.currentSession;
@@ -325,7 +325,7 @@ const app = {
             const btn = document.querySelector('.input-area .btn-icon');
             if (!btn) return;
             const svg = btn.querySelector('svg');
-            
+
             if (app.state.isGeneratingMain) {
                 btn.classList.add('stop-mode');
                 btn.onclick = app.chat.stopGeneration;
@@ -342,7 +342,7 @@ const app = {
         updateDoubtButton: () => {
             const btn = document.querySelector('.doubt-input-row button');
             if (!btn) return;
-            
+
             if (app.state.isGeneratingDoubt) {
                 btn.classList.add('stop-mode');
                 btn.textContent = 'Stop';
@@ -358,13 +358,13 @@ const app = {
             const container = document.getElementById('message-container');
             const row = document.createElement('div');
             row.className = `message-row ${role}`;
-            
+
             // --- CHANGE START ---
             let inner;
             if (role === 'ai') {
                 // 1. Parse existing text if any (for non-streaming history)
                 const renderedHtml = window.marked ? marked.parse(text) : text;
-                
+
                 // 2. Use a DIV instead of P for the content container
                 // 3. Add 'markdown-content' class for styling
                 inner = `
@@ -387,15 +387,15 @@ const app = {
         appendChunk: (chunk) => {
             // Select the DIV we created above
             const lastAiDiv = document.querySelector('.message-row.ai:last-child .bubble .streaming-text');
-            
+
             if (lastAiDiv) {
                 // 1. Retrieve current raw text from data attribute
                 let currentRaw = lastAiDiv.dataset.raw || "";
-                
+
                 // 2. Append new chunk
                 currentRaw += chunk;
                 lastAiDiv.dataset.raw = currentRaw;
-                
+
                 // 3. Render Markdown to HTML
                 if (window.marked) {
                     lastAiDiv.innerHTML = marked.parse(currentRaw);
@@ -415,33 +415,34 @@ const app = {
                 // If no bubble exists yet (rare race condition), create one
                 app.chat.appendMessage('ai', chunk);
             }
-            
+
             // Scroll to bottom
             const scroller = document.getElementById('scroller');
             scroller.scrollTop = scroller.scrollHeight;
         },
-    openDoubt: (ctx) => {
-        // If ctx is an object (HTML Element from 'this'), try to get text, otherwise use ctx string
-        let contextText = ctx;
-        if (typeof ctx === 'object') {
-            // Fallback if clicked directly without updated handler
-            const bubble = ctx.closest('.bubble');
-            const textDiv = bubble.querySelector('.streaming-text');
-            contextText = textDiv.dataset.raw || textDiv.innerText;
-        }
+        openDoubt: (ctx) => {
+            // If ctx is an object (HTML Element from 'this'), try to get text, otherwise use ctx string
+            let contextText = ctx;
+            if (typeof ctx === 'object') {
+                // Fallback if clicked directly without updated handler
+                const bubble = ctx.closest('.bubble');
+                const textDiv = bubble.querySelector('.streaming-text');
+                contextText = textDiv.dataset.raw || textDiv.innerText;
+            }
 
-        app.state.activeContext = contextText;
-        // ... rest of the function remains the same ...
-        app.state.inDoubtMode = true;
-        const overlay = document.getElementById('doubt-overlay');
+            app.state.activeContext = contextText;
+            app.state.contextSent = false; // Reset flag
+            // ... rest of the function remains the same ...
+            app.state.inDoubtMode = true;
+            const overlay = document.getElementById('doubt-overlay');
             overlay.classList.add('active');
-            
+
             const messages = document.getElementById('doubt-messages');
             messages.innerHTML = `
                 <div style="font-size:0.82rem; color:#888; margin-bottom:12px; line-height:1.4;">
                     <strong>Context:</strong><br>${ctx.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
                 </div>`;
-            
+
             setTimeout(() => document.getElementById('doubt-input').focus(), 100);
             app.chat.updateDoubtButton();
         },
@@ -469,7 +470,18 @@ const app = {
                 <div style="align-self: flex-end; background: var(--chat-user-bg); padding: 9px 14px; border-radius: 16px; max-width: 80%; margin: 8px 0 8px auto; font-size:0.95rem;">
                     ${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
 
-            app.state.ws.send(JSON.stringify({ type: 'text', data: text, session: 'doubt' }));
+            const payload = {
+                type: 'text',
+                data: text,
+                session: 'doubt'
+            };
+
+            if (!app.state.contextSent) {
+                payload.context = app.state.activeContext;
+                app.state.contextSent = true;
+            }
+
+            app.state.ws.send(JSON.stringify(payload));
 
             const aiBubble = document.createElement('div');
             aiBubble.style = 'align-self: flex-start; background: var(--surface); border: 1px solid var(--border); padding: 10px 14px; border-radius: 16px; max-width: 85%; margin: 8px 0; word-wrap: break-word;';
@@ -480,7 +492,7 @@ const app = {
         },
         clearChat: () => { document.getElementById('message-container').innerHTML = ''; }
     },
-    
+
     screen: {
         render: (htmlContent) => {
             const identity = document.getElementById('home-identity');
@@ -494,10 +506,10 @@ const app = {
             const dynamic = document.getElementById('home-dynamic-content');
             dynamic.classList.add('hidden');
             identity.classList.remove('hidden');
-            setTimeout(() => dynamic.innerHTML = '', 300); 
+            setTimeout(() => dynamic.innerHTML = '', 300);
         }
     },
-    
+
     mic: {
         isRecording: false,
         start: async () => {
@@ -531,20 +543,20 @@ const app = {
 
     init: () => {
         app.connect();
-        
+
         document.getElementById('power-button').onclick = app.power.showMenu;
         document.getElementById('mic-btn').onclick = app.mic.start;
-        
+
         document.getElementById('chat-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !app.state.isGeneratingMain) app.chat.sendUserMessage();
         });
-        
+
         document.getElementById('doubt-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !app.state.isGeneratingDoubt) app.chat.sendDoubt();
         });
-        
+
         const directInput = document.getElementById('direct-input');
-        if(directInput) {
+        if (directInput) {
             directInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') app.home.sendDirectMessage();
             });
@@ -555,7 +567,7 @@ const app = {
                 document.getElementById('power-menu').classList.add('hidden');
             }
         });
-        
+
         app.router.navigate('home');
         app.chat.updateSendButton();
         app.chat.updateDoubtButton();
@@ -564,7 +576,7 @@ const app = {
 
 function updateClock() {
     const now = new Date();
-    document.getElementById('clock').textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    document.getElementById('clock').textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 }
 setInterval(updateClock, 1000); updateClock();
 

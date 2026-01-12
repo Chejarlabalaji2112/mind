@@ -188,11 +188,13 @@ def create_app(args):
                         except asyncio.CancelledError:
                             pass
                     
+                    context = msg.get("context")
+
                     # NEW: Create newjson.dump task for streaming
                     async def stream_response():
                         try:
                             if hasattr(response_handler, 'astream'):
-                                async for chunk in response_handler.astream(user_text, ask_doubt, app.state.chat_names):
+                                async for chunk in response_handler.astream(user_text, ask_doubt, app.state.chat_names, context=context):
                                     await websocket.send_text(json.dumps({
                                         "type": "chunk", 
                                         "text": chunk, 
@@ -200,7 +202,7 @@ def create_app(args):
                                     }))
                                     await asyncio.sleep(0.01)
                             else:
-                                full = response_handler.get_full_response(user_text, ask_doubt, app.state.chat_names)
+                                full = response_handler.get_full_response(user_text, ask_doubt, app.state.chat_names, context=context)
                                 await websocket.send_text(json.dumps({
                                     "type": "response", 
                                     "text": full,
