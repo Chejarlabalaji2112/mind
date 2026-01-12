@@ -43,6 +43,9 @@ class SymbolicHandler:
                     self.robot_controller.nod_yes()
                 if action == "no":
                     self.robot_controller.shake_no()
+            elif request == "chat_name":
+                logger.info("requesting to set a chat id for the chat.")
+                return " ".join(parts[1:]).lower()
                     
             else:
                 logger.warning(f"Unknown symbolic tool: {request}")

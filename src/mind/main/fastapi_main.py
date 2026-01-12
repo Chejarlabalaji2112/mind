@@ -52,8 +52,6 @@ def create_app(args):
         notifier = Notifier(manager)
         app.state.connection_manager = manager
         app.state.screen_updater = FNScreenUpdater(manager)
-        llm_adapter = OllamaAdapter(model="gemma:latest", remote_base_url="http://10.159.109.99:11434")
-        robot_adapter = None
         screen_updater = FNScreenUpdater(manager)
         presenters = [screen_updater]
         
@@ -78,7 +76,6 @@ def create_app(args):
 
 
         if args.sim:
-            # Inject event_bus into Robot
             robot_adapter = MujocoRobot(loop=loop)
             sim_thread = threading.Thread(target=robot_adapter.run, daemon=True, name="mujoco_sim_thread")
             sim_thread.start()
@@ -103,21 +100,24 @@ def create_app(args):
                 def stop(self): pass
 
             robot_adapter = DummyRobot()
- 
+    
+        app.state.agents = {}
         # Initialize Symbolic Handler
         app.state.symbolic_handler = SymbolicHandler(tools_instances, presenters, robot_adapter)
         
-        agent = Agent(decision_maker=llm_adapter, robot_controller=robot_adapter, notifier=notifier, loop=loop)
-        app.state.agent = agent
-        
-        if args.wake_up_on_start and robot_adapter:
-            agent.wake_up()
+        #  aliafshar/gemma3-it-qat-tools:4b
+        async with OllamaAdapter(model="smollm2") as llm_adapter:
+            main_agent = Agent(decision_maker=llm_adapter, robot_controller=robot_adapter, notifier=notifier, loop=loop)
+            app.state.agents["main"] = main_agent
+            
+            if args.wake_up_on_start and robot_adapter:
+                app.state.agents["main"].wake_up()
 
-        yield
+            yield # lifespan's yield 
 
         # Cleanup
         if robot_adapter:
-            agent.stop()
+            app.state.agents["main"].stop()
             if hasattr(app.state, 'sim_thread'):
                 app.state.sim_thread.join(timeout=5.0)
         
@@ -138,19 +138,20 @@ def create_app(args):
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket):
         manager = app.state.connection_manager
-        agent = app.state.agent
+        main_agent = app.state.agents["main"]
         
         await manager.connect(websocket)
         
         try:
             initial_status = RobotStatus.SHUTDOWN.value
-            if agent.robot_controller:
-                initial_status = agent.robot_controller.status()
+            if main_agent.robot_controller:
+                initial_status = main_agent.robot_controller.status()
             manager.broadcast_status(initial_status)
 
-            response_handler = agent.input_handler()  # Single instance per connection
+            response_handler = main_agent.input_handler()  # Single instance per connection
             current_task = None  # NEW: Track streaming task
             current_session = None  # NEW: Track session
+            app.state.chat_names = ["casual chat", "doubt chat"]
 
             while True:
                 data = await websocket.receive_text()
@@ -165,11 +166,14 @@ def create_app(args):
                     user_text = msg["data"]
                     session = msg.get("session", "main")
                     current_session = session
+                    ask_doubt = True if current_session == "doubt" else False
 
                     # Symbolic Handler Logic
                     if user_text.strip().startswith("/"):
-                        await app.state.symbolic_handler.process(user_text)
+                        sym_hand_output = await app.state.symbolic_handler.process(user_text)
                         # Optionally send a confirmation "end of stream" signal so UI knows cmd is done
+                        if sym_hand_output:
+                            app.state.chat_names[0] = sym_hand_output 
                         await websocket.send_text(json.dumps({
                             "type": "stream_end",
                             "session": session
@@ -184,11 +188,11 @@ def create_app(args):
                         except asyncio.CancelledError:
                             pass
                     
-                    # NEW: Create new task for streaming
+                    # NEW: Create newjson.dump task for streaming
                     async def stream_response():
                         try:
                             if hasattr(response_handler, 'astream'):
-                                async for chunk in response_handler.astream(user_text):
+                                async for chunk in response_handler.astream(user_text, ask_doubt, app.state.chat_names):
                                     await websocket.send_text(json.dumps({
                                         "type": "chunk", 
                                         "text": chunk, 
@@ -196,7 +200,7 @@ def create_app(args):
                                     }))
                                     await asyncio.sleep(0.01)
                             else:
-                                full = response_handler.get_full_response()
+                                full = response_handler.get_full_response(user_text, ask_doubt, app.state.chat_names)
                                 await websocket.send_text(json.dumps({
                                     "type": "response", 
                                     "text": full,
@@ -233,9 +237,9 @@ def create_app(args):
 
                 elif msg_type == "power":
                     action = msg["data"]["action"]
-                    new_status = agent.handle_power_command(action)  # NEW: Get new status
+                    new_status = main_agent.handle_power_command(action)  # NEW: Get new status
                     manager.broadcast_status(new_status)  # NEW: Broadcast update
-
+                    
         except WebSocketDisconnect:
             # NEW: Cancel task on disconnect
             if current_task and not current_task.done():
