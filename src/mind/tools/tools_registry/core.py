@@ -20,3 +20,5 @@ class Register:
         self.registry.register_from_class(self.tools_instances.skillstracker, with_namespace=True)
 
 
+#TODO: implement a easy lookup table. given the agent name then returns a registory of tools for that agent. example utils_agent then only gives tools like timer, stopwatch etc. no other tools like robotcontroller.
+

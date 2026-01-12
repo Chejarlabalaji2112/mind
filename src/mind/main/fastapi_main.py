@@ -14,7 +14,7 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 
 # Architecture Imports
 from mind.utils import BASE_DIR
-from mind.core.agents.agent import Agent
+from core.agents.hitomi import Hitomi
 from mind.core.status import RobotStatus
 
 from mind.utils.logging_handler import setup_logger
@@ -107,7 +107,7 @@ def create_app(args):
         
         #  aliafshar/gemma3-it-qat-tools:4b
         async with OllamaAdapter(model="smollm2") as llm_adapter:
-            main_agent = Agent(decision_maker=llm_adapter, robot_controller=robot_adapter, notifier=notifier, loop=loop)
+            main_agent = Hitomi(decision_maker=llm_adapter, robot_controller=robot_adapter, notifier=notifier, loop=loop)
             app.state.agents["main"] = main_agent
             
             if args.wake_up_on_start and robot_adapter:

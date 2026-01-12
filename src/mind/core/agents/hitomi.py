@@ -9,8 +9,8 @@ from mind.core.ports.notification_port import NotificationPort
 
 logger = setup_logger(__name__)
 
-class Agent():
-    """Orchestrates tools using a DecisionMaker (LLM or other)."""
+class Hitomi():
+    """Orchestrator"""
 
     def __init__(self, decision_maker: DecisionMaker, robot_controller: BaseRobotController, notifier: NotificationPort, loop=None ):
         self.decision_maker = decision_maker
