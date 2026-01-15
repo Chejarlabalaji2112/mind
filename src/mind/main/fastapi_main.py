@@ -13,19 +13,22 @@ from fastapi.templating import Jinja2Templates
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 
 # Architecture Imports
+from mind.core.agents.utils_manager import UtilsManager
 from mind.utils import BASE_DIR
-from core.agents.hitomi import Hitomi
+from mind.core.agents.hitomi import Hitomi
 from mind.core.status import RobotStatus
 
 from mind.utils.logging_handler import setup_logger
 
-from mind.adapters.llm_adapters.ollama_adapter import OllamaAdapter
+from mind.adapters.llm_adapters.main_adapter import MainAdapter
+from mind.adapters.llm_adapters.utils_adapter import UtilsAdapter
 from mind.adapters.robot_controller_adapters.mujoco_robot_adapter import MujocoRobot
 from mind.adapters.fastapi_adapters.helper_adapters import AddEventListeners, ConnectionManager, FNScreenUpdater, Notifier, output_tuner
 from mind.tools.tools_registry.core import Register
 from mind.tools.tools_registry.tools_helpers import ToolsHelpers
 from mind.adapters.fastapi_adapters.symbolic_handler import SymbolicHandler
 from mind.adapters.memory_adapters.sqlite_memory_adapter import SqliteMemoryAdapter
+from langchain_core.tools import tool
 
 logger = setup_logger(__name__)
 
@@ -51,8 +54,8 @@ def create_app(args):
         manager = ConnectionManager(loop=loop)
         notifier = Notifier(manager)
         app.state.connection_manager = manager
-        app.state.screen_updater = FNScreenUpdater(manager)
         screen_updater = FNScreenUpdater(manager)
+        app.state.screen_updater = screen_updater
         presenters = [screen_updater]
         
         # Initialize Memory Adapter (using default path or configured path)
@@ -61,9 +64,12 @@ def create_app(args):
         
         # Initialize Registry and Tools
         register = Register(loop=loop, memory_adapter=memory_adapter)
-        registry = register.registry
+        total_registry = register.registry
         app.state.register = register
-        app.state.registry = registry
+        app.state.total_registry = total_registry
+
+        utils_manager_registry = register.get_agent_registry("utils_manager")
+        utils_manager_tools = [utils_manager_registry.get_callable(name) for name in utils_manager_registry.list_tools()]
         
         # Initialize Tools Helpers and Bind Listeners
         tools_helpers = ToolsHelpers(presenters)
@@ -102,11 +108,22 @@ def create_app(args):
             robot_adapter = DummyRobot()
     
         app.state.agents = {}
+        
         # Initialize Symbolic Handler
         app.state.symbolic_handler = SymbolicHandler(tools_instances, presenters, robot_adapter)
         
+        utils_adapter = UtilsAdapter(model="aliafshar/gemma3-it-qat-tools:4b", tools=utils_manager_tools)
+        utils_manager = UtilsManager(decision_maker=utils_adapter)
+        app.state.agents["utils_manager"] = utils_manager
+
+        @tool
+        async def call_utils_agent(query: str) -> str:
+            """Delegates the query to the utils_manager agent. Use this for utilities like timer, stopwatch, pomodoro, etc."""
+            logger.info(f"Main agent delegating to utils manager: {query}")
+            return await utils_manager.handle_input(query)
+
         #  aliafshar/gemma3-it-qat-tools:4b
-        async with OllamaAdapter(model="smollm2") as llm_adapter:
+        async with MainAdapter(model="aliafshar/gemma3-it-qat-tools:4b", tools=[call_utils_agent]) as llm_adapter:
             main_agent = Hitomi(decision_maker=llm_adapter, robot_controller=robot_adapter, notifier=notifier, loop=loop)
             app.state.agents["main"] = main_agent
             

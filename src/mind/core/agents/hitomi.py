@@ -65,7 +65,6 @@ class Hitomi():
             
 
     def input_handler(self):
-            logger.info(f"Agent receiving request")
 
             try:
                 response = self.decision_maker.input_handler()

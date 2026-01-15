@@ -29,7 +29,7 @@ class StreamingResponseHandler:
             try:
                 # Check if doubt thread is new/empty
                 doubt_config = {"configurable": {"thread_id": f"{self.chat_name}"}}
-                doubt_state = await self.agents[1].aget_state(doubt_config)
+                doubt_state = await self.agents[1].agent_state(doubt_config)
                 
                 if not doubt_state.values:
                     # It's empty. Use provided context.
