@@ -1,4 +1,5 @@
 import sqlite3
+import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from mind.utils import custom_exception as ce
@@ -31,6 +32,33 @@ class SqliteMemoryAdapter(MemoryPort):
             Duration INTEGER,
             Notes TEXT,
             FOREIGN KEY (SkillID) REFERENCES Skills(SkillID) ON DELETE CASCADE
+        );""")
+        self.cur.execute("""
+        CREATE TABLE IF NOT EXISTS Sessions(
+            SessionID INTEGER PRIMARY KEY,
+            SkillID INTEGER,
+            StartTime TEXT,
+            EndTime TEXT,
+            Duration INTEGER,
+            Notes TEXT,
+            FOREIGN KEY (SkillID) REFERENCES Skills(SkillID) ON DELETE CASCADE
+        );""")
+        
+        self.cur.execute("""
+        CREATE TABLE IF NOT EXISTS EpisodicMemory(
+            MemoryID INTEGER PRIMARY KEY,
+            Timestamp TEXT,
+            Content TEXT,
+            Context TEXT
+        );""")
+
+        self.cur.execute("""
+        CREATE TABLE IF NOT EXISTS SemanticMemory(
+            FactID INTEGER PRIMARY KEY,
+            Subject TEXT,
+            Predicate TEXT,
+            Object TEXT,
+            CreatedOn TEXT
         );""")
         self.conn.commit()
 
@@ -155,3 +183,75 @@ class SqliteMemoryAdapter(MemoryPort):
     def consolidate(self):
         # Optional: Could be used for database vacuuming or archiving old sessions
         pass
+
+    def store_episodic(self, content: str, context: Dict[str, Any] = None):
+        """Store an experience or event (Episodic Memory)."""
+        try:
+            timestamp = datetime.now().isoformat()
+            context_json = json.dumps(context) if context else "{}"
+            self.cur.execute("""
+                INSERT INTO EpisodicMemory (Timestamp, Content, Context)
+                VALUES (?, ?, ?)
+            """, (timestamp, content, context_json))
+            self.conn.commit()
+            self.logger.info(f"Stored episodic memory: {content}")
+        except sqlite3.Error as e:
+            self.logger.exception(f"Database error in store_episodic: {e}")
+
+    def store_semantic(self, subject: str, predicate: str, object_: str):
+        """Store a fact (Semantic Memory)."""
+        try:
+            timestamp = datetime.now().isoformat()
+            self.cur.execute("""
+                INSERT INTO SemanticMemory (Subject, Predicate, Object, CreatedOn)
+                VALUES (?, ?, ?, ?)
+            """, (subject, predicate, object_, timestamp))
+            self.conn.commit()
+            self.logger.info(f"Stored semantic memory: {subject} {predicate} {object_}")
+        except sqlite3.Error as e:
+            self.logger.exception(f"Database error in store_semantic: {e}")
+
+    def retrieve_relevant(self, query: str, limit: int = 5) -> List[str]:
+        """Retrieve relevant memories (Episodic or Semantic) based on query.
+           Currently implements basic keyword search (LIKE).
+        """
+        results = []
+        try:
+            # Simple keyword extraction (splitting by space for NOW)
+            keywords = query.split()
+            if not keywords:
+                return []
+            
+            # Construct a LIKE query for Episodic Memory
+            # For simplicity, just matching content against the whole query string or first meaningful word
+            # A more robust solution would be vector search or FTS (Full Text Search)
+            
+            like_pattern = f"%{query}%"
+            
+            self.cur.execute("""
+                SELECT Content, Timestamp FROM EpisodicMemory
+                WHERE Content LIKE ? 
+                ORDER BY Timestamp DESC
+                LIMIT ?
+            """, (like_pattern, limit))
+            
+            episodic = self.cur.fetchall()
+            for row in episodic:
+                results.append(f"[Episodic] {row[1]}: {row[0]}")
+
+            # Construct query for Semantic Memory
+            self.cur.execute("""
+                SELECT Subject, Predicate, Object FROM SemanticMemory
+                WHERE Subject LIKE ? OR Object LIKE ? OR Predicate LIKE ?
+                LIMIT ?
+            """, (like_pattern, like_pattern, like_pattern, limit))
+            
+            semantic = self.cur.fetchall()
+            for row in semantic:
+                results.append(f"[Semantic] Fact: {row[0]} {row[1]} {row[2]}")
+                
+            return results[:limit]
+
+        except sqlite3.Error as e:
+            self.logger.exception(f"Database error in retrieve_relevant: {e}")
+            return ["Error retrieving memories."]
