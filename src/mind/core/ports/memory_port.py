@@ -38,3 +38,17 @@ class MemoryPort(ABC):
         """
         pass
 
+    @abstractmethod
+    def store_episodic(self, content: str, context: dict = None):
+        """Store an experience or event (Episodic Memory)."""
+        pass
+
+    @abstractmethod
+    def store_semantic(self, subject: str, predicate: str, object_: str):
+        """Store a fact (Semantic Memory)."""
+        pass
+
+    @abstractmethod
+    def retrieve_relevant(self, query: str, limit: int = 5) -> list[str]:
+        """Retrieve relevant memories (Episodic or Semantic) based on query."""
+        pass

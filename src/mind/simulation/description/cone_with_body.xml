@@ -1,0 +1,147 @@
+<mujoco>
+    
+    <compiler angle="degree" coordinate="local"/>
+    <option timestep="0.002" iterations="100" tolerance="1e-10"/>
+    
+    <!-- ADDED: Keyframe definition for the "Home" position -->
+    <!-- qpos values correspond to the order of joints defined below -->
+    <!-- Order: j_top_y, j_top_z, j_top_cam, j_top_ant_r, j_top_ant_l -->
+
+    <keyframe>
+        <key name="home" qpos="1.85 0 0 1.52 1.52" ctrl="2.1 0 0 15 15"/> <!-- closed position-->
+        <key name="open" qpos="0 0 0 0 0" ctrl="0 0 0 0 0"/>
+    </keyframe>
+
+    <asset>
+        <mesh name="bottom_mesh" file="../meshes/bottom1.stl" scale="2 2 2"/>
+        <mesh name="top_mesh" file="../meshes/top.stl" scale="2 2 2"/>
+        <mesh name="ant_r_mesh" file="../meshes/antenna_r.stl" scale="2 2 2"/>
+        <mesh name="ant_l_mesh" file="../meshes/antenna_l.stl" scale="2 2 2"/>
+        <mesh name="camera_mesh" file="../meshes/camera.stl" scale="2 2 2"/>
+        <mesh name="main_body" file="../meshes/body.stl"/>
+        <mesh name="ar1" file="../meshes/ar1.stl"/>
+        <mesh name="ar2" file="../meshes/ar2.stl"/>
+        <mesh name="ar3" file="../meshes/ar3.stl"/>
+        <mesh name="al1" file="../meshes/al1.stl"/>
+        <mesh name="al2" file="../meshes/al2.stl"/>
+        <mesh name="al3" file="../meshes/al3.stl"/>
+        <mesh name="hand_l" file="../meshes/hand_l.stl"/>
+        <mesh name="hand_r" file="../meshes/hand_r.stl"/>
+        <mesh name="torso" file="../meshes/torso.stl"/>
+        <mesh name="support_l" file="../meshes/support_l.stl"/>
+        <mesh name="support_r" file="../meshes/support_r.stl"/>
+        <mesh name="base_car" file="../meshes/base_car.stl"/>
+        
+        
+        
+
+        <texture name="display_top" type="2d" builtin="checker" width="512" height="512" rgb1="0 0 0" rgb2="0 0 0"/>
+        <material name="display_matt" texture="display_top" specular="0.1" shininess="0.1" emission="3"/>
+
+        <texture name="display_bottom"  type="2d" builtin="checker" width="512" height="256" rgb1="0 0 0" rgb2="0 0 0"/>
+        <material name="display_matb" texture="display_bottom" specular="0.5" shininess="0.5"/>
+    </asset>
+    <worldbody>
+    	<body name="body" pos="0 0 0.19">
+    		<geom type="mesh" mesh="main_body" rgba="0.7 0.7 0.7 1" density="350"/>
+    	<body name="base">
+    		<geom type="mesh" mesh="base_car" rgba="0.7 0.7 0.7 1" density="350"/>
+    		</body>
+    		
+    	<body name="support_leg_l">
+    		<geom type="mesh" mesh="support_l" rgba="0.7 0.7 0.7 1"/>
+    	</body>
+    		
+    	<body name="support_leg_r">
+    		<geom type="mesh" mesh="support_r" rgba="0.7 0.7 0.7 1"/>
+    	</body>
+    	
+	<body name="torso">
+    		<geom type="mesh" mesh="torso" rgba="0.7 0.7 0.7 1"/>
+    	</body>
+    	<body name="ar1">
+    		<geom type="mesh" mesh="ar1" rgba="0.7 0.7 0.7 1"/>
+	</body>
+    	<body name="ar2">
+    		<geom type="mesh" mesh="ar2" rgba="0.7 0.7 0.7 1"/>
+	</body>
+    	<body name="ar3">
+    		<geom type="mesh" mesh="ar3" rgba="0.7 0.7 0.7 1"/>
+	</body>
+    	<body name="al1">
+    		<geom type="mesh" mesh="al1" rgba="0.7 0.7 0.7 1"/>
+	</body>
+    	<body name="al2">
+    		<geom type="mesh" mesh="al2" rgba="0.7 0.7 0.7 1"/>
+	</body>
+    	<body name="al3">
+    		<geom type="mesh" mesh="al3" rgba="0.7 0.7 0.7 1"/>
+	</body>
+	<body name="hand_l">
+    		<geom type="mesh" mesh="hand_l" rgba="0.7 0.7 0.7 1"/>
+    	</body>
+    		
+    	<body name="hand_r">
+    		<geom type="mesh" mesh="hand_r" rgba="0.7 0.7 0.7 1"/>
+    	</body>
+        <body name="bottom" pos="0.065 0.1 0.53">
+
+            <geom type="mesh" mesh="bottom_mesh" rgba="0.7 0.7 0.7 1" density="300"/>
+            <geom name="bottom_screen" type="box" size="0.047 0.0132 0.0002" material="display_matb" pos="0.089 -0.1154 -0.0175" euler="0 74 90.3"/>
+            
+            <body name="top" pos="-0.008 0 0.01">
+
+                <joint name="j_top_y" type="hinge" axis="0 1 0" range="0 106" damping="4" stiffness="10" armature="0.000001" pos="-0.054 -0.02  0.06"/>
+                <joint name="j_top_z" type="hinge" axis="0 0 1" range="-10 10" damping="20" stiffness="10" armature="0.01" pos="-0.054 -0.098 -0.02"/>
+                
+                <geom type="mesh" mesh="top_mesh" rgba="0.7 0.7 0.7 1" density="300"/>
+                <geom name="screen_geom" type="box" size="0.064 0.0556 0.0002" material="display_matt" pos="-0.003 -0.0984 0.1456" euler="0 74 90" mass="0"/>
+                
+                <body name="camera" pos="0.004 0 0.03">
+
+                    <camera name="camera_top" pos="-0.025 0 0.1" euler="0 150 90"/>
+                    
+                    <joint name="j_top_cam" type="hinge" pos="-0.03 0.   0.194" range="0 90" damping="10" stiffness="50" armature="0.01" axis="0 1 0"/>
+                    
+                    <geom type="mesh" mesh="camera_mesh" rgba="0.1 0.5 0.7 1"/>
+                
+                </body>
+            
+            </body>
+                
+            <body name="antenna_right" pos="0 0 0.002">
+                
+                <joint name="j_top_ant_r" type="hinge" axis="0 1 0" range="0 180" damping="0.1" stiffness="50" springref="10" pos="-0.05 -0.16 -0.02"/>
+                
+                <geom type="mesh" mesh="ant_r_mesh" rgba="0 0 0 1"/>
+            
+            </body>
+            
+            <body name="antenna_left" pos="0 0 0.002">
+                
+                <joint name="j_top_ant_l" type="hinge" axis="0 1 0" range="0 180" damping="0.1" stiffness="50" springref="10" pos="-0.054  0.16 -0.02 "/>
+                
+                <geom type="mesh" mesh="ant_l_mesh" rgba="0 0 0 1"/>
+            
+            </body>
+        
+        </body>
+       </body>
+    
+    </worldbody>
+    
+    <actuator>
+        
+        <position name="servo_top_y"   joint="j_top_y"        kp="100"  ctrlrange="0 2.1"/>
+        
+        <position name="servo_top_z"   joint="j_top_z"        kp="90"   ctrlrange="-0.5 0.5"/>
+        
+        <position name="servo_top_com" joint="j_top_cam"      kp="50"   ctrlrange="0 3.5" />
+        
+        <position name="servo_ant_r"   joint="j_top_ant_r"    kp="5"    ctrlrange = "-10 15" />
+        
+        <position name="servo_ant_l"   joint="j_top_ant_l"    kp="5"    ctrlrange = "-10 15" />
+    
+    </actuator>
+
+</mujoco>
