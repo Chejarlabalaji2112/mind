@@ -90,7 +90,7 @@ def create_app(args):
             
             robot_adapter.status_update_event.add_listener(manager.broadcast_status)
             robot_adapter.status_update_event.add_listener(notifier.notify_status)
-            presenters.append(robot_adapter.bsh)
+            presenters.append(robot_adapter.bsh) 
             
         else:
             from mind.core.ports.base_robot_controller_port import BaseRobotController

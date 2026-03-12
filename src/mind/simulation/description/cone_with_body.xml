@@ -8,8 +8,8 @@
     <!-- Order: j_top_y, j_top_z, j_top_cam, j_top_ant_r, j_top_ant_l -->
 
     <keyframe>
-        <key name="home" qpos="1.85 0 0 1.52 1.52" ctrl="2.1 0 0 15 15"/> <!-- closed position-->
-        <key name="open" qpos="0 0 0 0 0" ctrl="0 0 0 0 0"/>
+        <key name="home" qpos="-1.51304e-05 1.44514 -0.000131488 -0.00218656 -0.000195364 -1.44514 1.36607e-05 6.06137e-06 1.85 0.000709827 0" ctrl="0 0 0 0 0 0 0  0 2.1  0 0"/> <!-- closed position-->
+        <key name="open" qpos="0 0 0 0 0 0 0 0 0 0 0" ctrl="0 0 0 0 0 0 0 0 0 0 0"/>
     </keyframe>
 
     <asset>
@@ -18,7 +18,7 @@
         <mesh name="ant_r_mesh" file="../meshes/antenna_r.stl" scale="2 2 2"/>
         <mesh name="ant_l_mesh" file="../meshes/antenna_l.stl" scale="2 2 2"/>
         <mesh name="camera_mesh" file="../meshes/camera.stl" scale="2 2 2"/>
-        <mesh name="main_body" file="../meshes/body.stl"/>
+        <mesh name="main_body" file="../meshes/body2.stl"/>
         <mesh name="ar1" file="../meshes/ar1.stl"/>
         <mesh name="ar2" file="../meshes/ar2_new.stl"/>
         <mesh name="ar3" file="../meshes/ar3_new.stl"/>
@@ -57,24 +57,24 @@
     	</body>
     	
 	<body name="torso">
-	<joint name="body" axis="0 1 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 -0.1 0.54"/>
+
     		<geom type="mesh" mesh="torso" rgba="0.7 0.7 0.7 1"/>
     	</body>
     	<body name="ar1">
-    		<joint name="right_Shoulder_Pitch" axis="0 1 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 -0.1 0.54"/>
+    		<joint name="right_Shoulder_Pitch" axis="0 1 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 -0.1 0.54" damping="4" stiffness="10" />
     		<geom type="mesh" mesh="ar1" rgba="0.7 0.7 0.7 1" />
 	
 	    	<body name="ar2">
-	    	<joint name="right_Shoulder_ro" axis="1 0 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 -0.15 0.53"/>
+	    	<joint name="right_Shoulder_ro" axis="1 0 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 -0.15 0.53" damping="4" stiffness="10"/>
 	    		<geom type="mesh" mesh="ar2" rgba="0.7 0.7 0.7 1"/>
 		
 		    	<body name="ar3">
-		    	<joint name="right_wrist_ro" axis="0 1 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 -0.2 0.533"/>
+		    	<joint name="right_wrist_ro" axis="0 1 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 -0.2 0.533" damping="4" stiffness="10"/>
 		    		<geom type="mesh" mesh="ar3" rgba="0.7 0.7 0.7 1"/>
 		
 		
 				<body name="hand_r">
-				<joint name="right_hand_ro" axis="0  0 1" range="90 90" actuatorfrcrange="-18 18" pos="0.0669 -0.35 0.5345"/>
+				<joint name="right_hand_ro" axis="0  0 1" range="90 90" actuatorfrcrange="-18 18" pos="0.0669 -0.35 0.5345" damping="4" stiffness="10"/>
 		    		<geom type="mesh" mesh="hand_r" rgba="0.7 0.7 0.7 1"/>
 		    		</body>
     		</body>
@@ -84,19 +84,19 @@
 	
 	
     	<body name="al1">
-    		<joint name="left_Shoulder_Pitch" axis="0 1 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 0.2 0.54"/>
+    		<joint name="left_Shoulder_Pitch" axis="0 1 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 0.2 0.54" damping="4" stiffness="10"/>
     		<geom type="mesh" mesh="al1" rgba="0.7 0.7 0.7 1"/>
 	
 	    	<body name="al2" >
-	    	<joint name="left_Shoulder_ro" axis="1 0 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 0.15 0.53"/>
+	    	<joint name="left_Shoulder_ro" axis="1 0 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 0.15 0.53" damping="4" stiffness="10" />
 	    		<geom type="mesh" mesh="al2" rgba="0.7 0.7 0.7 1"/>
 		
 		    	<body name="al3">
-		    	<joint name="left_wrist_ro" axis="0 1 0" range="90 90" actuatorfrcrange="-18 18" pos="0.0669 0.15 0.5345"/>
+		    	<joint name="left_wrist_ro" axis="0 1 0" range="90 90" actuatorfrcrange="-18 18" pos="0.0669 0.15 0.5345" damping="4" stiffness="10"/>
 		    		<geom type="mesh" mesh="al3" rgba="0.7 0.7 0.7 1"/>
 			
 			<body name="hand_l">
-			<joint name="left_hand_ro" axis="0  0 1" range="90 90" actuatorfrcrange="-18 18" pos="0.0669 0.35 0.5345"/>
+			<joint name="left_hand_ro" axis="0  0 1" range="90 90" actuatorfrcrange="-18 18" pos="0.0669 0.35 0.5345" damping="4" stiffness="10"/>
 		    		<geom type="mesh" mesh="hand_l" rgba="0.7 0.7 0.7 1"/>
     			</body>
     			</body>
@@ -104,12 +104,14 @@
     	</body>
     		
     	
-        <body name="bottom" pos="0.065 0.1 0.53">
+        <body name="bottom" pos="0.07 0.1 0.53">
 
             <geom type="mesh" mesh="bottom_mesh" rgba="0.7 0.7 0.7 1" density="300"/>
             <geom name="bottom_screen" type="box" size="0.047 0.0132 0.0002" material="display_matb" pos="0.089 -0.1154 -0.0175" euler="0 74 90.3"/>
             
             <body name="top" pos="-0.008 0 0.01">
+                
+
 
                 <joint name="j_top_y" type="hinge" axis="0 1 0" range="0 106" damping="4" stiffness="10" armature="0.000001" pos="-0.054 -0.02  0.06"/>
                 <joint name="j_top_z" type="hinge" axis="0 0 1" range="-10 10" damping="20" stiffness="10" armature="0.01" pos="-0.054 -0.098 -0.02"/>
@@ -129,21 +131,7 @@
             
             </body>
                 
-            <body name="antenna_right" pos="0 0 0.002">
-                
-                <joint name="j_top_ant_r" type="hinge" axis="0 1 0" range="0 180" damping="0.1" stiffness="50" springref="10" pos="-0.05 -0.16 -0.02"/>
-                
-                <geom type="mesh" mesh="ant_r_mesh" rgba="0 0 0 1"/>
-            
-            </body>
-            
-            <body name="antenna_left" pos="0 0 0.002">
-                
-                <joint name="j_top_ant_l" type="hinge" axis="0 1 0" range="0 180" damping="0.1" stiffness="50" springref="10" pos="-0.054  0.16 -0.02 "/>
-                
-                <geom type="mesh" mesh="ant_l_mesh" rgba="0 0 0 1"/>
-            
-            </body>
+
         
         </body>
        </body>
@@ -152,15 +140,26 @@
     
     <actuator>
         
-        <position name="servo_top_y"   joint="j_top_y"        kp="100"  ctrlrange="0 2.1"/>
+      
+        
+    <!-- Right arm -->
+    <position name="right_shoulder_pitch"  joint="right_Shoulder_Pitch"  kp="75"  ctrlrange="-1.57 1.57"  gear="1"/>
+    <position name="right_shoulder_roll"   joint="right_Shoulder_ro"     kp="100"  ctrlrange="-1.57 1.57"  gear="1"/>
+    <position name="right_wrist_roll"      joint="right_wrist_ro"        kp="80"   ctrlrange="-1.57 1.57"  gear="1"/>
+    <position name="right_hand_roll"       joint="right_hand_ro"         kp="60"   ctrlrange="-1.57 1.57"  gear="1"/>
+
+    <!-- Left arm -->
+    <position name="left_shoulder_pitch"   joint="left_Shoulder_Pitch"   kp="75"  ctrlrange="-1.57 1.57"  gear="1"/>
+    <position name="left_shoulder_roll"    joint="left_Shoulder_ro"      kp="100"  ctrlrange="-1.57 1.57"  gear="1"/>
+    <position name="left_wrist_roll"       joint="left_wrist_ro"         kp="80"   ctrlrange="-1.57 1.57"  gear="1"/>
+    <position name="left_hand_roll"        joint="left_hand_ro"          kp="60"   ctrlrange="-1.57 1.57"  gear="1"/>
+
+      <position name="servo_top_y"   joint="j_top_y"        kp="100"  ctrlrange="0 2.1"/>
         
         <position name="servo_top_z"   joint="j_top_z"        kp="90"   ctrlrange="-0.5 0.5"/>
         
         <position name="servo_top_com" joint="j_top_cam"      kp="50"   ctrlrange="0 3.5" />
         
-        <position name="servo_ant_r"   joint="j_top_ant_r"    kp="5"    ctrlrange = "-10 15" />
-        
-        <position name="servo_ant_l"   joint="j_top_ant_l"    kp="5"    ctrlrange = "-10 15" />
     
     </actuator>
 

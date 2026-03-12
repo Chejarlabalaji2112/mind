@@ -10,7 +10,6 @@ from mind.core.ports.notification_port import NotificationPort
 
 # --- CONNECTION MANAGER ---
 class ConnectionManager:
-    # 1. FIX: Accept 'loop' to handle cross-thread scheduling
     def __init__(self, loop: asyncio.AbstractEventLoop):
         self.active_connections: set[WebSocket] = set()
         self._lock = threading.Lock()
