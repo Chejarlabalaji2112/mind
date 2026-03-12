@@ -1,5 +1,6 @@
 import time
 import sys
+# from mind.utils import BASE_DIR
 from mind.adapters.memory_adapters.sqlite_memory_adapter import SqliteMemoryAdapter
 from mind.tools.tasks_skills_tools.skillstracker import SkillsTracker
 
@@ -57,6 +58,7 @@ def main(request, skill_name):
 
 
 if __name__ == "__main__":
+    print("create\nstart\nend\nret")
     request = input("Enter the request: ")
     skill = input("enter the skill_name: ")
     main(request, skill)

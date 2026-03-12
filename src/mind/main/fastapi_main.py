@@ -168,7 +168,7 @@ def create_app(args):
             response_handler = main_agent.input_handler()  # Single instance per connection
             current_task = None  # NEW: Track streaming task
             current_session = None  # NEW: Track session
-            app.state.chat_names = ["casual chat", "doubt chat"]
+            app.state.chat_names = ["chat_casual", "chat_doubt"]
 
             while True:
                 data = await websocket.receive_text()

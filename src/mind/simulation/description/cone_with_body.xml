@@ -20,13 +20,13 @@
         <mesh name="camera_mesh" file="../meshes/camera.stl" scale="2 2 2"/>
         <mesh name="main_body" file="../meshes/body.stl"/>
         <mesh name="ar1" file="../meshes/ar1.stl"/>
-        <mesh name="ar2" file="../meshes/ar2.stl"/>
-        <mesh name="ar3" file="../meshes/ar3.stl"/>
+        <mesh name="ar2" file="../meshes/ar2_new.stl"/>
+        <mesh name="ar3" file="../meshes/ar3_new.stl"/>
         <mesh name="al1" file="../meshes/al1.stl"/>
-        <mesh name="al2" file="../meshes/al2.stl"/>
-        <mesh name="al3" file="../meshes/al3.stl"/>
-        <mesh name="hand_l" file="../meshes/hand_l.stl"/>
-        <mesh name="hand_r" file="../meshes/hand_r.stl"/>
+        <mesh name="al2" file="../meshes/al2_new.stl"/>
+        <mesh name="al3" file="../meshes/al3_new.stl"/>
+        <mesh name="hand_l" file="../meshes/hand_l_new.stl"/>
+        <mesh name="hand_r" file="../meshes/hand_r_new.stl"/>
         <mesh name="torso" file="../meshes/torso.stl"/>
         <mesh name="support_l" file="../meshes/support_l.stl"/>
         <mesh name="support_r" file="../meshes/support_r.stl"/>
@@ -57,33 +57,53 @@
     	</body>
     	
 	<body name="torso">
+	<joint name="body" axis="0 1 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 -0.1 0.54"/>
     		<geom type="mesh" mesh="torso" rgba="0.7 0.7 0.7 1"/>
     	</body>
     	<body name="ar1">
-    		<geom type="mesh" mesh="ar1" rgba="0.7 0.7 0.7 1"/>
+    		<joint name="right_Shoulder_Pitch" axis="0 1 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 -0.1 0.54"/>
+    		<geom type="mesh" mesh="ar1" rgba="0.7 0.7 0.7 1" />
+	
+	    	<body name="ar2">
+	    	<joint name="right_Shoulder_ro" axis="1 0 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 -0.15 0.53"/>
+	    		<geom type="mesh" mesh="ar2" rgba="0.7 0.7 0.7 1"/>
+		
+		    	<body name="ar3">
+		    	<joint name="right_wrist_ro" axis="0 1 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 -0.2 0.533"/>
+		    		<geom type="mesh" mesh="ar3" rgba="0.7 0.7 0.7 1"/>
+		
+		
+				<body name="hand_r">
+				<joint name="right_hand_ro" axis="0  0 1" range="90 90" actuatorfrcrange="-18 18" pos="0.0669 -0.35 0.5345"/>
+		    		<geom type="mesh" mesh="hand_r" rgba="0.7 0.7 0.7 1"/>
+		    		</body>
+    		</body>
+    		</body>
 	</body>
-    	<body name="ar2">
-    		<geom type="mesh" mesh="ar2" rgba="0.7 0.7 0.7 1"/>
-	</body>
-    	<body name="ar3">
-    		<geom type="mesh" mesh="ar3" rgba="0.7 0.7 0.7 1"/>
-	</body>
+	
+	
+	
     	<body name="al1">
+    		<joint name="left_Shoulder_Pitch" axis="0 1 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 0.2 0.54"/>
     		<geom type="mesh" mesh="al1" rgba="0.7 0.7 0.7 1"/>
-	</body>
-    	<body name="al2">
-    		<geom type="mesh" mesh="al2" rgba="0.7 0.7 0.7 1"/>
-	</body>
-    	<body name="al3">
-    		<geom type="mesh" mesh="al3" rgba="0.7 0.7 0.7 1"/>
-	</body>
-	<body name="hand_l">
-    		<geom type="mesh" mesh="hand_l" rgba="0.7 0.7 0.7 1"/>
+	
+	    	<body name="al2" >
+	    	<joint name="left_Shoulder_ro" axis="1 0 0" range="90 90" actuatorfrcrange="-18 18" pos="0.07 0.15 0.53"/>
+	    		<geom type="mesh" mesh="al2" rgba="0.7 0.7 0.7 1"/>
+		
+		    	<body name="al3">
+		    	<joint name="left_wrist_ro" axis="0 1 0" range="90 90" actuatorfrcrange="-18 18" pos="0.0669 0.15 0.5345"/>
+		    		<geom type="mesh" mesh="al3" rgba="0.7 0.7 0.7 1"/>
+			
+			<body name="hand_l">
+			<joint name="left_hand_ro" axis="0  0 1" range="90 90" actuatorfrcrange="-18 18" pos="0.0669 0.35 0.5345"/>
+		    		<geom type="mesh" mesh="hand_l" rgba="0.7 0.7 0.7 1"/>
+    			</body>
+    			</body>
+    		</body>
     	</body>
     		
-    	<body name="hand_r">
-    		<geom type="mesh" mesh="hand_r" rgba="0.7 0.7 0.7 1"/>
-    	</body>
+    	
         <body name="bottom" pos="0.065 0.1 0.53">
 
             <geom type="mesh" mesh="bottom_mesh" rgba="0.7 0.7 0.7 1" density="300"/>
