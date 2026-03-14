@@ -1,4 +1,10 @@
-A simultation available 
+Mind is a framework designed with Hexagonal Architecture. I will complete this as a complete Cognitive Architecture.
+
+Cognitive Architecture with Hierachical Agents.
+
+I named the robot and the main orchestrator agent as HITOMI.
+
+A simultation available for HITOMI
 
 # Companion desgin
 # when closed
@@ -14,7 +20,7 @@ https://github.com/user-attachments/assets/f41330e6-103b-41e5-88b8-0171b026e4bf
 
 ---
 
-# 🤖 Personalized Companion — HITOMI Architecture
+# 🤖 Personalized Companion — Hitomi Architecture
 
 > _Adaptive Interaction · Emotional Understanding · Causal Intelligence_
 
