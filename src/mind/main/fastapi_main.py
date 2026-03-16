@@ -18,6 +18,8 @@ from mind.utils import BASE_DIR
 from mind.core.agents.hitomi import Hitomi
 from mind.core.status import RobotStatus
 
+from mind.adapters.esp32 import esp32_adapter as esp_adp 
+
 from mind.utils.logging_handler import setup_logger
 
 from mind.adapters.llm_adapters.main_adapter import MainAdapter
@@ -36,6 +38,7 @@ logger = setup_logger(__name__)
 
 @dataclass
 class Args:
+    mini: bool = False
     sim: bool = False
     scene: str = "empty"
     wake_up_on_start: bool = False
@@ -79,6 +82,21 @@ def create_app(args):
         add_event_listeners.to_timer()
         add_event_listeners.to_stopwatch()
         add_event_listeners.to_pomodoro()
+
+
+        if args.mini: # this is the mini_hitomi_small display
+            try:    
+                conn = esp_adp.Connection()
+                await conn.connect()
+
+                sender = esp_adp.Sender(conn)
+                listener = esp_adp.Listener(conn)
+
+                asyncio.create_task(listener.listen())
+
+                presenters.append(sender)
+            except RuntimeError:
+                logger.info("esp32 not available")
 
 
         if args.sim:
@@ -282,6 +300,7 @@ def run_app(args: Args) -> None:
 def main() -> None:
     default_args = Args()
     parser = argparse.ArgumentParser(description="Main entry of the mind.")
+    parser.add_argument("--mini", action="store_true")
     parser.add_argument("--sim", action="store_true")
     parser.add_argument("--scene", type=str, default=default_args.scene)
     parser.add_argument("--wake-up-on-start", action="store_true")

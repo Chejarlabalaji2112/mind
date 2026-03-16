@@ -1,4 +1,5 @@
 from mind.core.ports.act_port import Presenter
+import asyncio, inspect
 
 class ToolsHelpers:
     def __init__(self, presenters: list):
@@ -8,11 +9,13 @@ class ToolsHelpers:
         """
         self.presenters = presenters
 
+
     def _broadcast(self, title, content, bottom=""):
         """Helper method to update all presenters to avoid code repetition."""
         for presenter in self.presenters:
             prepared_input = presenter.prepare_input(title=title, content=content, bottom=bottom)
-            presenter.show(**prepared_input)
+            result = presenter.show(**prepared_input)
+            run_maybe_async(result)
 
     # ==========================================
     # TIMER HANDLERS
@@ -198,4 +201,14 @@ class ToolsHelpers:
             bottom="Ready"
         )
 
+def run_maybe_async(result):
     
+
+    if not inspect.isawaitable(result):
+        return
+
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(result)
+    except RuntimeError:
+        asyncio.run(result)

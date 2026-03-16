@@ -1,6 +1,6 @@
-from ports.act_port import Presenter
-from ports.percieve_port import Audition
-
+from mind.core.ports.act_port import Presenter
+from mind.core.ports.percieve_port import Audition
+from mind.utils import setup_logger
 
 
 #!/usr/bin/env python3
@@ -18,11 +18,11 @@ import websockets
 import json
 import socket
 import time
-from utils.logging_handler import setup_logger
+
 
 connection_logger = setup_logger("connection")
 sender_logger = setup_logger("sender", console=False)
-listener_logger = setup_logger("listener", console=False)
+listener_logger = setup_logger("listener", console=True)
 import os
 
 ESP32_MDNS = "esp32.local"
@@ -143,9 +143,12 @@ class Sender(Presenter):
     def __init__(self, connection: Connection):
         self.conn = connection
 
-    async def show(self, obj: dict):
+    async def show(self, **obj: dict):
         """Send any JSON object to ESP32."""
         await self.conn.send(json.dumps(obj))
+
+    def prepare_input(self, title, content, bottom):
+        return esp_output_tuner(title, content, bottom)
 
 
 # ------------------------------

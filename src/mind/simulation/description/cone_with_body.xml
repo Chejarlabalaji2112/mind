@@ -8,7 +8,7 @@
     <!-- Order: j_top_y, j_top_z, j_top_cam, j_top_ant_r, j_top_ant_l -->
 
     <keyframe>
-        <key name="home" qpos="-1.51304e-05 1.44514 -0.000131488 -0.00218656 -0.000195364 -1.44514 1.36607e-05 6.06137e-06 1.85 0.000709827 0" ctrl="0 0 0 0 0 0 0  0 2.1  0 0"/> <!-- closed position-->
+        <key name="home" qpos="-1.51304e-05 0 -0.000131488 -0.00218656 -0.000195364 0 1.36607e-05 6.06137e-06 1.85 0.000709827 0" ctrl="0 1.57 0 0 0 -1.57 0  0 2.1  0 0"/> <!-- closed position-->
         <key name="open" qpos="0 0 0 0 0 0 0 0 0 0 0" ctrl="0 0 0 0 0 0 0 0 0 0 0"/>
     </keyframe>
 
@@ -109,14 +109,14 @@
             <geom type="mesh" mesh="bottom_mesh" rgba="0.7 0.7 0.7 1" density="300"/>
             <geom name="bottom_screen" type="box" size="0.047 0.0132 0.0002" material="display_matb" pos="0.089 -0.1154 -0.0175" euler="0 74 90.3"/>
             
-            <body name="top" pos="-0.008 0 0.01">
+            <body name="top" pos="-0.015 0 0.022">
                 
 
 
                 <joint name="j_top_y" type="hinge" axis="0 1 0" range="0 106" damping="4" stiffness="10" armature="0.000001" pos="-0.054 -0.02  0.06"/>
                 <joint name="j_top_z" type="hinge" axis="0 0 1" range="-10 10" damping="20" stiffness="10" armature="0.01" pos="-0.054 -0.098 -0.02"/>
                 
-                <geom type="mesh" mesh="top_mesh" rgba="0.7 0.7 0.7 1" density="300"/>
+                <geom type="mesh" mesh="top_mesh" rgba="0.7 0.7 0.7 1" density="300" contype="3" conaffinity="0"/>
                 <geom name="screen_geom" type="box" size="0.064 0.0556 0.0002" material="display_matt" pos="-0.003 -0.0984 0.1456" euler="0 74 90" mass="0"/>
                 
                 <body name="camera" pos="0.004 0 0.03">
@@ -162,5 +162,11 @@
         
     
     </actuator>
+    
+<contact>
+    <exclude body1="top" body2="body"/>
+    <exclude body1="top" body2="bottom"/>
+    <exclude body1="body" body2="bottom"/>
+</contact>
 
 </mujoco>
