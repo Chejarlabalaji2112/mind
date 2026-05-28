@@ -18,7 +18,7 @@ from mind.simulation.scripts.av_orchestrator import AVOrchestrator
 from mind.core.ports.base_robot_controller_port import BaseRobotController
 from mind.simulation.scripts.motion_controller import MotionController
 
-XML_PATH         = f"{SIMULATION_DIR}/description/scene_h.xml"
+XML_PATH         = f"{SIMULATION_DIR}/description/kitchen_scene.xml"
 CLOSE_AUDIO_PATH = f"{SIMULATION_DIR}/media/audio/shutdown.mp3"
 SLEEP_AUDIO_PATH = f"{SIMULATION_DIR}/media/audio/sleep.mp3"
 BOOT_VIDEO_PATH  = f"{SIMULATION_DIR}/media/videos/pupil_boot.mp4"
