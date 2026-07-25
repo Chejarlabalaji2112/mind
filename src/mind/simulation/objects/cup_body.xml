@@ -1,7 +1,0 @@
-<mujocoinclude>
-    <body name="cup_body">
-        <geom class = "ycb_viz" type="mesh" mesh="cup_normalized_0_vis" conaffinity="0" contype="0" group="1" material="Body3__0"/>
-        <geom class = "ycb_viz" type="mesh" mesh="cup_normalized_1_vis" conaffinity="0" contype="0" group="1" material="Paint_-_Enamel_Glossy_Red"/>
-        <geom class = "ycb_col" friction="3 1 0.01" type="cylinder" size="0.043 0.04" pos="0 0 0"/>
-    </body>
-</mujocoinclude>
