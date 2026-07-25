@@ -18,7 +18,7 @@ from mind.simulation.scripts.av_orchestrator import AVOrchestrator
 from mind.core.ports.base_robot_controller_port import BaseRobotController
 from mind.simulation.scripts.motion_controller import MotionController
 
-XML_PATH         = f"{SIMULATION_DIR}/description/kitchen_scene.xml"
+XML_PATH         = f"{SIMULATION_DIR}/description/scene_flat_terrain_backlash.xml"
 CLOSE_AUDIO_PATH = f"{SIMULATION_DIR}/media/audio/shutdown.mp3"
 SLEEP_AUDIO_PATH = f"{SIMULATION_DIR}/media/audio/sleep.mp3"
 BOOT_VIDEO_PATH  = f"{SIMULATION_DIR}/media/videos/pupil_boot.mp4"
@@ -75,6 +75,7 @@ class MujocoRobot(BaseRobotController):
         
         self.home_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_KEY, "home")
         self.open_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_KEY, "open")
+
 
         mujoco.mj_resetDataKeyframe(self.model, self.data, self.home_id)
         mujoco.mj_forward(self.model, self.data)
@@ -174,7 +175,7 @@ class MujocoRobot(BaseRobotController):
         self._command_queue.put((RobotCommand.WAKE_UP, {"duration": duration}))
         self.screen_top.clear_display()
         logger.info(f"Wake-up queued")
-    
+ 
     def sleep(self, duration=3.0):
         self._requested_state = RobotStatus.SLEEP
         self._command_queue.put((RobotCommand.SLEEP, {"duration": duration}))
@@ -330,6 +331,7 @@ class MujocoRobot(BaseRobotController):
 
         elif cmd_type == RobotCommand.MOTION_COMPLETE:
             if self._current_status != RobotStatus.ACTIVE: return
+            print("halted here .......")
             boot_path = BOOT_VIDEO_PATH
             if (self._current_status == RobotStatus.ACTIVE) and not self._boot_played and os.path.exists(boot_path):
                 self._command_queue.put((RobotCommand.PLAY_VIDEO, {"path": boot_path, "is_boot": True}))

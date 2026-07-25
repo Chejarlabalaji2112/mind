@@ -1,0 +1,56 @@
+<mujoco model="scene">
+    <include file="open_duck_mini_v2_backlash.xml"/>
+
+    <visual>
+        <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+        <rgba haze="0.15 0.25 0.35 1"/>
+        <global azimuth="160" elevation="-20"/>
+    </visual>
+    <!-- 
+    <asset>
+        <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+        <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+            markrgb="0.8 0.8 0.8" width="300" height="300"/>
+        <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+    </asset> -->
+
+    <!-- <worldbody>
+        <body name="floor">
+            <light pos="0 0 3.5" dir="0 0 -1" directional="true"/>
+            <geom name="floor" size="0 0 0.05" pos="0 0 0" type="plane" material="groundplane" contype="1"
+                conaffinity="0" priority="1"/>
+        </body>
+    </worldbody> -->
+
+
+    <asset>
+        <texture type="skybox" builtin="gradient" rgb1="1 1 1" rgb2="1 1 1" width="800" height="800"/>
+        <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="1 1 1" rgb2="1 1 1" markrgb="0 0 0"
+            width="300" height="300"/>
+        <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0"/>
+    </asset>
+
+    <worldbody>
+        <body name="floor">
+            <geom name="floor" size="0 0 0.01" type="plane" material="groundplane" contype="1" conaffinity="0"
+                priority="1" friction="0.6" condim="3"/>
+        </body>
+    </worldbody>
+    <keyframe>
+        
+       
+       <key name="home" qpos='0.00750377 3.7403e-05 0.191069 0.999101 0.00113937 0.0423428 0.00191367 0.00190351 0.00886101 -0.0218468 -0.00943157 0.0163849 0.00934287 0.0189663 0.00944563 0.0204351 0.00949601 -0.0174121 -0.985729 0.000797865 -0.000438444 -0.00195088 -0.00195307 -0.00212308 -0.00887469 0.0251431 0.00948829 -0.0158122 -0.00933422 0.0173906 0.00943212 0.0190063 0.00948205'
+            ctrl="0 0 0 0 0 0 -0.985 0 0 0 0 0 0 0"
+       />
+    <key name="open"
+         qpos="0.00620238 0.000268349 0.191853
+               0.999459 0.000847726 0.0327722 0.00249751
+               0.00153009 0.00883524 -0.0219189 -0.00942731
+               0.0105633 0.00922036 0.0129582 0.00931367
+               0.0142811 0.00935796 -0.00558705 -0.00425073
+               0.000185654 -0.000844018 -0.00416274 -0.00416118
+               -0.0017461 -0.00885053 0.0248644 0.00947842
+               -0.00872982 -0.00918581 0.0108784 0.00928068
+               0.0126288 0.00932836"/>
+    </keyframe> 
+</mujoco>
